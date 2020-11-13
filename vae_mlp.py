@@ -74,7 +74,7 @@ plt.figure(figsize=(20, 4))
 for i in np.random.randint(len(x_train), size=n):
     # Original
     ax = plt.subplot(2, n, k + 1)
-    plt.imshow(x_test[i].reshape(28, 28))
+    plt.imshow(x_train[i].reshape(28, 28))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
