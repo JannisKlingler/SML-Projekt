@@ -10,7 +10,7 @@ latent_dim = 5
 trainingsepochen = 1
 
 # Erstellen eines Trainingsdatensatzes und eines Testdatensatzes
-(x_train, _), _ = keras.datasets.mnist.load_data()
+(x_train, y_train), _ = keras.datasets.mnist.load_data()
 # Binärisieren der Daten. Wir wählen als zugrundeliegende Verteilung eine
 # (multivariate) Bernoulliverteilung, da der MNIST-Datensatz annährend aus 0,1 Werten
 # besteht und das approximieren stetiger Werte z.B. mit einer multivariaten Gaußverteilung
