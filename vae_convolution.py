@@ -10,7 +10,7 @@ trainingsepochen = 10
 
 # Dieses Modell hat einfach alles! Convolution, Pooling, Dropout, Fully Connected Layer, uvm!
 # Leider benötigt das Training auch dementsprechend länger.
-(x_train, _), _ = keras.datasets.mnist.load_data()
+(x_train, y_train), _ = keras.datasets.mnist.load_data()
 x_train = np.where(x_train > 127.5, 1.0, 0).astype('float32')
 x_train = np.reshape(x_train, (len(x_train), 28, 28, 1))
 
@@ -61,23 +61,3 @@ vae.compile(optimizer='adam')
 vae.fit(x_train, x_train,
         epochs=trainingsepochen,
         batch_size=100)
-
-decoded_imgs = vae.predict(x_train)
-
-n = 15
-k = 0
-plt.figure(figsize=(20, 4))
-for i in np.random.randint(len(x_train), size=n):
-    ax = plt.subplot(2, n, k + 1)
-    plt.imshow(x_train[i].reshape(28, 28))
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-
-    ax = plt.subplot(2, n, k + 1 + n)
-    plt.imshow(decoded_imgs[i].reshape(28, 28))
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-    k = k + 1
-plt.show()
