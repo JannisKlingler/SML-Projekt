@@ -29,7 +29,7 @@ log_σ = layers.Dense(latent_dim, name="log_sig")(x)
 
 def reparam(args):
     μ, log_σ = args
-    epsilon = K.random_normal(shape=(100, latent_dim), mean=0., stddev=1)
+    epsilon = K.random_normal(shape=(K.shape(μ)[0], latent_dim), mean=0., stddev=1)
     return μ + K.exp(log_σ) * epsilon
 
 
