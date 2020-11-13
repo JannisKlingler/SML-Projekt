@@ -10,15 +10,14 @@ latent_dim = 5
 trainingsepochen = 1
 
 # Erstellen eines Trainingsdatensatzes und eines Testdatensatzes
-(x_train, _), (x_test, _) = keras.datasets.mnist.load_data()
+(x_train, _), _ = keras.datasets.mnist.load_data()
 # Binärisieren der Daten. Wir wählen als zugrundeliegende Verteilung eine
 # (multivariate) Bernoulliverteilung, da der MNIST-Datensatz annährend aus 0,1 Werten
 # besteht und das approximieren stetiger Werte z.B. mit einer multivariaten Gaußverteilung
 # bei solchen Datensätzen oft instabil ist.
 x_train = np.where(x_train > 127.5, 1.0, 0).astype('float32')
-x_test = np.where(x_test > 127.5, 1.0, 0).astype('float32')
 x_train = np.reshape(x_train, (len(x_train), 784))
-x_test = np.reshape(x_test, (len(x_test), 784))
+
 
 # Encodermodell mit einem hidden layer mit 500 Neuronen und Aktivierungsfunktion f(x)=tanh(x)
 encoder_input = keras.Input(shape=(784,))
@@ -32,8 +31,7 @@ log_σ = layers.Dense(latent_dim, name="log_sig")(x)
 
 def reparam(args):
     μ, log_σ = args
-    epsilon = K.random_normal(shape=(K.shape(μ)[0], latent_dim),
-                              mean=0., stddev=1)
+    epsilon = K.random_normal(shape=(100, latent_dim), mean=0., stddev=1)
     return μ + K.exp(log_σ) * epsilon
 
 
@@ -64,17 +62,16 @@ vae.compile(optimizer='adam')
 # Training des Netzwerkes
 vae.fit(x_train, x_train,
         epochs=trainingsepochen,
-        batch_size=100,
-        validation_data=(x_test, x_test))
+        batch_size=100)
 
 
-decoded_imgs = vae.predict(x_test)
+decoded_imgs = vae.predict(x_train)
 
 # Visualisierung der Ergebnisse
 n = 15  # Wieviele Bilder angezeigt werden sollen
 k = 0
 plt.figure(figsize=(20, 4))
-for i in np.random.randint(len(x_test), size=n):
+for i in np.random.randint(len(x_train), size=n):
     # Original
     ax = plt.subplot(2, n, k + 1)
     plt.imshow(x_test[i].reshape(28, 28))
