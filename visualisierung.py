@@ -52,14 +52,51 @@ plt.show()
 ######Erstellt eine nxn große Karte des zweidimensionalen lateneten Raums######
 ###############################################################################
 n = 25
+encoded_imgs = encoder.predict(x_train)
+
+x_1 = np.min(encoded_imgs[2][:, 0]) - np.min(encoded_imgs[2][:, 0]) / 4
+x_2 = np.max(encoded_imgs[2][:, 0]) - np.max(encoded_imgs[2][:, 0]) / 4
+y_1 = np.min(encoded_imgs[2][:, 1]) - np.min(encoded_imgs[2][:, 1]) / 4
 
 figure = np.zeros((28 * n, 28 * n))
-for i, yi in enumerate(np.linspace(-2.25, 2.25, n)):
-    for j, xi in enumerate(np.linspace(-2.25, 2.25, n)):
+for i, yi in enumerate(np.linspace(x_1, x_2, n)):
+    for j, xi in enumerate(np.linspace(y_1, y_1 + abs(x_1 - x_2), n)):
         z_sample = np.array([[xi, yi]])
         x_decoded = decoder.predict(z_sample)
         digit = x_decoded[0].reshape(28, 28)
         figure[i * 28: (i + 1) * 28, j * 28: (j + 1) * 28] = digit
 plt.figure(figsize=(10, 10))
 plt.imshow(figure, cmap='gray')
+plt.show()
+
+###############################################################################
+#Erstellt eine Animation des dreidimensionalen lateneten Raums (zeitaufwändig)#
+###############################################################################
+n = 25
+frames = 60
+encoded_imgs = encoder.predict(x_train)
+
+x_1 = np.min(encoded_imgs[2][:, 0]) - np.min(encoded_imgs[2][:, 0]) / 4
+x_2 = np.max(encoded_imgs[2][:, 0]) - np.max(encoded_imgs[2][:, 0]) / 4
+y_1 = np.min(encoded_imgs[2][:, 1]) - np.min(encoded_imgs[2][:, 1]) / 4
+z_1 = np.min(encoded_imgs[2][:, 2]) - np.min(encoded_imgs[2][:, 2]) / 4
+
+fig = plt.figure(figsize=(10, 10))
+ims = []
+for k in range(frames):
+    figure = np.zeros((28 * n, 28 * n))
+    for i, yi in enumerate(np.linspace(x_1, x_2, n)):
+        for j, xi in enumerate(np.linspace(y_1, y_1 + abs(x_1 - x_2), n)):
+            z_sample = np.array([[xi, yi, z_1 + k * abs(x_1 - x_2) / frames]])
+            x_decoded = decoder.predict(z_sample)
+            digit = x_decoded[0].reshape(28, 28)
+            figure[i * 28: (i + 1) * 28, j * 28: (j + 1) * 28] = digit
+    print("Frame", k+1, " von ", frames)
+    im = plt.imshow(figure, cmap='gray', animated=True)
+    ims.append([im])
+
+ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
+                                repeat_delay=1000)
+
+ani.save('latenter_raum.gif', writer='imagemagick', fps=30)
 plt.show()
