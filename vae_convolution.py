@@ -7,7 +7,7 @@ from tensorflow.keras import layers
 
 latent_dim = 5
 trainingsepochen = 10
-
+###
 # Dieses Modell hat einfach alles! Convolution, Pooling, Dropout, Fully Connected Layer, uvm!
 # Leider benötigt das Training auch dementsprechend länger.
 (x_train, y_train), _ = keras.datasets.mnist.load_data()
