@@ -5,4 +5,3 @@ Meine aktuellen Baustellen:
   z.B. Gauß. Das wird wichtig, wenn wir später Trainingsdaten verwenden wollen, die nicht nur Werte in {0,1}^n haben.
   Die ELBO muss dazu verändert werden und im Outputlayer des Decoders muss gesplittet auf ein Varianz- und Erwartungswertlayer abgebildet werden,
   ähnlich wie im Encoder. Beides wirft mir momentan Fehlermeldungen aus.
-Hallo Test
