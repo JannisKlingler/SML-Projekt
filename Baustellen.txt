@@ -1,7 +1,8 @@
 Meine aktuellen Baustellen:
 
 - ich bekomme es nicht hin Modelle zu speichern und wieder zu laden.
-- ich bekomme es nicht hin einen Code zu einem VAE zu schreiben, der statt einer Bionmialverteilung eine stetige Verteilung verwendet 
+- ich bekomme es nicht hin einen Code zu einem VAE zu schreiben, der statt einer Bionmialverteilung eine stetige Verteilung verwendet
   z.B. Gauß. Das wird wichtig, wenn wir später Trainingsdaten verwenden wollen, die nicht nur Werte in {0,1}^n haben.
-  Die ELBO muss dazu verändert werden und im Outputlayer des Decoders muss gesplittet auf ein Varianz- und Erwartungswertlayer abgebildet werden, 
+  Die ELBO muss dazu verändert werden und im Outputlayer des Decoders muss gesplittet auf ein Varianz- und Erwartungswertlayer abgebildet werden,
   ähnlich wie im Encoder. Beides wirft mir momentan Fehlermeldungen aus.
+Hallo Test
