@@ -52,8 +52,8 @@ decoder_output = decoder(encoder(encoder_input)[2])
 vae = keras.Model(encoder_input, decoder_output)
 
 log_p_xz = 784 * K.mean(keras.losses.binary_crossentropy(encoder_input, decoder_output))
-kl_div = K.sum(1 + 2 * log_σ - K.square(μ) - 2 * K.exp(log_σ), axis=-1)
-elbo = .5 * (log_p_xz - kl_div)
+kl_div = .5 * K.sum(1 + 2 * log_σ - K.square(μ) - 2 * K.exp(log_σ), axis=-1)
+elbo = log_p_xz - kl_div
 vae.add_loss(elbo)
 vae.compile(optimizer='adam')
 
