@@ -44,8 +44,8 @@ n = 3000
 encoded_imgs = encoder.predict(x_train[0:n], batch_size=100)
 fig = plt.figure(figsize=(9, 9))
 ax = fig.add_subplot(111, projection='3d')
-ax.scatter(encoded_imgs[0][:, 0], encoded_imgs[0][:, 1],
-           encoded_imgs[0][:, 2], c=y_train[0:n], cmap='tab10', marker='o')
+ax.scatter(encoded_imgs[2][:, 0], encoded_imgs[2][:, 1],
+           encoded_imgs[2][:, 2], c=y_train[0:n], cmap='tab10', marker='o')
 plt.show()
 
 ###############################################################################
