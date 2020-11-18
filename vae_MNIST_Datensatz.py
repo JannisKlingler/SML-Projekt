@@ -72,8 +72,8 @@ vae = keras.Model(encoder_inputs, decoder_outputs)
 # Trainingskriterium definieren. Dies ist die ELBO, siehe Auto-Encoding Variational Bayes S.5,11
 # logp(x|z) ist für die Bernoulliverteilung die Kreuzentropie.
 log_p_xz = 784 * keras.losses.binary_crossentropy(encoder_inputs, decoder_outputs)
-kl_div = K.sum(1 + 2 * log_σ - K.square(μ) - 2 * K.exp(log_σ), axis=-1)
-elbo = .5 * K.mean(log_p_xz - kl_div)
+kl_div = .5 * K.sum(1 + 2 * log_σ - K.square(μ) - 2 * K.exp(log_σ), axis=-1)
+elbo = K.mean(log_p_xz - kl_div)
 vae.add_loss(elbo)
 vae.compile(optimizer='adam')
 
