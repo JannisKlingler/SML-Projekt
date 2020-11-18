@@ -51,7 +51,6 @@ decoder_output = decoder(encoder(encoder_input)[2])
 vae = keras.Model(encoder_input, decoder_output)
 
 # Trainingskriterium definieren. Dies ist die ELBO, siehe Auto-Encoding Variational Bayes S.5,11
-# logp(x|z) ist für die Bernoulliverteilung die Kreuzentropie.
 log_p_xz = K.sum(encoder_input * K.log(decoder_output) +
                  (1 - encoder_input) * K.log(1 - decoder_output), axis=-1)
 kl_div = .5 * K.sum(1 + 2 * log_σ - K.square(μ) - 2 * K.exp(log_σ), axis=-1)
