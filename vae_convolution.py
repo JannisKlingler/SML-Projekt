@@ -11,7 +11,7 @@ trainingsepochen = 10
 # Dieses Modell hat einfach alles! Convolution, Pooling, Dropout, Fully Connected Layer, uvm!
 # Leider benötigt das Training auch dementsprechend länger.
 (x_train, y_train), _ = keras.datasets.mnist.load_data()
-x_train = np.where(x_train > 127.5, 1.0, 0).astype('float32')
+x_train = np.where(x_train > 127.5, 1., 0.).astype('float32')
 x_train = np.reshape(x_train, (len(x_train), 28, 28, 1))
 
 
@@ -52,7 +52,7 @@ decoder_output = decoder(encoder(encoder_input)[2])
 vae = keras.Model(encoder_input, decoder_output)
 
 log_p_xz = 784 * K.mean(keras.losses.binary_crossentropy(encoder_input, decoder_output))
-kl_div = .5 * K.sum(1 + 2 * log_σ - K.square(μ) - 2 * K.exp(log_σ), axis=-1)
+kl_div = .5 * K.sum(1. + 2. * log_σ - K.square(μ) - 2. * K.exp(log_σ), axis=-1)
 elbo = log_p_xz - kl_div
 vae.add_loss(elbo)
 vae.compile(optimizer='adam')

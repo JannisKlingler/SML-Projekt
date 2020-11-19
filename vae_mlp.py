@@ -15,7 +15,7 @@ trainingsepochen = 1
 # (multivariate) Bernoulliverteilung, da der MNIST-Datensatz annährend aus 0,1 Werten
 # besteht und das approximieren stetiger Werte z.B. mit einer multivariaten Gaußverteilung
 # bei solchen Datensätzen oft instabil ist.
-x_train = np.where(x_train > 127.5, 1.0, 0).astype('float32')
+x_train = np.where(x_train > 127.5, 1.0, 0.0).astype('float32')
 x_train = np.reshape(x_train, (len(x_train), 784))
 
 
@@ -52,8 +52,8 @@ vae = keras.Model(encoder_input, decoder_output)
 
 # Trainingskriterium definieren. Dies ist die ELBO, siehe Auto-Encoding Variational Bayes S.5,11
 log_p_xz = K.sum(encoder_input * K.log(decoder_output) +
-                 (1 - encoder_input) * K.log(1 - decoder_output), axis=-1)
-kl_div = .5 * K.sum(1 + 2 * log_σ - K.square(μ) - 2 * K.exp(log_σ), axis=-1)
+                 (1. - encoder_input) * K.log(1. - decoder_output), axis=-1)
+kl_div = .5 * K.sum(1. + 2. * log_σ - K.square(μ) - 2. * K.exp(log_σ), axis=-1)
 neg_elbo = - log_p_xz - kl_div
 vae.add_loss(neg_elbo)
 vae.compile(optimizer='adam')
