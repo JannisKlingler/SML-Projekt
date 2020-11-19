@@ -14,13 +14,13 @@ class VAE_Dense_Encoder(tf.keras.Model):
         for i in range(1, l):
             x = tf.keras.layers.Dense(encoder_struc[i], activation=act)(x)
 
-        mu = tf.keras.layers.Dense(encoder_struc[l], name="mu")(x)
-        sig = tf.keras.layers.Dense(encoder_struc[l], name="log_sig")(x)
+        μ = tf.keras.layers.Dense(encoder_struc[l], name="mu")(x)
+        log_σ = tf.keras.layers.Dense(encoder_struc[l], name="log_sig")(x)
 
-        z = tf.keras.layers.Lambda(lambda a: a[0] + K.exp(a[1]) * K.random_normal(
-            shape=(K.shape(a[0])[0], encoder_struc[l]), mean=0., stddev=1))([mu, sig])
+        z = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
+            shape=(K.shape(arg[0])[0], encoder_struc[l]), mean=0.0, stddev=1.0))([μ, log_σ])
 
-        super(VAE_Dense_Encoder, self).__init__(self.inp, [mu, sig, z], name="Encoder")
+        super(VAE_Dense_Encoder, self).__init__(self.inp, [μ, log_σ, z], name="Encoder")
         self.summary()
 
 

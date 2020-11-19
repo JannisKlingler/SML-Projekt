@@ -5,7 +5,7 @@ import tensorflow as tf
 import models
 import lossfunctions
 
-
+# Hyperparameter
 latent_dim = 5
 trainingsepochen = 10
 encoder_struc = [784, 500, 500, latent_dim]
@@ -14,7 +14,7 @@ decoder_struc = [latent_dim, 500, 500, 784]
 
 (x_train, y_train), _ = tf.keras.datasets.mnist.load_data()
 x_train = np.where(x_train > 127.5, 1.0, 0.0).astype('float32')
-x_train = np.reshape(x_train, (len(x_train), len(x_train[1]) ** 2))
+x_train = np.reshape(x_train, (len(x_train), encoder_struc[0]))
 
 encoder = models.VAE_Dense_Encoder(encoder_struc, "tanh")
 decoder = models.Bernoulli_Dense_Decoder(decoder_struc, "tanh")

@@ -3,8 +3,9 @@ from keras import backend as K
 
 
 def Bernoulli_Loss(encoder, decoder):
-    decoder_output = decoder(encoder(encoder.inp)[2])
+    μ, log_σ, z = encoder(encoder.inp)
+    decoder_output = decoder(z)
     log_p_xz = K.sum(encoder.inp * K.log(decoder_output) +
                      (1. - encoder.inp) * K.log(1. - decoder_output), axis=-1)
-    kl_div = .5 * K.sum(1. + 2. * encoder(encoder.inp)[1] - K.square(encoder(encoder.inp)[0]) - 2. * K.exp(encoder(encoder.inp)[1]), axis=-1)
-    return(- log_p_xz - kl_div)
+    kl_div = .5 * K.sum(1. + 2. * μ - K.square(μ) - 2. * K.exp(log_σ), axis=-1)
+    return (- log_p_xz - kl_div)
