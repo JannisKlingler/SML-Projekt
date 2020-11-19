@@ -9,3 +9,11 @@ def Bernoulli_Loss(encoder, decoder):
                      (1. - encoder.inp) * K.log(1. - decoder_output), axis=-1)
     kl_div = .5 * K.sum(1. + 2. * μ - K.square(μ) - 2. * K.exp(log_σ), axis=-1)
     return (- log_p_xz - kl_div)
+
+# To Do:
+# https://keras.io/guides/training_with_built_in_methods/ Erklärung wie man die
+# Lossfunktion in eine Klasse umschreiben kann, falls wir das mal brauchen sollten.
+# Das Problem ist nämlich, dass  Lossfunktionen eigentlich nur zwei Argumente haben
+# sollen (Input, Output). Wir brauchen aber vier Argumente (Input, Output, μ, log_σ).
+
+# Unterkapitel: Handling losses and metrics that don't fit the standard signature.
