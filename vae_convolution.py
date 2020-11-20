@@ -5,21 +5,19 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
-latent_dim = 5
-trainingsepochen = 10
-###
-# Dieses Modell hat einfach alles! Convolution, Pooling, Dropout, Fully Connected Layer, uvm!
-# Leider benötigt das Training auch dementsprechend länger.
+latent_dim = 10
+trainingsepochen = 60
+
 (x_train, y_train), _ = keras.datasets.mnist.load_data()
-x_train = np.where(x_train > 127.5, 1., 0.).astype('float32')
+x_train = np.where(x_train > 127.5, 1.0, 0.0).astype('float32')
 x_train = np.reshape(x_train, (len(x_train), 28, 28, 1))
 
 
 encoder_input = keras.Input(shape=(28, 28, 1))
-x = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(encoder_input)
-x = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(x)
-x = layers.MaxPooling2D((2, 2))(x)
-x = layers.Dropout(0.25)(x)
+x = layers.Conv2D(32, (3, 3),
+                  strides=(2, 2), padding="same", activation='relu')(encoder_input)
+x = layers.Conv2D(64, (3, 3), strides=(2, 2), padding="same", activation='relu')(x)
+x = layers.Conv2D(128, (3, 3), strides=(2, 2), activation='relu')(x)
 x = layers.Flatten()(x)
 x = layers.Dense(128, activation='relu')(x)
 
@@ -37,27 +35,28 @@ z = layers.Lambda(reparam)([μ, log_σ])
 encoder = keras.Model(encoder_input, [μ, log_σ, z], name="Encoder")
 encoder.summary()
 
-decoder = keras.Sequential([
-    layers.InputLayer(input_shape=(latent_dim,)),
-    layers.Dense(128, activation='relu'),
-    layers.Dense(14 * 14 * 32, activation='relu'),
-    layers.Reshape((14, 14, 32)),
-    layers.Dropout(0.25),
-    layers.UpSampling2D((2, 2)),
-    layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
-    layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same'), ], name="Decoder")
+decoder_input = layers.Input(shape=(latent_dim,))
+x = layers.Dense(128, activation='relu')(decoder_input)
+x = layers.Dense(3 * 3 * 128, activation='relu')(decoder_input)
+x = layers.Reshape((3, 3, 128))(x)
+x = layers.Conv2DTranspose(64, (3, 3), strides=(2, 2), activation='relu')(x)
+x = layers.Conv2DTranspose(16, (3, 3), strides=(2, 2), activation='relu', padding="same")(x)
+x = layers.Conv2DTranspose(1, (3, 3), strides=(2, 2), activation='sigmoid', padding="same")(x)
+
+decoder = keras.Model(decoder_input, x, name="Decoder")
 decoder.summary()
 
 decoder_output = decoder(encoder(encoder_input)[2])
 vae = keras.Model(encoder_input, decoder_output)
 
-log_p_xz = 784 * K.mean(keras.losses.binary_crossentropy(encoder_input, decoder_output))
+log_p_xz = 784. * K.mean(keras.losses.binary_crossentropy(encoder_input, decoder_output))
 kl_div = .5 * K.sum(1. + 2. * log_σ - K.square(μ) - 2. * K.exp(log_σ), axis=-1)
-elbo = log_p_xz - kl_div
+elbo = (log_p_xz - kl_div)
 vae.add_loss(elbo)
 vae.compile(optimizer='adam')
 
 
 vae.fit(x_train, x_train,
         epochs=trainingsepochen,
-        batch_size=100)
+        batch_size=100,
+        verbose=2)
