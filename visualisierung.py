@@ -3,7 +3,8 @@
 ###############################################################################
 ##########Plottet n Bilder und die vom VAE erstellten Rekonstruktionen#########
 ###############################################################################
-decoded_imgs = vae.predict(x_train)
+from matplotlib import animation
+rec_imgs = vae.predict(x_train)
 
 n = 15
 k = 0
@@ -72,6 +73,7 @@ plt.show()
 ###############################################################################
 #Erstellt eine Animation des dreidimensionalen lateneten Raums (zeitaufwändig)#
 ###############################################################################
+
 n = 25
 frames = 60
 encoded_imgs = encoder.predict(x_train)
