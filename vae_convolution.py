@@ -40,7 +40,7 @@ x = layers.Dense(128, activation='relu')(decoder_input)
 x = layers.Dense(3 * 3 * 128, activation='relu')(decoder_input)
 x = layers.Reshape((3, 3, 128))(x)
 x = layers.Conv2DTranspose(64, (3, 3), strides=(2, 2), activation='relu')(x)
-x = layers.Conv2DTranspose(16, (3, 3), strides=(2, 2), activation='relu', padding="same")(x)
+x = layers.Conv2DTranspose(32, (3, 3), strides=(2, 2), activation='relu', padding="same")(x)
 x = layers.Conv2DTranspose(1, (3, 3), strides=(2, 2), activation='sigmoid', padding="same")(x)
 
 decoder = keras.Model(decoder_input, x, name="Decoder")
