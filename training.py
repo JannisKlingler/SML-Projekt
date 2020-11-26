@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
 import tensorflow as tf
 import scipy as sp
-
 import models
 import lossfunctions
 
@@ -11,36 +11,28 @@ tf.random.set_seed(0)
 # Aufgabe vorgeben. Mögliche eingaben: 'MNIST', 'rotatingMNIST'
 job = 'rotatingMNIST'
 
-# Hyperparameter. latent_dim = 10 und epochs = 100 liefert gute Ergebnisse
 latent_dim = 20
-epochs = 30
-#encoder_struc = [784, 500, 500, latent_dim]
-#decoder_struc = [latent_dim, 500, 500, 784]
-dropout = 0.1  # Auf 0 setzen, falls nicht gewünscht
+epochs = 50
+
 akt_fun = 'tanh'
 
 if job == 'MNIST':
-    (x_train, y_train), _ = tf.keras.datasets.mnist.load_data()
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
     x_train = np.where(x_train > 127.5, 1.0, 0.0).astype('float32')
-    x_train = np.reshape(x_train, (len(x_train), 784))
-
-    encoder = models.VAE_Conv_Encoder(latent_dim, akt_fun)
-    decoder = models.Bernoulli_Conv_Decoder(latent_dim, akt_fun)
+    x_test = np.where(x_test > 127.5, 1.0, 0.0).astype('float32')
+    encoder = models.VAE_Dense_Encoder(latent_dim, akt_fun)
+    decoder = models.Bernoulli_Dense_Decoder(latent_dim, akt_fun)
     loss = lossfunctions.Bernoulli_Loss(encoder, decoder)
 
-elif job == 'rotatingMNIST':
-    #x_train = np.load('rotatingMNIST_test.npy')
-    (x_train, y_train), _ = tf.keras.datasets.mnist.load_data()
-    x_train = x_train[0:20000]
-    x_train = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
-        b, (i+1) * 360/10, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(10))), x_train))
-
-    x_train[0][3] = np.zeros((28, 28))
+elif job == 'rotatingMNIST':  # Passenden Dateipfad einfügen
+    x_train = np.load('C:/Users/Admin/Desktop/Python/rotatingMNIST_train.npy')
+    x_test = np.load('C:/Users/Admin/Desktop/Python/rotatingMNIST_test.npy')
     x_train = np.transpose(x_train, [0, 2, 3, 1])
-
+    x_test = np.transpose(x_test, [0, 2, 3, 1])
     encoder = models.VAE_ConvTime_Encoder(latent_dim, akt_fun)
     decoder = models.Bernoulli_ConvTime_Decoder(latent_dim, akt_fun)
-    loss = lossfunctions.BernoulliConv_Loss(encoder, decoder)
+    loss = lossfunctions.Bernoulli_Loss(encoder, decoder)
+
 else:
     raise Exception("That job does not exist")
 
@@ -55,16 +47,16 @@ vae.fit(x_train, x_train,
         batch_size=100,
         verbose=2)
 
-rec_imgs = vae.predict(x_train)
+rec_imgs = vae.predict(x_test)
 
 
 n = 20
 k = 0
 if job == 'MNIST':
     plt.figure(figsize=(20, 4))
-    for i in np.random.randint(len(x_train), size=n):
+    for i in np.random.randint(len(x_test), size=n):
         ax = plt.subplot(2, n, k + 1)
-        plt.imshow(x_train[i].reshape(28, 28))
+        plt.imshow(x_test[i].reshape(28, 28))
         plt.gray()
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
@@ -78,30 +70,20 @@ if job == 'MNIST':
 
 elif job == 'rotatingMNIST':
     rec_imgs = np.transpose(rec_imgs, [0, 3, 1, 2])
-    x_train = np.transpose(x_train, [0, 3, 1, 2])
-    plt.figure(figsize=(20, 4))
-    j = 0
-    for i in range(20):
-        ax = plt.subplot(2, n, k + 1)
-        plt.imshow(x_train[k//10][i % 10])
+    x_test = np.transpose(x_test, [0, 3, 1, 2])
+    fig, index = plt.figure(figsize=(10, 10)), np.random.randint(len(x_test), size=5)
+    grid = ImageGrid(fig, 111,  nrows_ncols=(10, 10), axes_pad=0.1,)
+    plot = [x_test[index[0]][j] for j in range(10)],
+    for i in index:
+        if k != 0:
+            original = [x_test[i][j] for j in range(10)]
+            plot = np.vstack((plot, original))
+        reconst = [rec_imgs[i][j] for j in range(10)]
+        plot = np.vstack((plot, reconst))
+        k += 1
+    for ax, im in zip(grid, plot):
         plt.gray()
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-
-        ax = plt.subplot(2, n, k + 1 + n)
-        plt.imshow(rec_imgs[k//10][i % 10])
-        plt.gray()
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-        k = k + 1
-    #plt.figure(figsize=(20, 20))
-    # for j in range(1):
-        # for i in range(10):
-        #ax = plt.subplot(10, 10, j*10+(i+1))
-        # plt.imshow(rec_imgs[j][i])
-        # plt.gray()
-        # ax.get_xaxis().set_visible(False)
-        # ax.get_yaxis().set_visible(False)
+        ax.imshow(im)
 plt.show()
 
 # Bei Bedarf: Modell speichern und laden
