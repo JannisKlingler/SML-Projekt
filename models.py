@@ -2,9 +2,6 @@ import tensorflow as tf
 from keras import backend as K
 
 
-def HelloWorld():
-    print('Hello World')
-
 
 class VAE_Dense_Encoder(tf.keras.Model):
     def __init__(self, encoder_struc, dropout, act):
