@@ -7,24 +7,24 @@ import lossfunctions
 
 tf.random.set_seed(0)
 
-#Aufgabe vorgeben. Mögliche eingaben: 'MNIST', 'rotatingMNIST'
+# Aufgabe vorgeben. Mögliche eingaben: 'MNIST', 'rotatingMNIST'
 job = 'MNIST'
 
 # Hyperparameter. latent_dim = 10 und epochs = 100 liefert gute Ergebnisse
 latent_dim = 10
-epochs = 10
-encoder_struc = [784, 500, 500, latent_dim]
-decoder_struc = [latent_dim, 500, 500, 784]
+epochs = 30
+#encoder_struc = [784, 500, 500, latent_dim]
+#decoder_struc = [latent_dim, 500, 500, 784]
 dropout = 0.1  # Auf 0 setzen, falls nicht gewünscht
-akt_fun = "tanh"
+akt_fun = 'tanh'
 
-if job == 'MNIST' :
+if job == 'MNIST':
     (x_train, y_train), _ = tf.keras.datasets.mnist.load_data()
     x_train = np.where(x_train > 127.5, 1.0, 0.0).astype('float32')
-    x_train = np.reshape(x_train, (len(x_train), encoder_struc[0]))
+    x_train = np.reshape(x_train, (len(x_train), 784))
 
-    encoder = models.VAE_Dense_Encoder(encoder_struc, dropout, akt_fun)
-    decoder = models.Bernoulli_Dense_Decoder(decoder_struc, dropout, akt_fun)
+    encoder = models.VAE_Conv_Encoder(latent_dim, akt_fun)
+    decoder = models.Bernoulli_Conv_Decoder(latent_dim, akt_fun)
     loss = lossfunctions.Bernoulli_Loss(encoder, decoder)
 else:
     raise Exception("That job does not exist")
