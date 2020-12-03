@@ -81,7 +81,34 @@ class Bernoulli_Dense_Decoder(tf.keras.Model):
 
         x = tf.keras.layers.Dense(decoder_struc[l], activation='sigmoid')(x)
         outp = tf.keras.layers.Reshape((28, 28, 1))(x)
-        super(Bernoulli_Dense_Decoder, self).__init__(self.inp, outp, name="Decoder")
+        super(Bernoulli_Dense_Decoder, self).__init__(self.inp, [outp, outp], name="Decoder")
+        self.summary()
+
+
+class Gauss_Conv_Decoder(tf.keras.Model):
+    def __init__(self, latent_dim, act):
+        self.inp = x = tf.keras.Input(shape=(latent_dim,))
+        x = tf.keras.layers.Dense(128, activation=act)(x)
+        x = tf.keras.layers.Dense(4 * 4 * 128, activation=act)(x)
+        x = tf.keras.layers.Reshape((4, 4, 128))(x)
+        x = tf.keras.layers.Conv2DTranspose(64, (3, 3), activation=act)(x)
+        x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
+        x = tf.keras.layers.Conv2DTranspose(32, (3, 3), activation=act)(x)
+        x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
+
+        μ = tf.keras.layers.Conv2DTranspose(1, (4, 4), padding="same")(x)
+        log_σ = tf.keras.layers.Conv2DTranspose(1, (4, 4), padding="same", activation='relu')(x)
+
+        μ_reshape = tf.keras.layers.Reshape((784,))(μ)
+        log_σ_reshape = tf.keras.layers.Reshape((784,))(log_σ)
+
+#        rec = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
+#            shape=(K.shape(arg[0])[0], 784), mean=0.0, stddev=1.0))([μ_reshape, log_σ_reshape])
+
+#        outp = tf.keras.layers.Reshape((28, 28, 1))(rec)
+
+        super(Gauss_Conv_Decoder, self).__init__(
+            self.inp, [μ, μ_reshape, log_σ_reshape], name="Decoder")
         self.summary()
 
 
@@ -96,7 +123,7 @@ class Bernoulli_Conv_Decoder(tf.keras.Model):
         x = tf.keras.layers.Conv2DTranspose(32, (3, 3), activation=act)(x)
         x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
         outp = tf.keras.layers.Conv2DTranspose(1, (4, 4), padding="same", activation='sigmoid')(x)
-        super(Bernoulli_Conv_Decoder, self).__init__(self.inp, outp, name="Decoder")
+        super(Bernoulli_Conv_Decoder, self).__init__(self.inp, [outp, outp], name="Decoder")
         self.summary()
 
 
@@ -111,17 +138,30 @@ class Bernoulli_ConvTime_Decoder(tf.keras.Model):
         x = tf.keras.layers.Conv2DTranspose(64, (3, 3), activation=act)(x)
         x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
         outp = tf.keras.layers.Conv2DTranspose(10, (4, 4), padding="same", activation='sigmoid')(x)
-        super(Bernoulli_ConvTime_Decoder, self).__init__(self.inp, outp, name="Decoder")
+        super(Bernoulli_ConvTime_Decoder, self).__init__(self.inp, [outp, outp], name="Decoder")
         self.summary()
 
-# To Do:
-# 1)
-# Implementierung eines Gauß_Dense_Decoder, zum modellieren stetiger Daten.
 
-# Dieser hat zwei Outputlayer, einen Erwartungswertoutput und ein log_var-Output,
-# ähnlich wie im Encoder, nur ohne Reparametrisierung. Es muss außerdem eine
-# neue Lossfunktion geschrieben werden, da log_p_xz anders berechnet wird.
+class Gauss_ConvTime_Decoder(tf.keras.Model):
+    def __init__(self, latent_dim, act):
+        self.inp = x = tf.keras.Input(shape=(latent_dim,))
+        x = tf.keras.layers.Dense(256, activation=act)(x)
+        x = tf.keras.layers.Dense(4 * 4 * 256, activation=act)(x)
+        x = tf.keras.layers.Reshape((4, 4, 256))(x)
+        x = tf.keras.layers.Conv2DTranspose(128, (3, 3), activation=act)(x)
+        x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
+        x = tf.keras.layers.Conv2DTranspose(64, (3, 3), activation=act)(x)
+        x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
 
-# 2)
-# Implementierung von  VAE_Conv_Encoder, Bernoulli_Conv_Decoder, Gauß_Conv_Decoder
-# für Datensätze komplexer als MNIST. Überlegung einer geeigneten Modellstruktur
+        μ = tf.keras.layers.Conv2DTranspose(10, (4, 4), padding="same")(x)
+        log_σ = tf.keras.layers.Conv2DTranspose(10, (4, 4), padding="same", activation='relu')(x)
+
+        μ_reshape = tf.keras.layers.Reshape((7840,))(μ)
+        log_σ_reshape = tf.keras.layers.Reshape((7840,))(log_σ)
+
+#        rec = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
+#            shape=(K.shape(arg[0])[0], 7840), mean=0.0, stddev=1.0))([μ_reshape, log_σ_reshape])
+
+        super(Gauss_ConvTime_Decoder, self).__init__(
+            self.inp, [μ, μ_reshape, log_σ_reshape], name="Decoder")
+        self.summary()

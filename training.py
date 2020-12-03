@@ -8,11 +8,11 @@ import lossfunctions
 
 tf.random.set_seed(0)
 
-# Aufgabe vorgeben. Mögliche eingaben: 'MNIST', 'rotatingMNIST'
-job = 'rotatingMNIST'
+# Aufgabe vorgeben. Mögliche Eingaben: 'MNIST', 'rotatingMNIST', 'GaussMNIST'
+job = 'MNIST'
 
 latent_dim = 20
-epochs = 30
+epochs = 10
 
 akt_fun = 'relu'
 
@@ -23,6 +23,14 @@ if job == 'MNIST':
     encoder = models.VAE_Conv_Encoder(latent_dim, akt_fun)
     decoder = models.Bernoulli_Conv_Decoder(latent_dim, akt_fun)
     loss = lossfunctions.Bernoulli_Loss(encoder, decoder)
+
+elif job == 'GaussMNIST':
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+    x_train = x_train.astype('float32') / 255.
+    x_test = x_test.astype('float32') / 255.
+    encoder = models.VAE_Conv_Encoder(latent_dim, akt_fun)
+    decoder = models.Gauss_Conv_Decoder(latent_dim, akt_fun)
+    loss = lossfunctions.Gauss_Loss(encoder, decoder)
 
 elif job == 'rotatingMNIST':  # Passenden Dateipfad einfügen
     x_train = np.load('C:/Users/Admin/Desktop/Python/rotatingMNIST_train.npy')
@@ -47,12 +55,12 @@ vae.fit(x_train, x_train,
         batch_size=100,
         verbose=2)
 
-rec_imgs = vae.predict(x_test)
+rec_imgs = vae.predict(x_test)[0]
 
 
 n = 20
 k = 0
-if job == 'MNIST':
+if job == 'MNIST' or job == 'GaussMNIST':
     plt.figure(figsize=(20, 4))
     for i in np.random.randint(len(x_test), size=n):
         ax = plt.subplot(2, n, k + 1)
