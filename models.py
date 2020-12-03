@@ -28,12 +28,13 @@ class VAE_Dense_Encoder(tf.keras.Model):
 class VAE_Conv_Encoder(tf.keras.Model):
     def __init__(self, latent_dim, act):
         self.inp = x = tf.keras.Input(shape=(28, 28, 1))
-        x = tf.keras.layers.Conv2D(32, (3, 3),
-                                   strides=(2, 2), padding="same", activation=act)(x)
-        x = tf.keras.layers.Conv2D(64, (3, 3), strides=(2, 2), padding="same", activation=act)(x)
-        x = tf.keras.layers.Conv2D(128, (3, 3), strides=(2, 2), activation=act)(x)
+        x = tf.keras.layers.Conv2D(32, (3, 3), padding="same", activation=act)(x)
+        x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+        x = tf.keras.layers.Conv2D(64, (3, 3), activation=act)(x)
+        x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+        x = tf.keras.layers.Conv2D(128, (3, 3), activation=act)(x)
         x = tf.keras.layers.Flatten()(x)
-        x = tf.keras.layers.Dense(128, activation=act)(x)
+        x = tf.keras.layers.Dense(128, activation='relu')(x)
 
         μ = tf.keras.layers.Dense(latent_dim, name="mu")(x)
         log_σ = tf.keras.layers.Dense(latent_dim, name="log_sig")(x)
@@ -48,10 +49,11 @@ class VAE_Conv_Encoder(tf.keras.Model):
 class VAE_ConvTime_Encoder(tf.keras.Model):
     def __init__(self, latent_dim, act):
         self.inp = x = tf.keras.Input(shape=(28, 28, 10))
-        x = tf.keras.layers.Conv2D(64, (3, 3),
-                                   strides=(2, 2), padding="same", activation=act)(x)
-        x = tf.keras.layers.Conv2D(128, (3, 3), strides=(2, 2), padding="same", activation=act)(x)
-        x = tf.keras.layers.Conv2D(256, (3, 3), strides=(2, 2), activation=act)(x)
+        x = tf.keras.layers.Conv2D(64, (3, 3), padding="same", activation=act)(x)
+        x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+        x = tf.keras.layers.Conv2D(128, (3, 3), activation=act)(x)
+        x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+        x = tf.keras.layers.Conv2D(256, (3, 3), activation=act)(x)
         x = tf.keras.layers.Flatten()(x)
         x = tf.keras.layers.Dense(256, activation=act)(x)
 
@@ -77,7 +79,7 @@ class Bernoulli_Dense_Decoder(tf.keras.Model):
             if dropout != 0:
                 x = tf.keras.layers.Dropout(dropout)(x)
 
-        x = tf.keras.layers.Dense(decoder_struc[l], activation="sigmoid")(x)
+        x = tf.keras.layers.Dense(decoder_struc[l], activation='sigmoid')(x)
         outp = tf.keras.layers.Reshape((28, 28, 1))(x)
         super(Bernoulli_Dense_Decoder, self).__init__(self.inp, outp, name="Decoder")
         self.summary()
@@ -87,13 +89,13 @@ class Bernoulli_Conv_Decoder(tf.keras.Model):
     def __init__(self, latent_dim, act):
         self.inp = x = tf.keras.Input(shape=(latent_dim,))
         x = tf.keras.layers.Dense(128, activation=act)(x)
-        x = tf.keras.layers.Dense(3 * 3 * 128, activation=act)(x)
-        x = tf.keras.layers.Reshape((3, 3, 128))(x)
-        x = tf.keras.layers.Conv2DTranspose(64, (3, 3), strides=(2, 2), activation=act)(x)
-        x = tf.keras.layers.Conv2DTranspose(32, (3, 3), strides=(
-            2, 2), activation=act, padding="same")(x)
-        outp = tf.keras.layers.Conv2DTranspose(1, (3, 3), strides=(
-            2, 2), activation='sigmoid', padding="same")(x)
+        x = tf.keras.layers.Dense(4 * 4 * 128, activation=act)(x)
+        x = tf.keras.layers.Reshape((4, 4, 128))(x)
+        x = tf.keras.layers.Conv2DTranspose(64, (3, 3), activation=act)(x)
+        x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
+        x = tf.keras.layers.Conv2DTranspose(32, (3, 3), activation=act)(x)
+        x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
+        outp = tf.keras.layers.Conv2DTranspose(1, (4, 4), padding="same", activation='sigmoid')(x)
         super(Bernoulli_Conv_Decoder, self).__init__(self.inp, outp, name="Decoder")
         self.summary()
 
@@ -102,13 +104,13 @@ class Bernoulli_ConvTime_Decoder(tf.keras.Model):
     def __init__(self, latent_dim, act):
         self.inp = x = tf.keras.Input(shape=(latent_dim,))
         x = tf.keras.layers.Dense(256, activation=act)(x)
-        x = tf.keras.layers.Dense(3 * 3 * 256, activation=act)(x)
-        x = tf.keras.layers.Reshape((3, 3, 256))(x)
-        x = tf.keras.layers.Conv2DTranspose(128, (3, 3), strides=(2, 2), activation=act)(x)
-        x = tf.keras.layers.Conv2DTranspose(64, (3, 3), strides=(
-            2, 2), activation=act, padding="same")(x)
-        outp = tf.keras.layers.Conv2DTranspose(10, (3, 3), strides=(
-            2, 2), activation='sigmoid', padding="same")(x)
+        x = tf.keras.layers.Dense(4 * 4 * 256, activation=act)(x)
+        x = tf.keras.layers.Reshape((4, 4, 256))(x)
+        x = tf.keras.layers.Conv2DTranspose(128, (3, 3), activation=act)(x)
+        x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
+        x = tf.keras.layers.Conv2DTranspose(64, (3, 3), activation=act)(x)
+        x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
+        outp = tf.keras.layers.Conv2DTranspose(10, (4, 4), padding="same", activation='sigmoid')(x)
         super(Bernoulli_ConvTime_Decoder, self).__init__(self.inp, outp, name="Decoder")
         self.summary()
 

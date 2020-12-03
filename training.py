@@ -12,16 +12,16 @@ tf.random.set_seed(0)
 job = 'rotatingMNIST'
 
 latent_dim = 20
-epochs = 50
+epochs = 30
 
-akt_fun = 'tanh'
+akt_fun = 'relu'
 
 if job == 'MNIST':
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
     x_train = np.where(x_train > 127.5, 1.0, 0.0).astype('float32')
     x_test = np.where(x_test > 127.5, 1.0, 0.0).astype('float32')
-    encoder = models.VAE_Dense_Encoder(latent_dim, akt_fun)
-    decoder = models.Bernoulli_Dense_Decoder(latent_dim, akt_fun)
+    encoder = models.VAE_Conv_Encoder(latent_dim, akt_fun)
+    decoder = models.Bernoulli_Conv_Decoder(latent_dim, akt_fun)
     loss = lossfunctions.Bernoulli_Loss(encoder, decoder)
 
 elif job == 'rotatingMNIST':  # Passenden Dateipfad einfügen
@@ -73,7 +73,7 @@ elif job == 'rotatingMNIST':
     x_test = np.transpose(x_test, [0, 3, 1, 2])
     fig, index = plt.figure(figsize=(10, 10)), np.random.randint(len(x_test), size=5)
     grid = ImageGrid(fig, 111,  nrows_ncols=(10, 10), axes_pad=0.1,)
-    plot = [x_test[index[0]][j] for j in range(10)],
+    plot = [x_test[index[0]][j] for j in range(10)]
     for i in index:
         if k != 0:
             original = [x_test[i][j] for j in range(10)]
