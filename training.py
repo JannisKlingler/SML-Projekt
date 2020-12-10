@@ -9,9 +9,9 @@ import lossfunctions
 tf.random.set_seed(0)
 
 # Aufgabe vorgeben. Mögliche Eingaben: 'MNIST', 'rotatingMNIST', 'GaussMNIST'
-job = 'MNIST'
+job = 'rotatingMNIST'
 
-latent_dim = 20
+latent_dim = 10
 epochs = 10
 
 akt_fun = 'relu'
@@ -21,6 +21,7 @@ if job == 'MNIST':
     x_train = np.where(x_train > 127.5, 1.0, 0.0).astype('float32')
     x_test = np.where(x_test > 127.5, 1.0, 0.0).astype('float32')
     encoder = models.VAE_Conv_Encoder(latent_dim, akt_fun)
+    #middle = models.Id_Middle()
     decoder = models.Bernoulli_Conv_Decoder(latent_dim, akt_fun)
     loss = lossfunctions.Bernoulli_Loss(encoder, decoder)
 
@@ -29,6 +30,7 @@ elif job == 'GaussMNIST':
     x_train = x_train.astype('float32') / 255.
     x_test = x_test.astype('float32') / 255.
     encoder = models.VAE_Conv_Encoder(latent_dim, akt_fun)
+    #middle = models.Id_Middle()
     decoder = models.Gauss_Conv_Decoder(latent_dim, akt_fun)
     loss = lossfunctions.Gauss_Loss(encoder, decoder)
 
@@ -38,6 +40,7 @@ elif job == 'rotatingMNIST':  # Passenden Dateipfad einfügen
     x_train = np.transpose(x_train, [0, 2, 3, 1])
     x_test = np.transpose(x_test, [0, 2, 3, 1])
     encoder = models.VAE_ConvTime_Encoder(latent_dim, akt_fun)
+    #middle = models.Id_Middle()
     decoder = models.Bernoulli_ConvTime_Decoder(latent_dim, akt_fun)
     loss = lossfunctions.Bernoulli_Loss(encoder, decoder)
 
@@ -58,7 +61,7 @@ vae.fit(x_train, x_train,
 rec_imgs = vae.predict(x_test)[0]
 
 
-n = 20
+n = 25
 k = 0
 if job == 'MNIST' or job == 'GaussMNIST':
     plt.figure(figsize=(20, 4))
