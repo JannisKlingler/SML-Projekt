@@ -12,6 +12,7 @@ class ODE_VAE_ConvTime_Encoder(tf.keras.Model):
     def __init__(self, latent_dim, act):
         self.inp = x = tf.keras.Input(shape=(28, 28, 10))
         frames = 10
+        latent_dim = 1
 
         # s_0, v_0 finden
         first_frame = tf.transpose(x, [2, 0, 1])[0]
@@ -49,14 +50,32 @@ class ODE_VAE_ConvTime_Encoder(tf.keras.Model):
         v = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
             shape=(K.shape(arg[0])[0], frames), mean=0.0, stddev=1.0))([v_mu, v_log_sig])
 
-        # Differential Function
+        # Differential Function finden
         f = tf.keras.layers.Concatenate()([s, v])
         f = tf.keras.layers.Dense(64, activation='tanh')(f)
         f = tf.keras.layers.Dense(frames, activation='tanh')(f)
-        x_1 = tf.keras.layers.Lambda(lambda arg: s_0)([farg])
-        x_1 = tf.keras.layers.Add()([x_1, f])
-        sLsg = tf.keras.backend.cumsum(z, axis=1)
-        sLsg = tf.keras.layers.Add()([x_1, sLsg])
+
+
+        #DifferentialGleichung lösen:
+        #Zeit zwischen Frames
+        t = 1.0
+
+        # s_n = s_0 + t v_0 \sum\limits_{i=0}^{n-1} 1 + t^2 \sum\limits_{i=0}^{n-1} \sum\limits_{j=0}^{i-1} f_j
+        #Klappt nur, wenn s_0 und v_0 floats sind. man muss sie noch entpacken
+        ones = tf.keras.layers.Lambda(lambda arg: 1.0)([f])
+        ones_times_s_0 = tf.keras.layers.Lambda(lambda arg: s_0)([f])
+        ones_times_tv_0 = tf.keras.layers.Lambda(lambda arg: t * v_0)([f])
+
+        cs_of_ones_times_tv_0 = tf.keras.backend.cumsum(ones_times_tv_0, axis=1)
+        cs_of_ones_times_tv_0 = tf.keras.layers.Subtract()([cs_of_ones_times_tv_0, ones_times_tv_0])
+
+        cs_of_f = tf.keras.backend.cumsum(f, axis=1)
+        cs_of_f = tf.keras.layers.Subtract()([cs_of_f, f])
+        cscs_of_f = tf.keras.backend.cumsum(cs_of_f, axis=1)
+        cscs_of_f = tf.keras.layers.Subtract()([cscs_of_f, cs_of_f])
+        cscs_of_f_times_tSquared = tf.keras.layers.Lambda(lambda arg: t*t*arg)([cscs_of_f])
+
+        s = tf.keras.layers.Add()([ones_times_s_0, cs_of_ones_times_tv_0, cscs_of_f_times_tSquared])
         # sLsg ist die lösung der DifferentialGl.
 
         '''#im moment ignoriert batchsize
