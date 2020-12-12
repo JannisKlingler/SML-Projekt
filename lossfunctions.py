@@ -9,18 +9,26 @@ def Trivial_Loss(encoder, decoder, frames):
     return K.mean(tf.keras.losses.binary_crossentropy(x, x_rec))
 
 
+def Bernoulli_ODE_Loss(encoder, decoder, frames):
+    x = encoder.inp
+    Ls_mu, Ls_logsig, Lv_mu, Lv_logsig, sLsg = encoder(x)
+    _, x_rec = decoder(sLsg)
+    return 1
+
+
 def Bernoulli_Loss(encoder, decoder, frames):
-    μ, log_σ, z = encoder(encoder.inp)
-    _, decoder_output = decoder(z)
+    x = encoder.inp
+    μ, log_σ, z = encoder(x)
+    _, x_rec = decoder(z)
     log_p_xz = 784. * frames * \
-        K.mean(tf.keras.losses.binary_crossentropy(encoder.inp, decoder_output))
+        K.mean(tf.keras.losses.binary_crossentropy(x, x_rec))
     kl_div = .5 * K.sum(1. + 2. * log_σ - K.square(μ) - 2. * K.exp(log_σ), axis=-1)
     return (log_p_xz - kl_div)
 
 
 def Gauss_Loss(encoder, decoder, frames):
-    μ, log_σ, z = encoder(encoder.inp)
     x = tf.keras.layers.Flatten()(encoder.inp)
+    μ, log_σ, z = encoder(encoder.inp)
     _, mu, log_sig = decoder(z)
     log_p_xz = -.5 * K.sum(K.log(2. * tf.constant(m.pi)) + 2. * log_sig +
                            (K.square(mu - x))/(K.exp(2. * log_sig)), axis=-1)

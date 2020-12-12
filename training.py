@@ -6,13 +6,13 @@ import scipy as sp
 import models
 import lossfunctions
 
-tf.random.set_seed(0)
+tf.random.set_seed(1)
 
 # Aufgabe vorgeben. Mögliche Eingaben: 'MNIST', 'rotatingMNIST', 'GaussMNIST'
 job = 'rotatingMNIST'
 
 latent_dim = 20
-epochs = 10
+epochs = 15
 
 akt_fun = 'relu'
 

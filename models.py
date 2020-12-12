@@ -60,13 +60,9 @@ class ODE_VAE_ConvTime_Encoder(tf.keras.Model):
             Lv_mu.append(v_mu)
             Lv_logsig.append(v_logsig)
 
-        # s_0 = 1 x latent_dim
-        # x_1 = frames x latent_dim
-
         # Differential Function
         T = 1  # Zeit zwischen Frames
         f = tf.keras.layers.Concatenate()(Ls + Lv)
-        #f = tf.keras.layers.Flatten()(self.inp)
         f = tf.keras.layers.Dense(100, activation='tanh')(f)
         f = tf.keras.layers.Dense(100, activation='tanh')(f)
         f = tf.keras.layers.Dense(frames*latent_dim, activation='tanh')(f)
