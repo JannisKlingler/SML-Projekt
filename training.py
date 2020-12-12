@@ -11,7 +11,7 @@ tf.random.set_seed(0)
 # Aufgabe vorgeben. Mögliche Eingaben: 'MNIST', 'rotatingMNIST', 'GaussMNIST'
 job = 'rotatingMNIST'
 
-latent_dim = 5
+latent_dim = 20
 epochs = 10
 
 akt_fun = 'relu'
@@ -48,10 +48,6 @@ else:
     raise Exception("That job does not exist")
 
 
-print(encoder.inp)
-print(encoder(encoder.inp))
-print(encoder(encoder.inp)[-1])
-print(decoder(encoder(encoder.inp)[-1]))
 vae = tf.keras.Model(encoder.inp, decoder(encoder(encoder.inp)[-1]))
 
 vae.add_loss(loss)
@@ -60,7 +56,6 @@ vae.compile(optimizer='adam')
 vae.fit(x_train, x_train,
         epochs=epochs,
         batch_size=100)
-
 rec_imgs = vae.predict(x_test)[0]
 
 
