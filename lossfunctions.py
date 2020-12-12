@@ -3,15 +3,22 @@ import math as m
 from keras import backend as K
 
 
-def Bernoulli_Loss(encoder, decoder):
+def Trivial_Loss(encoder, decoder, frames):
+    x = encoder.inp
+    _, x_rec = decoder(encoder(x)[-1])
+    return K.mean(tf.keras.losses.binary_crossentropy(x, x_rec))
+
+
+def Bernoulli_Loss(encoder, decoder, frames):
     μ, log_σ, z = encoder(encoder.inp)
     _, decoder_output = decoder(z)
-    log_p_xz = 784. * K.mean(tf.keras.losses.binary_crossentropy(encoder.inp, decoder_output))
+    log_p_xz = 784. * frames * \
+        K.mean(tf.keras.losses.binary_crossentropy(encoder.inp, decoder_output))
     kl_div = .5 * K.sum(1. + 2. * log_σ - K.square(μ) - 2. * K.exp(log_σ), axis=-1)
     return (log_p_xz - kl_div)
 
 
-def Gauss_Loss(encoder, decoder):
+def Gauss_Loss(encoder, decoder, frames):
     μ, log_σ, z = encoder(encoder.inp)
     x = tf.keras.layers.Flatten()(encoder.inp)
     _, mu, log_sig = decoder(z)

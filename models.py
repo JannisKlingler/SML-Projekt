@@ -9,27 +9,33 @@ from keras import backend as K
 
 
 class ODE_VAE_ConvTime_Encoder(tf.keras.Model):
-    def __init__(self, latent_dim, act):
+    def __init__(self, frames, latent_dim, act):
         self.inp = x = tf.keras.Input(shape=(28, 28, 10))
-        frames = 10
-        latent_dim = 1
 
         # s_0, v_0 finden
-        first_frame = tf.transpose(x, [2, 0, 1])[0]
-        first_frame = tf.transpose(first_frame, [1, 2, 0])
+        first_frame = x[:, :, :, 0]
+        first_frame = tf.keras.layers.Reshape((28, 28, 1))(first_frame)
+        first_3frames = x[:, :, :, 0:3]
 
-        first_3frames = tf.transpose(x, [2, 0, 1])[0:3]
-        first_3frames = tf.transpose(first_3frames, [1, 2, 0])
-
-        # Position Encoder DepthwiseConv2D
+        # Position Encoder
         xs = tf.keras.layers.Conv2D(16, (3, 3), padding="same", activation=act)(first_frame)
         xs = tf.keras.layers.Flatten()(xs)
-        s_0_mu = tf.keras.layers.Dense(latent_dim, activation=relu)(xs)
-        s_0_logsig = tf.keras.layers.Dense(latent_dim, activation=relu)(xs)
+        s_0_mu = tf.keras.layers.Dense(latent_dim, activation=act)(xs)
+        s_0_logsig = tf.keras.layers.Dense(latent_dim, activation=act)(xs)
 
         s_0 = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
             shape=(K.shape(arg[0])[0], latent_dim), mean=0.0, stddev=1.0))([s_0_mu, s_0_logsig])
 
+        # Momentum Encoder
+        xv = tf.keras.layers.Conv2D(16, (3, 3), padding="same", activation=act)(first_3frames)
+        xv = tf.keras.layers.Flatten()(xv)
+        v_0_mu = tf.keras.layers.Dense(latent_dim, activation=act)(xv)
+        v_0_logsig = tf.keras.layers.Dense(latent_dim, activation=act)(xv)
+
+        v_0 = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
+            shape=(K.shape(arg[0])[0], latent_dim), mean=0.0, stddev=1.0))([v_0_mu, v_0_logsig])
+
+        '''
         # z_1,...,z_N finden
         x = tf.keras.layers.Conv2D(16, (3, 3), padding="same", activation=act)(x)
         x = tf.keras.layers.MaxPooling2D((2, 2))(x)
@@ -49,76 +55,57 @@ class ODE_VAE_ConvTime_Encoder(tf.keras.Model):
             shape=(K.shape(arg[0])[0], frames), mean=0.0, stddev=1.0))([s_mu, s_log_sig])
         v = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
             shape=(K.shape(arg[0])[0], frames), mean=0.0, stddev=1.0))([v_mu, v_log_sig])
-
-        # Differential Function finden
-        f = tf.keras.layers.Concatenate()([s, v])
-        f = tf.keras.layers.Dense(64, activation='tanh')(f)
-        f = tf.keras.layers.Dense(frames, activation='tanh')(f)
-
-
-        #DifferentialGleichung lösen:
-        #Zeit zwischen Frames
-        t = 1.0
-
-        # s_n = s_0 + t v_0 \sum\limits_{i=0}^{n-1} 1 + t^2 \sum\limits_{i=0}^{n-1} \sum\limits_{j=0}^{i-1} f_j
-        #Klappt nur, wenn s_0 und v_0 floats sind. man muss sie noch entpacken
-        ones = tf.keras.layers.Lambda(lambda arg: 1.0)([f])
-        ones_times_s_0 = tf.keras.layers.Lambda(lambda arg: s_0)([f])
-        ones_times_tv_0 = tf.keras.layers.Lambda(lambda arg: t * v_0)([f])
-
-        cs_of_ones_times_tv_0 = tf.keras.backend.cumsum(ones_times_tv_0, axis=1)
-        cs_of_ones_times_tv_0 = tf.keras.layers.Subtract()([cs_of_ones_times_tv_0, ones_times_tv_0])
-
-        cs_of_f = tf.keras.backend.cumsum(f, axis=1)
-        cs_of_f = tf.keras.layers.Subtract()([cs_of_f, f])
-        cscs_of_f = tf.keras.backend.cumsum(cs_of_f, axis=1)
-        cscs_of_f = tf.keras.layers.Subtract()([cscs_of_f, cs_of_f])
-        cscs_of_f_times_tSquared = tf.keras.layers.Lambda(lambda arg: t*t*arg)([cscs_of_f])
-
-        s = tf.keras.layers.Add()([ones_times_s_0, cs_of_ones_times_tv_0, cscs_of_f_times_tSquared])
-        # sLsg ist die lösung der DifferentialGl.
-
-        '''#im moment ignoriert batchsize
-        first_frame = tf.transpose(x,[2,0,1])[0]
-        first_frame = tf.transpose(first_frame, [1,2,0])
-
-        first_3frames = tf.transpose(x,[2,0,1])[0:3]
-        first_3frames = tf.transpose(first_3frames, [1,2,0])
-
-
-        #Position Encoder DepthwiseConv2D
-        xs = tf.keras.layers.DepthwiseConv2D(depth_multiplier=1, (3, 3), padding="same", activation=act)(x)
-        xs = tf.keras.layers.Flatten()(xs)
-        s_mu = tf.keras.layers.Dense(latent_dim, activation=relu)(xs)
-        s_logsig = tf.keras.layers.Dense(latent_dim, activation=relu)(xs)
-
-        s = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
-            shape=(K.shape(arg[0])[0], latent_dim), mean=0.0, stddev=1.0))([s_mu, s_logsig])
-
-        #Momentum encoder
-        xv = tf.keras.layers.Conv2D(64, (3, 3), padding="same", activation=act)(first_3frames)
-        xv = tf.keras.layers.Flatten()(xv)
-        v_mu = tf.keras.layers.Dense(latent_dim, activation=relu)(xv)
-        v_logsig = tf.keras.layers.Dense(latent_dim, activation=relu)(xv)
-
-        v = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
-            shape=(K.shape(arg[0])[0], latent_dim), mean=0.0, stddev=1.0))([v_mu, v_logsig])
-
-
-        self.vt_L = tf.transpose(vt_L,[1,2,0,3],name='vt_L') # T, N, L, q
-
-        #Differential Function
-        f = tf.keras.layers.Concatenate()([s, v])
-        f = tf.keras.layers.Dense(64, activation='tanh')(f)
-        f = tf.keras.layers.Dense(frames, activation='tanh')(f)
-        x_1 = tf.keras.layers.Lambda(lambda arg: s)([farg])
-        x_1 = tf.keras.layers.Add()([x_1, f])
-        z = tf.keras.backend.cumsum(z, axis=1)
-        z = x_1 = tf.keras.layers.Add()([x_1, z])
         '''
 
+        # s_0 = 1 x latent_dim
+        # x_1 = frames x latent_dim
+
+        # Differential Function
+        T = 1  # Zeit zwischen Frames
+        #f = tf.keras.layers.Concatenate()([s, v])
+        f = tf.keras.layers.Flatten()(self.inp)
+        f = tf.keras.layers.Dense(64, activation='tanh')(f)
+        f = tf.keras.layers.Dense(frames*latent_dim, activation='tanh')(f)
+        f = tf.keras.layers.Reshape((frames, latent_dim))(f)
+        x_1 = tf.keras.layers.RepeatVector(frames)(s_0)
+
+        a = K.cumsum(f, axis=1)
+        a = tf.keras.layers.Subtract()([a, f])
+        x_3 = K.cumsum(a, axis=1)
+        x_3 = tf.keras.layers.Subtract()([x_3, a])
+        x_3 = tf.keras.layers.Lambda(lambda arg: T*T*arg)(x_3)
+
+        a = tf.keras.layers.RepeatVector(frames)(v_0)
+        b = K.cumsum(a, axis=1)
+        b = tf.keras.layers.Subtract()([b, a])
+        x_2 = tf.keras.layers.Lambda(lambda arg: T*arg)(b)
+
+        sLsg = tf.keras.layers.Add()([x_1, x_2, x_3])
+        # sLsg ist die lösung der DifferentialGl.
+
         super(ODE_VAE_ConvTime_Encoder, self).__init__(
-            self.inp, [s_mu, s_logsig, v_mu, v_logsig, z], name="Encoder")
+            self.inp, [s_0_mu, s_0_logsig, v_0_mu, v_0_logsig, sLsg], name="Encoder")
+        self.summary()
+
+
+class ODE_Bernoulli_ConvTime_Decoder(tf.keras.Model):
+    def __init__(self, frames, latent_dim, act):
+        self.inp = x = tf.keras.Input(shape=(frames, latent_dim,))
+        l = []
+        for i in range(frames):
+            a = x[:, i, :]
+            a = tf.keras.layers.Dense(64, activation=act)(a)
+            a = tf.keras.layers.Dense(4 * 4 * 64, activation=act)(a)
+            a = tf.keras.layers.Reshape((4, 4, 64))(a)
+            a = tf.keras.layers.Conv2DTranspose(32, (3, 3), activation=act)(a)
+            a = tf.keras.layers.UpSampling2D(size=(2, 2))(a)
+            a = tf.keras.layers.Conv2DTranspose(16, (3, 3), activation=act)(a)
+            a = tf.keras.layers.UpSampling2D(size=(2, 2))(a)
+            a = tf.keras.layers.Conv2DTranspose(1, (3, 3), padding="same", activation='sigmoid')(a)
+            l.append(a)
+        outp = tf.keras.layers.Concatenate(axis=-1)(l)
+
+        super(ODE_Bernoulli_ConvTime_Decoder, self).__init__(self.inp, [outp, outp], name="Decoder")
         self.summary()
 
 
@@ -167,8 +154,8 @@ class VAE_Conv_Encoder(tf.keras.Model):
 
 
 class VAE_ConvTime_Encoder(tf.keras.Model):
-    def __init__(self, latent_dim, act):
-        self.inp = x = tf.keras.Input(shape=(28, 28, 10))
+    def __init__(self, frames, latent_dim, act):
+        self.inp = x = tf.keras.Input(shape=(28, 28, frames))
         x = tf.keras.layers.Conv2D(64, (3, 3), padding="same", activation=act)(x)
         x = tf.keras.layers.MaxPooling2D((2, 2))(x)
         x = tf.keras.layers.Conv2D(128, (3, 3), activation=act)(x)
@@ -243,7 +230,7 @@ class Bernoulli_Conv_Decoder(tf.keras.Model):
 
 
 class Bernoulli_ConvTime_Decoder(tf.keras.Model):
-    def __init__(self, latent_dim, act):
+    def __init__(self, frames, latent_dim, act):
         self.inp = x = tf.keras.Input(shape=(latent_dim,))
         x = tf.keras.layers.Dense(256, activation=act)(x)
         x = tf.keras.layers.Dense(4 * 4 * 256, activation=act)(x)
@@ -252,13 +239,14 @@ class Bernoulli_ConvTime_Decoder(tf.keras.Model):
         x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
         x = tf.keras.layers.Conv2DTranspose(64, (3, 3), activation=act)(x)
         x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
-        outp = tf.keras.layers.Conv2DTranspose(10, (3, 3), padding="same", activation='sigmoid')(x)
+        outp = tf.keras.layers.Conv2DTranspose(
+            frames, (3, 3), padding="same", activation='sigmoid')(x)
         super(Bernoulli_ConvTime_Decoder, self).__init__(self.inp, [outp, outp], name="Decoder")
         self.summary()
 
 
 class Gauss_ConvTime_Decoder(tf.keras.Model):
-    def __init__(self, latent_dim, act):
+    def __init__(self, frames, latent_dim, act):
         self.inp = x = tf.keras.Input(shape=(latent_dim,))
         x = tf.keras.layers.Dense(256, activation=act)(x)
         x = tf.keras.layers.Dense(4 * 4 * 256, activation=act)(x)
@@ -268,11 +256,12 @@ class Gauss_ConvTime_Decoder(tf.keras.Model):
         x = tf.keras.layers.Conv2DTranspose(64, (3, 3), activation=act)(x)
         x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
 
-        μ = tf.keras.layers.Conv2DTranspose(10, (3, 3), padding="same")(x)
-        log_σ = tf.keras.layers.Conv2DTranspose(10, (3, 3), padding="same", activation='sigmoid')(x)
+        μ = tf.keras.layers.Conv2DTranspose(frames, (3, 3), padding="same")(x)
+        log_σ = tf.keras.layers.Conv2DTranspose(
+            frames, (3, 3), padding="same", activation='sigmoid')(x)
 
-        μ_reshape = tf.keras.layers.Reshape((7840,))(μ)
-        log_σ_reshape = tf.keras.layers.Reshape((7840,))(log_σ)
+        μ_reshape = tf.keras.layers.Reshape((784*frames,))(μ)
+        log_σ_reshape = tf.keras.layers.Reshape((784*frames,))(log_σ)
 
         super(Gauss_ConvTime_Decoder, self).__init__(
             self.inp, [μ, μ_reshape, log_σ_reshape], name="Decoder")

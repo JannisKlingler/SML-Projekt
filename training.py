@@ -11,7 +11,7 @@ tf.random.set_seed(0)
 # Aufgabe vorgeben. Mögliche Eingaben: 'MNIST', 'rotatingMNIST', 'GaussMNIST'
 job = 'rotatingMNIST'
 
-latent_dim = 10
+latent_dim = 5
 epochs = 10
 
 akt_fun = 'relu'
@@ -21,42 +21,45 @@ if job == 'MNIST':
     x_train = np.where(x_train > 127.5, 1.0, 0.0).astype('float32')
     x_test = np.where(x_test > 127.5, 1.0, 0.0).astype('float32')
     encoder = models.VAE_Conv_Encoder(latent_dim, akt_fun)
-    #middle = models.Id_Middle()
     decoder = models.Bernoulli_Conv_Decoder(latent_dim, akt_fun)
-    loss = lossfunctions.Bernoulli_Loss(encoder, decoder)
+    loss = lossfunctions.Bernoulli_Loss(encoder, decoder, 1)
+    #loss = lossfunctions.Trivial_Loss(encoder, decoder, 1)
 
 elif job == 'GaussMNIST':
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
     x_train = x_train.astype('float32') / 255.
     x_test = x_test.astype('float32') / 255.
     encoder = models.VAE_Conv_Encoder(latent_dim, akt_fun)
-    #middle = models.Id_Middle()
     decoder = models.Gauss_Conv_Decoder(latent_dim, akt_fun)
-    loss = lossfunctions.Gauss_Loss(encoder, decoder)
+    loss = lossfunctions.Gauss_Loss(encoder, decoder, 1)
 
 elif job == 'rotatingMNIST':  # Passenden Dateipfad einfügen
     x_train = np.load('C:/Users/Admin/Desktop/Python/rotatingMNIST_train.npy')
     x_test = np.load('C:/Users/Admin/Desktop/Python/rotatingMNIST_test.npy')
     x_train = np.transpose(x_train, [0, 2, 3, 1])
     x_test = np.transpose(x_test, [0, 2, 3, 1])
-    encoder = models.VAE_ConvTime_Encoder(latent_dim, akt_fun)
-    #middle = models.Id_Middle()
-    decoder = models.Bernoulli_ConvTime_Decoder(latent_dim, akt_fun)
-    loss = lossfunctions.Bernoulli_Loss(encoder, decoder)
+    frames = 10
+    #encoder = models.VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
+    encoder = models.ODE_VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
+    decoder = models.ODE_Bernoulli_ConvTime_Decoder(frames, latent_dim, akt_fun)
+    loss = lossfunctions.Trivial_Loss(encoder, decoder, 10)
 
 else:
     raise Exception("That job does not exist")
 
 
-vae = tf.keras.Model(encoder.inp, decoder(encoder(encoder.inp)[2]))
+print(encoder.inp)
+print(encoder(encoder.inp))
+print(encoder(encoder.inp)[-1])
+print(decoder(encoder(encoder.inp)[-1]))
+vae = tf.keras.Model(encoder.inp, decoder(encoder(encoder.inp)[-1]))
 
 vae.add_loss(loss)
 vae.compile(optimizer='adam')
 
 vae.fit(x_train, x_train,
         epochs=epochs,
-        batch_size=100,
-        verbose=2)
+        batch_size=100)
 
 rec_imgs = vae.predict(x_test)[0]
 
