@@ -34,10 +34,8 @@ elif job == 'GaussMNIST':
     loss = lossfunctions.Gauss_Loss(encoder, decoder, 1)
 
 elif job == 'rotatingMNIST':  # Passenden Dateipfad einfügen
-    x_train = np.load('C:/Users/Admin/Desktop/Python/rotatingMNIST_train.npy')
-    x_test = np.load('C:/Users/Admin/Desktop/Python/rotatingMNIST_test.npy')
-    x_train = np.transpose(x_train, [0, 2, 3, 1])
-    x_test = np.transpose(x_test, [0, 2, 3, 1])
+    x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
+    x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
     frames = 10
     #encoder = models.VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
     encoder = models.ODE_VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
@@ -78,22 +76,20 @@ if job == 'MNIST' or job == 'GaussMNIST':
         k = k + 1
 
 elif job == 'rotatingMNIST':
-    rec_imgs = np.transpose(rec_imgs, [0, 3, 1, 2])
-    x_test = np.transpose(x_test, [0, 3, 1, 2])
     fig, index = plt.figure(figsize=(10, 10)), np.random.randint(len(x_test), size=5)
     grid = ImageGrid(fig, 111,  nrows_ncols=(10, 10), axes_pad=0.1,)
-    plot = [x_test[index[0]][j] for j in range(10)]
+    plot = [x_test[index[0]][:, :, j] for j in range(10)]
     for i in index:
         if k != 0:
-            original = [x_test[i][j] for j in range(10)]
+            original = [x_test[i][:, :, j] for j in range(10)]
             plot = np.vstack((plot, original))
-        reconst = [rec_imgs[i][j] for j in range(10)]
+        reconst = [rec_imgs[i][:, :, j] for j in range(10)]
         plot = np.vstack((plot, reconst))
         k += 1
     for ax, im in zip(grid, plot):
         plt.gray()
         ax.imshow(im)
-plt.show()
+    plt.show()
 
 # Bei Bedarf: Modell speichern und laden
 #tf.keras.models.save_model(vae, 'C:/Pfad/vae')

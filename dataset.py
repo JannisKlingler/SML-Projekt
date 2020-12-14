@@ -9,31 +9,23 @@ frames = 10
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
 
-# x_train = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
-#    b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_train))
+x_train_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
+    b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_train))
 
-x_test = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
-    b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_test[9000:10000]))
+x_test_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
+    b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_test))
 
 
-for j in range(len(x_test)):
+for j in range(len(x_test_rot)):
     for i in np.random.choice(range(3, 10), 3, replace=False):
-        x_test[j][i] = np.zeros((28, 28))
+        x_test_rot[j][i] = np.zeros((28, 28))
 
-#train = np.array(x_train)
-test = np.array(x_test)
 
-#np.save('rotatingMNIST_train', train)
-np.save('rotatingMNIST_test', test)
+train = np.transpose(np.array(x_train_rot), [0, 2, 3, 1])
+test = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
+
+
+np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train', train)
+np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test', test)
 
 #x_test = np.load('C:/Users/Admin/Desktop/Python/rotatingMNIST_test.npy')
-
-
-plt.figure(figsize=(20, 20))
-for j in range(10):
-    for i in range(frames):
-        ax = plt.subplot(10, frames, j*10+(i+1))
-        plt.imshow(test[j][i], cmap='gray')
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-plt.show()
