@@ -5,14 +5,15 @@ import tensorflow as tf
 import scipy as sp
 import models
 import lossfunctions
+import picture
 
 tf.random.set_seed(1)
 
 # Aufgabe vorgeben. Mögliche Eingaben: 'MNIST', 'rotatingMNIST', 'GaussMNIST'
-job = 'rotatingMNIST'
+job = 'rectangles'
 
-latent_dim = 20
-epochs = 15
+latent_dim = 4
+epochs = 1
 
 akt_fun = 'relu'
 
@@ -36,6 +37,15 @@ elif job == 'GaussMNIST':
 elif job == 'rotatingMNIST':  # Passenden Dateipfad einfügen
     x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
     x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
+    frames = 10
+    #encoder = models.VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
+    encoder = models.ODE_VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
+    decoder = models.ODE_Bernoulli_ConvTime_Decoder(frames, latent_dim, akt_fun)
+    loss = lossfunctions.Trivial_Loss(encoder, decoder, 10)
+
+elif job == 'rectangles':  # Passenden Dateipfad einfügen
+    x_train = picture.create_dataset(amount=100)
+    x_test = picture.create_dataset(amount=10)
     frames = 10
     #encoder = models.VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
     encoder = models.ODE_VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
@@ -90,6 +100,9 @@ elif job == 'rotatingMNIST':
         plt.gray()
         ax.imshow(im)
     plt.show()
+
+elif job == 'rectangles':
+    picture.show_dataset(x_test, rec_imgs)
 
 # Bei Bedarf: Modell speichern und laden
 #tf.keras.models.save_model(vae, 'C:/Pfad/vae')
