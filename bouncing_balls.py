@@ -1,35 +1,48 @@
-# My picture project
-
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import random
 from mpl_toolkits.axes_grid1 import ImageGrid
 
 
+class Balls:
+    position = [np.array([]), np.array([])]
+    radius = np.array([])
+    velocity = [np.array([]), np.array([])]
 
-def create_picture(width=28, height=28, rect=[[7, 5],[20, 20]]):
-    ### rect = [left_upper_corner, right_lower_corner]
-    ### where left_upper_corner = [x_position, y_position],
-    ###       rigt_lower_corner = [x_position, y_position],
+    def __init__(self, width, height, amount=1):
+        max_radius = 4 # Maximaler Radius eines Balles
+        max_velocity = 4 # Maximale Geschwindigkeit
+        self.radius = np.random.rand(amount) * max_radius
 
-    #cast rectangle to sutable format
-    rect = np.array(rect)
+        x_pos = max_radius + np.random.rand(amount) * max((width - 2 * max_radius), 0)
+        y_pos = max_radius + np.random.rand(amount) * max((height - 2 * max_radius), 0)
+        self.position = [x_pos, y_pos]
 
-    #adapt rect to picture
-    rect[0][0] = max(rect[0][0], 0)
-    rect[1][0] = min(rect[1][0], width - 1)
-    rect[0][1] = max(rect[0][1], 0)
-    rect[1][1] = min(rect[1][1], height - 1)
+        self.velocity = np.random.rand(amount) * max_velocity
+
+    def pixel_in_ball(self, pos_pixel):
+        # pos_pixel = [x, y]
+        # returns whether a pixel is inside of some ball
+
+        for i in range(len(self.radius)):
+            if math.pow((pos_pixel[0] - self.position[0][i]), 2) + math.pow((pos_pixel[1] - self.position[1][i]), 2) < radius[i]:
+               return 0.0
+
+        return 1.0
+
+
+
+def create_picture(balls, width=28, height=28):
 
     #background
     pixel = 1.0
     pic = np.tile(pixel, (height, width))
 
-
-    # inner rectangle is black
-    i_rect = [np.ceil(rect[0]).astype(int), rect[1].astype('int')]
-    pic[i_rect[0][1]:i_rect[1][1], i_rect[0][0]:i_rect[1][0]] = [[0]]
+    for x in range(len(pic)):
+        for y in range(len(pic[0])):
+            pic[x][y] = balls.pixel_in_ball([x, y])
 
     return pic
 
@@ -80,5 +93,8 @@ def create_dataset(width=28, height=28, frames=10, amount=10):
 
 
 if __name__ == "__main__":
-    data = create_dataset()
-    show_dataset(data, data)
+    balls = Balls(width=28, height=28)
+    img = create_picture(balls, 28, 28)
+
+    #data = create_dataset()
+    show_dataset([[img]], [[img]])
