@@ -177,8 +177,8 @@ for i in range(latent_dim):
     a = [np.zeros((frames, latent_dim)).astype('Float32'), a]
     A.append(a)
 A = np.array(A)
-#print('!!!!!!!!!!!!!!!!!!!')
-#print(np.shape(A))
+# print('!!!!!!!!!!!!!!!!!!!')
+# print(np.shape(A))
 
 
 def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
@@ -192,21 +192,19 @@ def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
     log_qz_0 = tfd.MultivariateNormalDiag(
         loc=(Ls_mu[0] + Lv_mu[0]), scale_diag=(Ls_logsig[0] + Lv_logsig[0])).log_prob(z[:, 0, 0, :] + z[:, 1, 0, :])
 
-#    return - log_p_x_z - log_pz
-
     fn = f(z)
 
     Trace = 0
     for i in range(latent_dim):
         z_2 = z + tf.constant(A[i])
-        Trace += f(z_2)[:,:,i]
-    Int = K.cumsum(Trace, axis=1)
-    log_qz = log_qz_0 - Int
+        Trace += f(z_2)[:, :, i]
 
-    ELBO = log_pz - K.sum(log_qz) + log_p_x_z
-    #print('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
-    #print(ELBO)
-    return - ELBO  # ode_regul - log_p_x_z + log_qz - log_pz
+    Int = K.cumsum(Trace, axis=1)
+    print('Fehler:')
+    print(log_qz_0)
+    print(Int)
+    log_qz = log_qz_0 - Int
+    return - log_p_x_z - log_pz + K.sum(log_qz, axis=1)
 
 
 encoder = ODE_VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
