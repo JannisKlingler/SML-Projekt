@@ -200,6 +200,11 @@ def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
         Trace += f(z_2)[:, :, i]
 
     Int = K.cumsum(Trace, axis=1)
+    Llogqz0 = []
+    for k in range(frames):
+        Llogqz0.append(log_qz_0)
+    log_qz_0 = tf.stack(Llogqz0)
+    log_qz_0 = tf.transpose(Llogqz0, perm=[1,0])
     print('Fehler:')
     print(log_qz_0)
     print(Int)
