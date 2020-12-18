@@ -189,8 +189,24 @@ def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
     log_p_x_z = - K.sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec), axis=(1, 2))
     log_pz = tfd.MultivariateNormalDiag(loc=tf.zeros(
         2*frames*latent_dim), scale_diag=tf.ones(2*frames*latent_dim)).log_prob(tf.keras.layers.Flatten()(z))
-    log_qz_0 = tfd.MultivariateNormalDiag(
-        loc=(Ls_mu[0] + Lv_mu[0]), scale_diag=(Ls_logsig[0] + Lv_logsig[0])).log_prob(z[:, 0, 0, :] + z[:, 1, 0, :])
+    #a = log_qz_0 = tfd.MultivariateNormalDiag(
+    #    loc=tf.zeros(latent_dim), scale_diag=tf.ones(latent_dim)).log_prob(z[:, 0, 0, :] + z[:, 1, 0, :])
+    print('CCCCCCCCCCCCCCCCCCCCCCCCCC')
+    muLayer = tf.keras.layers.Concatenate(axis=1)([Ls_mu[0], Lv_mu[0]])
+    logsigLayer = tf.keras.layers.Concatenate(axis=1)([Ls_logsig[0], Lv_logsig[0]])
+    sigLayer = K.exp(logsigLayer)
+    xLayer = tf.keras.layers.Concatenate(axis=1)([z[:, 0, 0, :], z[:, 1, 0, :]])
+    print(muLayer)
+    print(sigLayer)
+    print(xLayer)
+
+    #a = tfd.MultivariateNormalDiag(loc=(muLayer), scale_diag=(sigLayer)).log_prob(xLayer)
+    #tfd.MultivariateNormalDiag(loc=(Lv_mu[0]), scale_diag=(Lv_logsig[0])).log_prob(z[:, 1, 0, :])
+
+
+
+
+    log_qz_0 = tfd.MultivariateNormalDiag(loc=(muLayer), scale_diag=(sigLayer)).log_prob(xLayer)
 
     fn = f(z)
 
@@ -205,11 +221,20 @@ def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
         Llogqz0.append(log_qz_0)
     log_qz_0 = tf.stack(Llogqz0)
     log_qz_0 = tf.transpose(Llogqz0, perm=[1,0])
-    print('Fehler:')
-    print(log_qz_0)
-    print(Int)
+    #print('Fehler:')
+    #print(log_qz_0)
+    #print(Int)
     log_qz = log_qz_0 - Int
-    return - log_p_x_z - log_pz + K.sum(log_qz, axis=1)
+    #print(log_qz)
+    #print(K.sum(log_qz, axis=1))
+    ELBOneg = - log_p_x_z - log_pz + K.sum(log_qz, axis=1)
+    #return - log_p_x_z - log_pz
+    print('AAAAAAAAAAAAAAAAAAAAA')
+    print(log_pz)
+    print(log_pz[0])
+    print(ELBOneg)
+    print(ELBOneg[0])
+    return ELBOneg
 
 
 encoder = ODE_VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
@@ -234,6 +259,8 @@ log_p_x_z = - K.sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec), axis
 log_pz = tfd.MultivariateNormalDiag(loc=tf.zeros(
     2*frames*latent_dim), scale_diag=tf.ones(2*frames*latent_dim)).log_prob(z)
 
+print('BBBBBBBBBBBBBBBB')
+print(log_p_x_z)
 print(log_p_x_z.numpy())
 print(log_pz.numpy())
 # %%
