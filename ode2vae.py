@@ -9,9 +9,33 @@ import tensorflow_probability as tfp
 tfd = tfp.distributions
 
 # %%
-x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
-x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
+
 frames = 10
+
+
+try:
+    x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
+    x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
+except:
+    print('Dataset is being generated. This may take a few minutes.')
+    N = 100
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+    x_test = x_test[0:N]
+    x_train = x_train[0:N]
+    x_train_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
+        b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_train))
+    x_test_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
+        b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_test))
+    for j in range(len(x_test_rot)):
+        for i in np.random.choice(range(3, 10), 3, replace=False):
+            x_test_rot[j][i] = np.zeros((28, 28))
+    x_train = np.transpose(np.array(x_train_rot), [0, 2, 3, 1])
+    x_test = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
+    #np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train', x_train)
+    #np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test', x_test)
+    print('Dataset generated')
+
+
 latent_dim = 25
 batch_size = 100
 epochs = 1
@@ -153,8 +177,8 @@ for i in range(latent_dim):
     a = [np.zeros((frames, latent_dim)).astype('Float32'), a]
     A.append(a)
 A = np.array(A)
-print('!!!!!!!!!!!!!!!!!!!')
-print(np.shape(A))
+#print('!!!!!!!!!!!!!!!!!!!')
+#print(np.shape(A))
 
 
 def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
@@ -170,58 +194,18 @@ def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
 
 #    return - log_p_x_z - log_pz
 
-    T = 1  # Zeit zwischen Frames
     fn = f(z)
 
-    LS = []
+    Trace = 0
     for i in range(latent_dim):
         z_2 = z + tf.constant(A[i])
-        S = f(z_2)
-        LS.append(S)
+        Trace += f(z_2)[:,:,i]
+    Int = K.cumsum(Trace, axis=1)
+    log_qz = log_qz_0 - Int
 
-    # Ls[0] + Lv[0]     z
-    # Ls_mu[0] + Lv_mu[0]    Erw
-    # Ls_logsig[0] + Lv_logsig[0]    Var
-
-    # (log_qz_0 - Integral) ausrechnen
-    '''
-    LlogInt = []
-    S = 0
-    for i in range(latent_dim):
-        f_1 = fn[:, :, i]
-        print(fn)
-        print(f_1)
-        #f_1 = tf.keras.layers.RepeatVector(batch_size)(f_1)
-        Lf1 = []
-        for k in range(batch_size):
-            Lf1.append(f_1)
-        f_1 = tf.stack(Lf1)
-        a = np.zeros((frames, latent_dim)).astype('Float32')
-
-        for j in range(frames):
-            a[j, i] = T
-        a = [np.zeros((frames, latent_dim)).astype('Float32'), a]
-        # print(a)
-        b = tf.constant(a)
-        # print(b)
-#        b = tf.convert_to_tensor(a)
-        print('Hahaha!!!!!!!!!!!!!!!!!!!2')
-        f_2 = f(tf.keras.layers.Add()([z, b]))[:, i]
-        # print(f_2)
-        Lf2 = []
-        for k in range(batch_size):
-            Lf2.append(f_2)
-        f_2 = tf.stack(Lf2)
-        #f_2 = tf.keras.layers.RepeatVector(batch_size)(f_2)
-        # print(f_2)
-        S += sum(f_2) - sum(f_1)
-        LlogInt.append(log_qz_0 - S)
-    log_qz = LlogInt
-    '''
-    print('Hahaha!!!!!!!!!!!!!!!!!!!')
-#    print(log_qz[0])
-    # / frames ??
     ELBO = log_pz - K.sum(log_qz) + log_p_x_z
+    #print('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+    #print(ELBO)
     return - ELBO  # ode_regul - log_p_x_z + log_qz - log_pz
 
 
