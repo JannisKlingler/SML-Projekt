@@ -10,7 +10,7 @@ import picture
 tf.random.set_seed(1)
 
 # Aufgabe vorgeben. Mögliche Eingaben: 'MNIST', 'rotatingMNIST', 'GaussMNIST'
-job = 'rectangles'
+job = 'MNIST'
 
 latent_dim = 4
 epochs = 1
@@ -84,6 +84,7 @@ if job == 'MNIST' or job == 'GaussMNIST':
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
         k = k + 1
+    plt.show()
 
 elif job == 'rotatingMNIST':
     fig, index = plt.figure(figsize=(10, 10)), np.random.randint(len(x_test), size=5)

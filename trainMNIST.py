@@ -5,10 +5,9 @@ import tensorflow as tf
 import scipy as sp
 import models
 import lossfunctions
-import picture
+
 
 tf.random.set_seed(1)
-
 
 
 latent_dim = 4
@@ -52,3 +51,4 @@ for i in np.random.randint(len(x_test), size=n):
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
     k = k + 1
+plt.show()
