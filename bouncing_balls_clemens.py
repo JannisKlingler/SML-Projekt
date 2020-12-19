@@ -66,7 +66,7 @@ def create_dataset(dataset_size, frames, picture_size, object_number):
     for j in range(dataset_size):
         sequence = []
 
-        radius = [np.random.uniform(0.05, 0.15)]
+        radius = [np.random.uniform(0.06, 0.15)]
         position = [np.random.uniform(0 + radius[0], 1 - radius[0], size=2)]
         velocity = [np.random.uniform(-1, 1, size=2)]
         for i in range(object_number - 1):
@@ -102,8 +102,8 @@ def create_dataset(dataset_size, frames, picture_size, object_number):
             if i % 15 == 0:
                 arr = np.zeros((picture_size, picture_size))
                 for i in range(object_number):
-                    ro, co = draw.circle(position[i, 0] * picture_size, position[i, 1] *
-                                         picture_size, radius=radius[i]*picture_size, shape=arr.shape)
+                    ro, co = draw.disk((position[i, 0] * picture_size, position[i, 1] *
+                                        picture_size), radius=radius[i]*picture_size, shape=arr.shape)
                     arr[ro, co] = 1
                 sequence.append(arr)
         sequence = np.array(sequence)
