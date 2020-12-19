@@ -1,3 +1,4 @@
+import bouncing_balls_clemens as data
 import scipy as sp
 from keras import backend as K
 import matplotlib.pyplot as plt
@@ -7,38 +8,16 @@ import math as m
 import tensorflow as tf
 import tensorflow_probability as tfp
 tfd = tfp.distributions
-
 # %%
 
 frames = 10
 
-
-try:
-    x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
-    x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
-except:
-    print('Dataset is being generated. This may take a few minutes.')
-    N = 100
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-    x_test = x_test[0:N]
-    x_train = x_train[0:N]
-    x_train_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
-        b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_train))
-    x_test_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
-        b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_test))
-    for j in range(len(x_test_rot)):
-        for i in np.random.choice(range(3, 10), 3, replace=False):
-            x_test_rot[j][i] = np.zeros((28, 28))
-    x_train = np.transpose(np.array(x_train_rot), [0, 2, 3, 1])
-    x_test = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
-    #np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train', x_train)
-    #np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test', x_test)
-    print('Dataset generated')
-
+#x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
+#x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
 
 latent_dim = 25
 batch_size = 100
-epochs = 1
+epochs = 50
 akt_fun = 'relu'
 
 # %%
@@ -164,9 +143,8 @@ def Trivial_Loss(encoder, f, decoder, frames):
     x_rec = decoder(f(encoder(x)[-1]))
     return K.sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec), axis=(1, 2))
 
-
 #log_p_xi_zi = K.sum(-28 * tf.keras.losses.binary_crossentropy(x[:,:,:,i], x_rec[:,:,:,i]), axis=-1)
-# p(z) wird bei ihm an der Stelle concat(Lv,Ls) ausgewertet statt bei concat(Lv_i,Ls_i)
+
 
 T = 1
 A = []
@@ -177,8 +155,6 @@ for i in range(latent_dim):
     a = [np.zeros((frames, latent_dim)).astype('Float32'), a]
     A.append(a)
 A = np.array(A)
-# print('!!!!!!!!!!!!!!!!!!!')
-# print(np.shape(A))
 
 
 def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
@@ -189,26 +165,12 @@ def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
     log_p_x_z = - K.sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec), axis=(1, 2))
     log_pz = tfd.MultivariateNormalDiag(loc=tf.zeros(
         2*frames*latent_dim), scale_diag=tf.ones(2*frames*latent_dim)).log_prob(tf.keras.layers.Flatten()(z))
-    #a = log_qz_0 = tfd.MultivariateNormalDiag(
-    #    loc=tf.zeros(latent_dim), scale_diag=tf.ones(latent_dim)).log_prob(z[:, 0, 0, :] + z[:, 1, 0, :])
-    print('CCCCCCCCCCCCCCCCCCCCCCCCCC')
+
     muLayer = tf.keras.layers.Concatenate(axis=1)([Ls_mu[0], Lv_mu[0]])
-    logsigLayer = tf.keras.layers.Concatenate(axis=1)([Ls_logsig[0], Lv_logsig[0]])
-    sigLayer = K.exp(logsigLayer)
-    xLayer = tf.keras.layers.Concatenate(axis=1)([z[:, 0, 0, :], z[:, 1, 0, :]])
-    print(muLayer)
-    print(sigLayer)
-    print(xLayer)
+    sigLayer = K.exp(tf.keras.layers.Concatenate(axis=1)([Ls_logsig[0], Lv_logsig[0]]))
+    zLayer = tf.keras.layers.Concatenate(axis=1)([z[:, 0, 0, :], z[:, 1, 0, :]])
 
-    #a = tfd.MultivariateNormalDiag(loc=(muLayer), scale_diag=(sigLayer)).log_prob(xLayer)
-    #tfd.MultivariateNormalDiag(loc=(Lv_mu[0]), scale_diag=(Lv_logsig[0])).log_prob(z[:, 1, 0, :])
-
-
-
-
-    log_qz_0 = tfd.MultivariateNormalDiag(loc=(muLayer), scale_diag=(sigLayer)).log_prob(xLayer)
-
-    fn = f(z)
+    log_qz_0 = tfd.MultivariateNormalDiag(loc=(muLayer), scale_diag=(sigLayer)).log_prob(zLayer)
 
     Trace = 0
     for i in range(latent_dim):
@@ -220,21 +182,10 @@ def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
     for k in range(frames):
         Llogqz0.append(log_qz_0)
     log_qz_0 = tf.stack(Llogqz0)
-    log_qz_0 = tf.transpose(Llogqz0, perm=[1,0])
-    #print('Fehler:')
-    #print(log_qz_0)
-    #print(Int)
+    log_qz_0 = tf.transpose(Llogqz0, perm=[1, 0])
     log_qz = log_qz_0 - Int
-    #print(log_qz)
-    #print(K.sum(log_qz, axis=1))
-    ELBOneg = - log_p_x_z - log_pz + K.sum(log_qz, axis=1)
-    #return - log_p_x_z - log_pz
-    print('AAAAAAAAAAAAAAAAAAAAA')
-    print(log_pz)
-    print(log_pz[0])
-    print(ELBOneg)
-    print(ELBOneg[0])
-    return ELBOneg
+
+    return 1  # log_qz_0  # - log_p_x_z - log_pz + K.sum(log_qz, axis=1)
 
 
 encoder = ODE_VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
@@ -242,31 +193,18 @@ f = Differential_Function(frames, latent_dim, akt_fun)
 decoder = ODE_Bernoulli_ConvTime_Decoder(frames, latent_dim, akt_fun)
 ode2vae = tf.keras.Model(encoder.inp, decoder(f(encoder(encoder.inp)[-1])))
 
-#loss = Trivial_Loss(encoder, f, decoder, 10)
-loss = Bernoulli_ODE_Loss(encoder, f, decoder, 10)
+loss = Trivial_Loss(encoder, f, decoder, 10)
+#loss = Bernoulli_ODE_Loss(encoder, f, decoder, 10)
 ode2vae.add_loss(loss)
 ode2vae.compile(optimizer='adam')
 # %%
 
-x = x_train[0:4]
-x_rec = x_train[1:5] / 2. + .1
-z = [np.zeros(2*latent_dim*frames) for i in range(4)]
-Ls_mu = Lv_mu = [np.zeros(latent_dim*frames) for i in range(4)]
-Ls_logsig = Lv_logsig = [np.ones(latent_dim*frames) for i in range(4)]
-
-
-log_p_x_z = - K.sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec), axis=(1, 2))
-log_pz = tfd.MultivariateNormalDiag(loc=tf.zeros(
-    2*frames*latent_dim), scale_diag=tf.ones(2*frames*latent_dim)).log_prob(z)
-
-print('BBBBBBBBBBBBBBBB')
-print(log_p_x_z)
-print(log_p_x_z.numpy())
-print(log_pz.numpy())
-# %%
-ode2vae.fit(x_train, epochs=epochs, batch_size=batch_size)
+train_generator = data.DataGenerator(object_number=3, picture_size=28,
+                                     frames=10, dataset_size=10000, batch_size=100)
+ode2vae.fit(train_generator, epochs=epochs)
 
 # %%
+x_test = data.create_dataset(dataset_size=200, frames=10)
 k = 0
 rec_imgs = ode2vae.predict(x_test)
 fig, index = plt.figure(figsize=(10, 10)), np.random.randint(len(x_test), size=5)
