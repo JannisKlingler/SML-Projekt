@@ -213,15 +213,31 @@ ode2vae.compile(optimizer='adam')
 
 # Für bouncing balls
 train_generator = data.DataGenerator(object_number=3, picture_size=28,
-                                     frames=frames, dataset_size=1000, batch_size=100)
+                                     frames=frames, dataset_size=200, batch_size=100)
 
-ode2vae.fit(train_generator, epochs=epochs, callbacks=[data.rec_loss_BouncingBalls()])
+# Optionaler Callback um den Verlauf des Reconstruction Loss im Trainingsprozess zu überblicken
+acc = [m.inf, 0]
+
+
+class rec_loss_BouncingBalls(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs={}):
+        print('\nErstelle Testdatensatz')
+        x_test_eval = data.create_dataset(
+            dataset_size=500, frames=10, picture_size=28, object_number=3)
+        x_trest_rec = ode2vae.predict(x_test_eval)
+        acc[1] = np.sum((x_test - x_trest_rec) ** 2) / 500
+        print('\nRekonstruktionsgenauigkeit: ', acc[1])
+        print('Verbesserung: ', acc[0] - acc[1])
+        acc[0] = acc[1]
+
+
+ode2vae.fit(train_generator, epochs=epochs, callbacks=[rec_loss_BouncingBalls()])
 
 # Für rotating MNIST:
 #ode2vae.fit(x_train, epochs=epochs, batch_size=100)
 
 
-x_test = data.create_dataset(dataset_size=200, frames=frames)
+x_test = data.create_dataset(dataset_size=100, frames=10, picture_size=28, object_number=3)
 k = 0
 rec_imgs = ode2vae.predict(x_test)
 fig, index = plt.figure(figsize=(10, 10)), np.random.randint(len(x_test), size=5)
