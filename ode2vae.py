@@ -1,4 +1,4 @@
-import bouncing_balls_clemens as data
+#import bouncing_balls_clemens as data
 import scipy as sp
 from keras import backend as K
 import matplotlib.pyplot as plt
@@ -12,12 +12,32 @@ tfd = tfp.distributions
 
 frames = 10
 
-x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
-x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
+frames = 10
+try:
+    x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
+    x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
+except:
+    print('Dataset is being generated. This may take a few minutes.')
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+    N = 1000
+    x_train = x_train[0:N]
+    x_test = x_test[0:N]
+    x_train_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
+        b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_train))
+    x_test_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
+        b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_test))
+    for j in range(len(x_test_rot)):
+        for i in np.random.choice(range(3, 10), 3, replace=False):
+            x_test_rot[j][i] = np.zeros((28, 28))
+    x_train = np.transpose(np.array(x_train_rot), [0, 2, 3, 1])
+    x_test = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
+    #np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train', x_train)
+    #np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test', x_test)
+    print('Dataset generated')
 
 latent_dim = 25
 batch_size = 100
-epochs = 50
+epochs = 5
 akt_fun = 'relu'
 
 # %%
@@ -146,7 +166,7 @@ def Trivial_Loss(encoder, f, decoder, frames):
 #log_p_xi_zi = K.sum(-28 * tf.keras.losses.binary_crossentropy(x[:,:,:,i], x_rec[:,:,:,i]), axis=-1)
 
 
-T = 1
+T = 0.1
 A = []
 for i in range(latent_dim):
     a = np.zeros((frames, latent_dim)).astype('Float32')
@@ -162,7 +182,8 @@ def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
     Ls_mu, Ls_logsig, Lv_mu, Lv_logsig, z = encoder(x)
     sLsg = f(z)
     x_rec = decoder(sLsg)
-    log_p_x_z = - K.sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec), axis=(1, 2))
+    a = frames * tf.keras.losses.binary_crossentropy(x, x_rec)
+    log_p_x_z = - K.sum(a, axis=(1, 2))
     log_pz = tfd.MultivariateNormalDiag(loc=tf.zeros(
         2*frames*latent_dim), scale_diag=tf.ones(2*frames*latent_dim)).log_prob(tf.keras.layers.Flatten()(z))
 
@@ -175,17 +196,23 @@ def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
     Trace = 0
     for i in range(latent_dim):
         z_2 = z + tf.constant(A[i])
-        Trace += f(z_2)[:, :, i]
+        Trace += f(z_2)[:, :, i] - sLsg[:, :, i]
 
     Int = K.cumsum(Trace, axis=1)
     Llogqz0 = []
     for k in range(frames):
         Llogqz0.append(log_qz_0)
-    log_qz_0 = tf.stack(Llogqz0)
-    log_qz_0 = tf.transpose(Llogqz0, perm=[1, 0])
-    log_qz = log_qz_0 - Int
+    STACKlog_qz_0 = tf.stack(Llogqz0)
+    STACKlog_qz_0 = tf.transpose(STACKlog_qz_0, perm=[1, 0])
+    log_qz = 0 - Int
 
-    return log_qz  # log_qz_0  # - log_p_x_z - log_pz + K.sum(log_qz, axis=1)
+    print('AAAAAAAAAAAAAAAAAAAA')
+    print(K.sum(log_qz, axis=1))
+    print(log_qz_0)
+    print(log_pz)
+    print(a)
+    ELBO =  log_p_x_z + log_pz - (frames+1)*log_qz_0 + K.sum(log_qz, axis=1)
+    return  -ELBO  # log_qz_0  # - log_p_x_z - log_pz + K.sum(log_qz, axis=1)
 
 
 encoder = ODE_VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
@@ -193,7 +220,7 @@ f = Differential_Function(frames, latent_dim, akt_fun)
 decoder = ODE_Bernoulli_ConvTime_Decoder(frames, latent_dim, akt_fun)
 ode2vae = tf.keras.Model(encoder.inp, decoder(f(encoder(encoder.inp)[-1])))
 
-loss = Trivial_Loss(encoder, f, decoder, frames=10)
+loss = Bernoulli_ODE_Loss(encoder, f, decoder, frames=10)
 #loss = Bernoulli_ODE_Loss(encoder, f, decoder, 10)
 ode2vae.add_loss(loss)
 ode2vae.compile(optimizer='adam')
