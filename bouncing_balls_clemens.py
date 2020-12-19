@@ -60,7 +60,7 @@ def time_step(step_size, position, velocity, radius, object_number):
 
 def create_dataset(dataset_size, frames, picture_size, object_number):
     dataset = []
-    step_size = 0.006
+    step_size = 0.007
     steps = frames * 15
 
     for j in range(dataset_size):

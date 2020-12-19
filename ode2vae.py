@@ -12,8 +12,8 @@ tfd = tfp.distributions
 
 frames = 10
 
-#x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
-#x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
+x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
+x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
 
 latent_dim = 25
 batch_size = 100
@@ -185,7 +185,7 @@ def Bernoulli_ODE_Loss(encoder, f, decoder, frames):
     log_qz_0 = tf.transpose(Llogqz0, perm=[1, 0])
     log_qz = log_qz_0 - Int
 
-    return 1  # log_qz_0  # - log_p_x_z - log_pz + K.sum(log_qz, axis=1)
+    return log_qz  # log_qz_0  # - log_p_x_z - log_pz + K.sum(log_qz, axis=1)
 
 
 encoder = ODE_VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
@@ -193,18 +193,18 @@ f = Differential_Function(frames, latent_dim, akt_fun)
 decoder = ODE_Bernoulli_ConvTime_Decoder(frames, latent_dim, akt_fun)
 ode2vae = tf.keras.Model(encoder.inp, decoder(f(encoder(encoder.inp)[-1])))
 
-loss = Trivial_Loss(encoder, f, decoder, 10)
+loss = Trivial_Loss(encoder, f, decoder, frames=10)
 #loss = Bernoulli_ODE_Loss(encoder, f, decoder, 10)
 ode2vae.add_loss(loss)
 ode2vae.compile(optimizer='adam')
 # %%
 
-train_generator = data.DataGenerator(object_number=3, picture_size=28,
-                                     frames=10, dataset_size=10000, batch_size=100)
-ode2vae.fit(train_generator, epochs=epochs)
-
+# train_generator = data.DataGenerator(object_number=3, picture_size=28,
+#                                     frames=10, dataset_size=60000, batch_size=100)
+#ode2vae.fit(train_generator, epochs=epochs)
+ode2vae.fit(x_train, epochs=epochs, batch_size=100)
 # %%
-x_test = data.create_dataset(dataset_size=200, frames=10)
+#x_test = data.create_dataset(dataset_size=200, frames=10)
 k = 0
 rec_imgs = ode2vae.predict(x_test)
 fig, index = plt.figure(figsize=(10, 10)), np.random.randint(len(x_test), size=5)
