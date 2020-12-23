@@ -1,12 +1,12 @@
 from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
+import scipy as sp
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from scipy.optimize import fsolve
 from skimage import draw
 import tensorflow as tf
 import time
-# %%
 
 
 def time_step(step_size, position, velocity, radius, object_number):
@@ -59,7 +59,7 @@ def time_step(step_size, position, velocity, radius, object_number):
     return position, velocity
 
 
-def create_dataset(dataset_size, frames, picture_size, object_number, variation):
+def create_dataset_buncingBalls(dataset_size, frames, picture_size, object_number, variation):
     dataset = []
     step_size = 0.007
     steps = frames * 15
@@ -125,31 +125,37 @@ def create_dataset(dataset_size, frames, picture_size, object_number, variation)
     return dataset
 
 
-class DataGenerator(tf.keras.utils.Sequence):
-    def __init__(self, object_number, picture_size, frames, dataset_size, batch_size, variation):
-        self.object_number = object_number
-        self.picture_size = picture_size
-        self.frames = frames
-        self.dataset_size = dataset_size
-        self.batch_size = batch_size
-        self.variation = variation
+def create_dataset_rotatingMNIST(train_dataset_size, test_dataset_size, frames, variation):
+    (x_train, _), (x_test, _) = tf.keras.datasets.mnist.load_data()
+    x_train, x_test = x_train[0:train_dataset_size], x_test[0:test_dataset_size]
+    x_train_rot, x_test_rot = [], []
 
-    def __len__(self):
-        return int(self.dataset_size / self.batch_size)
+    if variation == True:
+        start_rot = np.random.uniform(0, 360, size=train_dataset_size)
+    else:
+        start_rot = np.zeros(train_dataset_size)
 
-    def __getitem__(self, index):
-        X = create_dataset(self.batch_size, self.frames, self.picture_size,
-                           self.object_number, self.variation)
-        return X
+    x_train = [[np.where(sp.ndimage.rotate(x_train[i], start_rot[i] + (j + 1) * 360 / frames, reshape=False)
+                         > 127.5, 1.0, 0.0).astype('float32') for j in range(frames)] for i in range(train_dataset_size)]
+    x_train = np.transpose(np.array(x_train), [0, 2, 3, 1])
+    x_test = [[np.where(sp.ndimage.rotate(x_test[i], start_rot[i] + (j + 1) * 360 / frames, reshape=False)
+                        > 127.5, 1.0, 0.0).astype('float32') for j in range(frames)] for i in range(test_dataset_size)]
+    x_test = np.transpose(np.array(x_test), [0, 2, 3, 1])
+    x_test_missing = np.zeros((test_dataset_size, 28, 28, 10))
+    for j in range(len(x_test_missing)):
+        for i in range(3):
+            x_test_missing[j, :, :, i] = x_test[j, :, :, i]
+
+    return x_train, x_test, x_test_missing
 
 
-video = create_dataset(1, 10, 200, 3, False)  # evtl. step size verringern!
-for i in range(10):
-    plt.axis('off')
-    plt.imshow(video[0, :, :, i], cmap='gray')
-    plt.pause(0.05)
-    plt.clf()
-plt.show()
+# video = create_dataset(1, 10, 200, 3, False)  # evtl. step size verringern!
+# for i in range(10):
+#    plt.axis('off')
+#    plt.imshow(video[0, :, :, i], cmap='gray')
+#    plt.pause(0.05)
+#    plt.clf()
+# plt.show()
 
 
 #tic = time.perf_counter()
