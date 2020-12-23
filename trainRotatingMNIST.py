@@ -11,16 +11,19 @@ tf.random.set_seed(1)
 
 latent_dim = 20
 epochs = 1
-
+frames = 10
+DataSize = -1 #Für ganzen MNIST-Datenstaz wähle -1
 akt_fun = 'relu'
 
-frames = 10
+
 try:
     x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
     x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
 except:
     print('Dataset is being generated. This may take a few minutes.')
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+    x_train = x_train[0:DataSize]
+    x_test = x_test[0:DataSize]
     x_train_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
         b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_train))
     x_test_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
@@ -30,8 +33,11 @@ except:
             x_test_rot[j][i] = np.zeros((28, 28))
     x_train = np.transpose(np.array(x_train_rot), [0, 2, 3, 1])
     x_test = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
-    np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train', x_train)
-    np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test', x_test)
+    try:
+        np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train', x_train)
+        np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test', x_test)
+    except:
+        print('could not save Dataset')
     print('Dataset generated')
 
 
