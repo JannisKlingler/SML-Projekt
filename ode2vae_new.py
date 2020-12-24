@@ -1,5 +1,4 @@
-# import bouncing_balls_clemens as data  # Für bouncing balls
-import scipy as sp
+import datasets as data
 from keras import backend as K
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
@@ -9,38 +8,53 @@ import tensorflow_probability as tfp
 tfd = tfp.distributions
 
 frames = 10
-epochs = 30
-latent_dim = 18
+epochs = 60
 akt_fun = 'relu'
-job = 'rotatingMNIST'
+job = 'rotatingMNIST'  # 'rotatingMNIST' ; 'bouncingBalls'
 
 if job == 'rotatingMNIST':
+    latent_dim = 25
+
     try:
         x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train.npy')
-        x_test_whole = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
-        x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test_missing.npy')
+        x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test.npy')
+        x_test_missing = np.load(
+            'C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test_missing.npy')
 
     except:
         print('Dataset is being generated. This may take a few minutes.')
-        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-#        N = 1000
-#        x_train = x_train[0:N]
-#        x_test = x_test[0:N]
-        x_train_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
-            b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_train))
-        x_test_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
-            b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_test))
-        x_train = np.transpose(np.array(x_train_rot), [0, 2, 3, 1])
-        x_test = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
-
-        x_test_missing = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
-        for j in range(len(x_test_missing)):
-            for i in range(3, 10):
-                x_test_missing[j, :, :, i] = np.zeros((28, 28))
+        x_train, x_test, x_test_missing = data.create_dataset_rotatingMNIST(train_dataset_size=60000,
+                                                                            test_dataset_size=10000, frames=10, variation=False)
 
         np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_train', x_train)
         np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test', x_test)
         np.save('C:/Users/Admin/Desktop/Python/Datasets/rotatingMNIST_test_missing', x_test_missing)
+        print('Dataset generated')
+
+if job == 'bouncingBalls':
+    latent_dim = 30
+
+    try:
+        x_train = np.load('C:/Users/Admin/Desktop/Python/Datasets/bouncingBalls.npy')
+        x_test = np.load('C:/Users/Admin/Desktop/Python/Datasets/bouncingBalls_test.npy')
+        x_test_missing = np.load(
+            'C:/Users/Admin/Desktop/Python/Datasets/bouncingBalls_test_missing.npy')
+
+    except:
+        print('Dataset is being generated. This may take a few minutes. Ignore possible warnings.')
+        x_train = data.create_dataset_bouncingBalls(dataset_size=60000, frames=10,
+                                                    picture_size=28, object_number=3, variation=False)
+        x_test = data.create_dataset_bouncingBalls(dataset_size=10000, frames=10,
+                                                   picture_size=28, object_number=3, variation=False)
+
+        x_test_missing = np.zeros((10000, 28, 28, frames))
+        for j in range(len(x_test)):
+            for i in range(3):
+                x_test_missing[j, :, :, i] = x_test[j, :, :, i]
+
+        np.save('C:/Users/Admin/Desktop/Python/Datasets/bouncingBalls_train', x_train)
+        np.save('C:/Users/Admin/Desktop/Python/Datasets/bouncingBalls_test', x_test)
+        np.save('C:/Users/Admin/Desktop/Python/Datasets/bouncingBalls_test_missing', x_test_missing)
         print('Dataset generated')
 
 
@@ -65,12 +79,12 @@ class ODE2_VAE_ConvTime_Encoder(tf.keras.Model):
         s = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
             shape=(K.shape(arg[0])[0], latent_dim), mean=0.0, stddev=1.0))([s_μ, s_log_σ])
 
-        vel_enc = tf.keras.layers.Conv2D(16, (3, 3), padding="same",
+        vel_enc = tf.keras.layers.Conv2D(32, (3, 3), padding="same",
                                          activation=act)(first_three_frames)
         vel_enc = tf.keras.layers.MaxPooling2D((2, 2))(vel_enc)
-        vel_enc = tf.keras.layers.Conv2D(32, (3, 3), activation=act)(vel_enc)
-        vel_enc = tf.keras.layers.MaxPooling2D((2, 2))(vel_enc)
         vel_enc = tf.keras.layers.Conv2D(64, (3, 3), activation=act)(vel_enc)
+        vel_enc = tf.keras.layers.MaxPooling2D((2, 2))(vel_enc)
+        vel_enc = tf.keras.layers.Conv2D(128, (3, 3), activation=act)(vel_enc)
         vel_enc = tf.keras.layers.Flatten()(vel_enc)
         v_μ = tf.keras.layers.Dense(latent_dim, activation=act)(vel_enc)
         v_log_σ = tf.keras.layers.Dense(latent_dim, activation=act)(vel_enc)
@@ -84,29 +98,6 @@ class ODE2_VAE_ConvTime_Encoder(tf.keras.Model):
         sv_σ = K.exp(tf.keras.layers.Concatenate(axis=1)([s_log_σ, v_log_σ]))
         super(ODE2_VAE_ConvTime_Encoder, self).__init__(
             self.inp, [sv_μ, sv_σ, z], name="Encoder")
-
-# Workaround, wird für die Lossfunktion benötigt.
-
-
-def encode_whole_sequence(x):
-    Lsv_μ, Lsv_σ, Lz = [], [], []
-    for i in range(frames):
-        if job == 'rotatingMNIST':
-            if (i < frames-2):
-                three_frames = x[:, :, :, i:i+3]
-            elif (i >= frames-2):
-                three_frames = tf.concat([x[:, :, :, i:frames], x[:, :, :, 0:i-frames+3]], axis=3)
-        c = tf.concat([three_frames, x[:, :, :, 0:7]], axis=3)
-        sv_μ, sv_σ, z = encoder(c)
-        Lsv_μ.append(sv_μ)
-        Lsv_σ.append(sv_σ)
-        Lz.append(z)
-
-    Lsv_μ = tf.stack(Lsv_μ, axis=1)
-    Lsv_σ = tf.stack(Lsv_σ, axis=1)
-    Lz = tf.stack(Lz, axis=1)
-    z_0 = Lz[:, 0, :, :]
-    return Lsv_μ, Lsv_σ, Lz, z_0
 
 
 class Differential_Function(tf.keras.Model):
@@ -164,10 +155,35 @@ class ODE2_Bernoulli_ConvTime_Decoder(tf.keras.Model):
         super(ODE2_Bernoulli_ConvTime_Decoder, self).__init__(self.inp, outp, name="Decoder")
 
 
-def Reconstruction_Loss(decoder, frames):
-    x = encoder.inp
-    x_rec = decoder(latent_trajectory(encode_whole_sequence(x)[-1], steps=frames-1)[-1])
+def Reconstruction_Loss(x, x_rec):
     return K.sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec), axis=(1, 2))
+
+
+# Helfer zur Berechnung des Bernoulli_ODE2_Loss
+def encode_whole_sequence(x):
+    Lsv_μ, Lsv_σ, Lz = [], [], []
+    for i in range(frames):
+        if job == 'rotatingMNIST':
+            if (i < frames-2):
+                three_frames = x[:, :, :, i:i+3]
+            elif (i >= frames-2):
+                three_frames = tf.concat([x[:, :, :, i:frames], x[:, :, :, 0:i-frames+3]], axis=3)
+        else:
+            if (i < frames-2):
+                three_frames = x[:, :, :, i:i+3]
+            elif (i >= frames-2):
+                three_frames = x[:, :, :, frames-3:frames]
+        c = tf.concat([three_frames, x[:, :, :, 0:7]], axis=3)
+        sv_μ, sv_σ, z = encoder(c)
+        Lsv_μ.append(sv_μ)
+        Lsv_σ.append(sv_σ)
+        Lz.append(z)
+
+    Lsv_μ = tf.stack(Lsv_μ, axis=1)
+    Lsv_σ = tf.stack(Lsv_σ, axis=1)
+    Lz = tf.stack(Lz, axis=1)
+    z_0 = Lz[:, 0, :, :]
+    return Lsv_μ, Lsv_σ, Lz, z_0
 
 
 t = 1e-5
@@ -178,31 +194,24 @@ for i in range(latent_dim):
     A.append(a)
 A = tf.constant(np.array(A).astype('Float32'))
 
-β = latent_dim / ((2 * latent_dim * 100) + 100 + (100 * 100) +
-                  100 + (100 * latent_dim) + latent_dim)
-
-if job == 'rotatingMNIST':
-    γ = 1.
-if job == 'bouncingBalls':
-    γ = 0.01
-
 
 def ODE2_Flow(Lf_s_tv_t, Lz_t, j, t):
-    delta = [tf.subtract(f(tf.add(Lz_t[:, :, j, :], A[i]))[0], Lf_s_tv_t[:, j, :])
-             for i in range(latent_dim)]
+    delta = [f(Lz_t[:, :, j, :] + A[i])[0] - Lf_s_tv_t[:, j, :] for i in range(latent_dim)]
     delta = tf.stack(delta, axis=1)
 
     Trace = tf.linalg.trace(delta) / tf.constant(t)
     return Trace
 
 
-def Bernoulli_ODE2_Loss(decoder, frames):
-    x = encoder.inp
+γ = 1.
+
+
+def Bernoulli_ODE2_Loss(x, x_pred):
     Lsv_μ, Lsv_σ, Lz, z_0 = encode_whole_sequence(x)
-    Lf_s_tv_t, Lz_t, Lv_t, Ls_t = latent_trajectory(z_0, steps=frames-1)
+    Lf_s_tv_t, Lz_t, _, Ls_t = latent_trajectory(z_0, steps=frames-1)
     x_rec = decoder(Ls_t)
 
-    log_p_x_z = - K.sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec), axis=(1, 2))
+    log_p_x_z = - Reconstruction_Loss(x, x_rec)
 
     log_pz = tfd.MultivariateNormalDiag(loc=tf.zeros(
         2*frames*latent_dim), scale_diag=tf.ones(2*frames*latent_dim)).log_prob(tf.keras.layers.Flatten()(Lz_t))
@@ -218,81 +227,39 @@ def Bernoulli_ODE2_Loss(decoder, frames):
 
     ELBO = log_p_x_z + log_pz - log_qz
 
-    log_q_enc = tfd.MultivariateNormalDiag(loc=(tf.keras.layers.Flatten()(Lsv_μ)), scale_diag=(
-        tf.keras.layers.Flatten()(Lsv_σ))).log_prob(tf.keras.layers.Flatten()(Lz))
+    if γ > 0:
+        log_q_enc = tfd.MultivariateNormalDiag(loc=(tf.keras.layers.Flatten()(Lsv_μ)), scale_diag=(
+            tf.keras.layers.Flatten()(Lsv_σ))).log_prob(tf.keras.layers.Flatten()(Lz))
 
-    KL_q_ode_q_enc = log_qz - log_q_enc
+        ELBO -= γ * (log_qz - log_q_enc)
 
-    return - ELBO + γ * KL_q_ode_q_enc
+    return - ELBO
 
 
 encoder = ODE2_VAE_ConvTime_Encoder(frames, latent_dim, akt_fun)
 f = Differential_Function(latent_dim, t=1e-5)
 decoder = ODE2_Bernoulli_ConvTime_Decoder(frames, latent_dim, akt_fun)
 ode2vae = tf.keras.Model(encoder.inp, decoder(
-    latent_trajectory(encode_whole_sequence(encoder.inp)[-1], steps=frames-1)[-1]))
+    latent_trajectory(encoder(encoder.inp)[-1], steps=frames-1)[-1]))
 
 
-loss = Bernoulli_ODE2_Loss(decoder, frames=frames)
-ode2vae.add_loss(loss)
-ode2vae.compile(optimizer='adam')
+# Verfügbare Lossfunktionen: Bernoulli_ODE2_Loss, Reconstruction_Loss
+ode2vae.compile(optimizer='adam', loss=Bernoulli_ODE2_Loss,
+                metrics=[tf.keras.metrics.MeanSquaredError(name="MSE"), Reconstruction_Loss])
 
-
-acc = [np.inf, 0]
-
-
-class Loss_Monitoring(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs={}):
-        if job == 'rotatingMNIST':
-            x_test_eval = x_test_whole[np.random.randint(len(x_test_whole), size=500)]
-            x_test_rec = ode2vae.predict(x_test_eval)
-        if job == 'bouncingBalls':
-            print('\nCreate evaluation dataset')
-            x_test_eval = data.create_dataset(
-                dataset_size=500, frames=10, picture_size=28, object_number=3, variation=False)
-            x_test_rec = ode2vae.predict(x_test_eval)
-
-        acc[1] = np.sum((x_test_eval - x_test_rec) ** 2) / 500
-        log_p_x_z = K.sum(
-            frames * tf.keras.losses.binary_crossentropy(x_test_eval, x_test_rec)) / 500
-        print('\nReconstruction accuracy (MSE): ', acc[1])
-        print('Improvement: ', acc[0] - acc[1])
-        print('log_p_x_z: ', np.array(log_p_x_z))
-
-#        if (γ < 1.5 & epoch % 5 == 0 & epoch != 0):
-#            γ += 0.05
-#            print('γ increased:', γ - 0.05, ' → ', γ)
-        acc[0] = acc[1]
-
-
-if job == 'rotatingMNIST':
-    ode2vae.fit(x_train, epochs=epochs, batch_size=100, callbacks=[Loss_Monitoring()])
-
-
-if job == 'bouncingBalls':
-    train_generator = data.DataGenerator(object_number=3, picture_size=28,
-                                         frames=frames, dataset_size=5000, batch_size=100, variation=False)
-
-    ode2vae.fit(train_generator, epochs=epochs, callbacks=[Loss_Monitoring()])
-
-    x_test_whole = data.create_dataset(dataset_size=100, frames=10,
-                                       picture_size=28, object_number=3, variation=False)
-
-    x_test = x_test_whole
-    for j in range(len(x_test)):
-        for i in range(3, 10):
-            x_test[j, :, :, i] = np.zeros((28, 28))
+ode2vae.fit(x_train, x_train, epochs=epochs, batch_size=100,
+            validation_data=(x_test[0:500], x_test[0:500]))
 
 
 k = 0
-rec_imgs = ode2vae.predict(x_test_whole)
-print(np.shape(rec_imgs))
+rec_imgs = ode2vae.predict(x_test)
+np.save('C:/Users/Admin/Desktop/Python/Datasets/reconstructions', rec_imgs)
 fig, index = plt.figure(figsize=(10, 10)), np.random.randint(len(x_test), size=5)
 grid = ImageGrid(fig, 111,  nrows_ncols=(10, 10), axes_pad=0.1,)
-plot = [x_test[index[0]][:, :, j] for j in range(10)]
+plot = [x_test_missing[index[0]][:, :, j] for j in range(10)]
 for i in index:
     if k != 0:
-        original = [x_test[i][:, :, j] for j in range(10)]
+        original = [x_test_missing[i][:, :, j] for j in range(10)]
         plot = np.vstack((plot, original))
     reconst = [rec_imgs[i][:, :, j] for j in range(10)]
     plot = np.vstack((plot, reconst))
@@ -302,4 +269,6 @@ for ax, im in zip(grid, plot):
     ax.imshow(im)
 plt.show()
 
-#
+
+#    ode_regul = 0.01 * np.sum([np.sum(f.get_weights()[i] ** 2)
+#                               for i in range(len(f.get_weights()))])

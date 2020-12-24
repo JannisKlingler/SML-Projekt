@@ -59,7 +59,7 @@ def time_step(step_size, position, velocity, radius, object_number):
     return position, velocity
 
 
-def create_dataset_buncingBalls(dataset_size, frames, picture_size, object_number, variation):
+def create_dataset_bouncingBalls(dataset_size, frames, picture_size, object_number, variation):
     dataset = []
     step_size = 0.007
     steps = frames * 15
@@ -71,7 +71,7 @@ def create_dataset_buncingBalls(dataset_size, frames, picture_size, object_numbe
             radius = [np.random.uniform(0.06, 0.15)]
             velocity = [np.random.uniform(-1, 1, size=2)]
         else:
-            radius = [0.12]
+            radius = [0.11]
             alpha = np.random.uniform(0, 1)
             velocity = [[np.cos(alpha) * 0.8, np.sin(alpha) * 0.8]]
         position = [np.random.uniform(0 + radius[0], 1 - radius[0], size=2)]
@@ -84,7 +84,7 @@ def create_dataset_buncingBalls(dataset_size, frames, picture_size, object_numbe
                     start_radius = np.random.uniform(0.05, 0.15)
                     start_velocity = np.random.uniform(-1, 1, size=2)
                 else:
-                    start_radius = 0.12
+                    start_radius = 0.11
                     alpha = np.random.uniform(0, 1)
                     start_velocity = [np.cos(alpha) * 0.8, np.sin(alpha) * 0.8]
                 start_position = np.random.uniform(0 + start_radius, 1 - start_radius, size=2)
