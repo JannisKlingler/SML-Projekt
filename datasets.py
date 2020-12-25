@@ -59,7 +59,7 @@ def time_step(step_size, position, velocity, radius, object_number):
     return position, velocity
 
 
-def create_dataset_bouncingBalls(dataset_size, frames, picture_size, object_number, variation):
+def create_dataset_bouncingBalls(dataset_size, frames, picture_size, object_number, variation, pictures):
     dataset = []
     step_size = 0.007
     steps = frames * 15
@@ -112,12 +112,16 @@ def create_dataset_bouncingBalls(dataset_size, frames, picture_size, object_numb
         for i in range(steps):
             position, velocity = time_step(step_size, position, velocity, radius, object_number)
             if i % 15 == 0:
-                arr = np.zeros((picture_size, picture_size))
-                for i in range(object_number):
-                    ro, co = draw.disk((position[i, 0] * picture_size, position[i, 1] *
-                                        picture_size), radius=radius[i]*picture_size, shape=arr.shape)
-                    arr[ro, co] = 1
-                sequence.append(arr)
+                if pictures == True:
+                    arr = np.zeros((picture_size, picture_size))
+                    for i in range(object_number):
+                        ro, co = draw.disk((position[i, 0] * picture_size, position[i, 1] *
+                                            picture_size), radius=radius[i]*picture_size, shape=arr.shape)
+                        arr[ro, co] = 1
+                    sequence.append(arr)
+                else:
+                    a = position + np.zeros((3, 2))
+                    sequence.append(a)
         sequence = np.array(sequence)
         dataset.append(sequence)
     dataset = np.array(dataset)
@@ -132,7 +136,7 @@ def create_dataset_rotatingMNIST(train_dataset_size, test_dataset_size, frames, 
 
     if variation == True:
         start_rot = np.random.uniform(0, 360, size=train_dataset_size)
-    else:
+    if variation != True:
         start_rot = np.zeros(train_dataset_size)
 
     x_train = [[np.where(sp.ndimage.rotate(x_train[i], start_rot[i] + (j + 1) * 360 / frames, reshape=False)
@@ -148,6 +152,7 @@ def create_dataset_rotatingMNIST(train_dataset_size, test_dataset_size, frames, 
 
     return x_train, x_test, x_test_missing
 
+# %%
 
 # video = create_dataset(1, 10, 200, 3, False)  # evtl. step size verringern!
 # for i in range(10):
