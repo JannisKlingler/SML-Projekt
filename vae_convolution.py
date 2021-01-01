@@ -14,7 +14,7 @@ import scipy.io
 latent_dim = 10
 trainingsepochen = 100
 
-mat_data = scipy.io.loadmat('C:/Users/Admin/Desktop/Python/frey_rawface.mat')
+mat_data = scipy.io.loadmat('C:/Users/Admin/Desktop/Python/Datasets/frey_rawface.mat')
 x_train = mat_data['ff'].T.reshape(-1, 28, 20, 1)
 x_train = x_train.astype('float32') / 255.0
 print(f"Größe Datensatz: {len(x_train)}")

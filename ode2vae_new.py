@@ -9,7 +9,7 @@ tfd = tfp.distributions
 
 frames = 10
 epochs = 20
-latent_dim = 25
+latent_dim = 17  # Über 17: Absturz
 akt_fun = 'relu'
 job = 'bouncingBalls'  # 'rotatingMNIST' ; 'bouncingBalls'
 data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
@@ -176,7 +176,7 @@ def encode_whole_sequence(x):
 
 
 # %%
-γ = 1
+γ = 0
 t = 0.1
 
 A = []
@@ -190,17 +190,42 @@ A = tf.constant(np.array(A).astype('Float32'))
 def ODE2_Flow(Lf_s_tv_t, Lz_t, j, t):
     delta = [f(Lz_t[:, :, j, :] + A[i])[0] - Lf_s_tv_t[:, j, :] for i in range(latent_dim)]
     delta = tf.stack(delta, axis=1)
+    determinant = tf.linalg.det(delta)
+    log_determinant = tf.math.log(tf.math.abs(determinant))
+    return log_determinant
 
-    Trace = tf.linalg.trace(delta) / tf.constant(t)
-    return Trace
+# def ODE2_Flow(Lf_s_tv_t, Lz_t, j, t):
+#    derivatives = []
+#    for i in range(latent_dim):
+#        eps = Lz_t[:, :, j, :] + A[i]
+#        v_t_eps = eps[:, 1, :]
+#        s_t = eps[:, 0, :]
+#        with tf.GradientTape(persistent=True) as tape:
+#            tape.watch(v_t_eps)
+#            f_eps = f(tf.stack([s_t, v_t_eps], axis=1))[0]
+#            df_dv = tape.gradient(f_eps, v_t_eps)
+#        derivatives.append(df_dv)
+#    derivatives = tf.stack(derivatives, axis=1)
+#    Trace = tf.linalg.trace(derivatives)
+#    determinant = tf.linalg.det(derivatives)
+#    return tf.math.log(tf.math.abs(determinant))
 
 
 # Versionen der Lossfunktion und MSE-Performance auf Bouncing Balls nach 20 Trainingsepochen:
-# Reconstruction_Loss : 0.0377
-# ELBO = log_p_x_z + log_pz - log_qz;      γ = 0 :  0.0832
-# ELBO = log_p_x_z + log_pz - log_qz;      γ = 1 :  0.0809
-# ELBO = log_p_x_z + log_pz_0 - log_qz_0;  γ = 0 :  0.0562
-# ELBO = log_p_x_z + log_pz_0 - log_qz_0;  γ = 1 :  0.0659
+# Reconstruction_Loss : 0.0377 # lat_dim 30
+# ELBO = log_p_x_z + log_pz - log_qz;      γ = 0 :  0.0832 (Trace) # lat_dim 30
+# ELBO = log_p_x_z + log_pz - log_qz;      γ = 1 :  0.0809 (Trace) # lat_dim 30
+# ELBO = log_p_x_z + log_pz_0 - log_qz_0;  γ = 0 :  0.0562 (Trace) # lat_dim 30
+# ELBO = log_p_x_z + log_pz_0 - log_qz_0;  γ = 1 :  0.0659 (Trace) # lat_dim 30
+
+
+# NEU!
+# Reconstruction_Loss : 0.0377 # lat_dim 17 höhere latent_dim stürzt ab.
+# ELBO = log_p_x_z + log_pz - log_qz;      γ = 0 :  0.0819 (Determinant) #lat_dim 17
+# ELBO = log_p_x_z + log_pz - log_qz;      γ = 1 :  ? (Determinant)
+# ELBO = log_p_x_z + log_pz_0 - log_qz_0;  γ = 0 :  ? (Determinant)
+# ELBO = log_p_x_z + log_pz_0 - log_qz_0;  γ = 1 :  ? (Determinant)
+
 
 def Bernoulli_ODE2_Loss(x, x_pred):
     if γ > 0:
@@ -214,11 +239,11 @@ def Bernoulli_ODE2_Loss(x, x_pred):
 
     log_p_x_z = - Reconstruction_Loss(x, x_rec)
 
-#    log_pz = tfd.MultivariateNormalDiag(loc=tf.zeros(2*frames*latent_dim),
-#                                        scale_diag=tf.ones(2*frames*latent_dim)).log_prob(tf.keras.layers.Flatten()(Lz_t))
+    log_pz = tfd.MultivariateNormalDiag(loc=tf.zeros(2*frames*latent_dim),
+                                        scale_diag=tf.ones(2*frames*latent_dim)).log_prob(tf.keras.layers.Flatten()(Lz_t))
 
-    log_pz_0 = tfd.MultivariateNormalDiag(loc=tf.zeros(2*latent_dim),
-                                          scale_diag=tf.ones(2*latent_dim)).log_prob(tf.keras.layers.Flatten()(z_0))
+#    log_pz_0 = tfd.MultivariateNormalDiag(loc=tf.zeros(2*latent_dim),
+#                                          scale_diag=tf.ones(2*latent_dim)).log_prob(tf.keras.layers.Flatten()(z_0))
 
     log_qz_0 = tfd.MultivariateNormalDiag(loc=(sv_0_μ), scale_diag=(
         sv_0_σ)).log_prob(tf.keras.layers.Flatten()(z_0))
@@ -229,7 +254,7 @@ def Bernoulli_ODE2_Loss(x, x_pred):
 
     log_qz = frames * log_qz_0 - K.sum(Int, axis=1)
 
-    ELBO = log_p_x_z + log_pz_0 - log_qz_0  # log_p_x_z + log_pz - log_qz
+    ELBO = log_p_x_z + log_pz - log_qz  # log_p_x_z + log_pz - log_qz
 
     if γ > 0:
         log_q_enc = tfd.MultivariateNormalDiag(loc=(tf.keras.layers.Flatten()(Lsv_μ)), scale_diag=(
