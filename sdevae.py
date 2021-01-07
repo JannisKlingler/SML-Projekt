@@ -9,13 +9,14 @@ from keras import backend as K
 tfd = tfp.distributions
 # import datasets as data
 
-
+'''
 # Needed for gpu support on some machines
 config = tf.compat.v1.ConfigProto(
     gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.8))
 config.gpu_options.allow_growth = True
 session = tf.compat.v1.Session(config=config)
 tf.compat.v1.keras.backend.set_session(session)
+'''
 
 ########################################################
 # %% hyperparameter
@@ -23,7 +24,7 @@ epochs = 4
 latent_dim = 10  # Dimensionality for latent variables. 20-30 works fine.
 batch_size = 100  # ≥100 as suggested by Kingma in Autoencoding Variational Bayes.
 train_size = 60000  # Data points in train set. Choose accordingly to dataset size.
-test_size = 10000  # Data points in test set. Choose accordingly to dataset size.
+test_size = 10000 # Data points in test set. Choose accordingly to dataset size.
 batches = int(train_size / batch_size)
 frames = 10  # Number of images in every datapoint. Choose accordingly to dataset size.
 armortized_len = 3  # Sequence size seen by velocity encoder network.
@@ -40,36 +41,40 @@ ode_integration = 'trivialsum'  # options: 'DormandPrince' , 'trivialsum'
 dt = 0.1  # Step size for numerical integration. Increasing dt reduces training time
 # but may impact predictive qualitiy. 'trivialsum'  uses dt = 1 and only reconstruction
 # loss as training criteria. This is very fast and works surprisingly well.
-data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
+data_path = 'C:/Users/Admin/Documents/Uni/SML-Projekt/'
 job = 'rotatingMNIST'  # Dataset for training. Options: 'rotatingMNIST' , 'bouncingBalls'
 
 # %%
 ########################################################
 # Datensatz laden oder erstellen
+DataSize = 100
 try:
-    x_train = np.load(data_path + job + '_train.npy')
-    x_test = np.load(data_path + job + '_test.npy')
-
+    x_train = np.load('rotatingMNIST_train.npy')
+    x_test = np.load('rotatingMNIST_test.npy')
 except:
     print('Dataset is being generated. This may take a few minutes.')
-
-    if job == 'rotatingMNIST':
-        x_train, x_test, _ = data.create_dataset_rotatingMNIST(
-            train_dataset_size=60000, test_dataset_size=10000, frames=10, variation=False)
-
-    if job == 'bouncingBalls':
-        x_train = data.create_dataset_bouncingBalls(dataset_size=60000, frames=10,
-                                                    picture_size=28, object_number=3, variation=False, pictures=True)
-        x_test = data.create_dataset_bouncingBalls(dataset_size=10000, frames=10,
-                                                   picture_size=28, object_number=3, variation=False, pictures=True)
-
-    np.save(data_path + job + '_train', x_train)
-    np.save(data_path + job + '_test', x_test)
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+    x_train = x_train[0:DataSize]
+    x_test = x_test[0:DataSize]
+    x_train_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
+        b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_train))
+    x_test_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
+        b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_test))
+    for j in range(len(x_test_rot)):
+        for i in np.random.choice(range(3, 10), 3, replace=False):
+            x_test_rot[j][i] = np.zeros((28, 28))
+    x_train = np.transpose(np.array(x_train_rot), [0, 2, 3, 1])
+    x_test = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
+    try:
+        np.save('C:/Users/Admin/Documents/Uni/SML-Projekt/rotatingMNIST_train', x_train)
+        np.save('C:/Users/Admin/Documents/Uni/SML-Projekt/rotatingMNIST_test', x_test)
+    except:
+        print('could not save Dataset')
     print('Dataset generated')
 
 
 # Dim: train_size x pictureWidth x pictureHeight*pictureColors x frames
-x_train = x_train[0:train_size]
+x_train = x_train[0:train_size+1]
 print('train-shape:', x_train.shape)
 
 
@@ -122,11 +127,11 @@ class mu_sig_Net(tf.keras.Model):
 
 class PointwiseEncoder(tf.keras.Model):
     def __init__(self, latent_dim, nrFrames, pictureWidth, pictureHeight, pictureColors, act):
-        self.inp = z = tf.keras.layers.Input(
+        self.inp = zn = tf.keras.layers.Input(
             shape=(pictureWidth, pictureHeight*pictureColors, nrFrames))
-        print('AA:', z)
+        print('AA:', zn)
         vel_enc = tf.keras.layers.Conv2D(32, (3, 3), padding="same",
-                                         activation=act)(z)
+                                         activation=act)(zn)
         print('BB:', vel_enc)
         vel_enc = tf.keras.layers.MaxPooling2D((2, 2))(vel_enc)
         vel_enc = tf.keras.layers.Conv2D(64, (3, 3), activation=act)(vel_enc)
@@ -151,9 +156,12 @@ ms_Net = mu_sig_Net(latent_dim)
 
 
 def encode_sequence(x):
+    print('EEE:',tf.shape(x))
     List = []
-    for i in range(1, frames-1):
-        encoded = P_enc(x[:, :, :, i-1:i+2])
+    for i in range(1, 3):
+        encoded = ms_Net(P_enc(x[:, :, :, i-1:i+2]))
+        print(i)
+        print(tf.shape(x[:, :, :, i-1:i+2]))
         print('CCC:', encoded)
         List.append(encoded)
     List = tf.stack(List, axis=1)
@@ -165,7 +173,7 @@ x_train_enc = encode_sequence(x_train)
 print('DDD:', np.array(x_train_enc).shape)
 
 
-vae = tf.keras.Model(P_enc.inp, encode_seqence(P_enc.inp))
+
 
 
 class ODE2_VAE_ConvTime_Encoder(tf.keras.Model):
