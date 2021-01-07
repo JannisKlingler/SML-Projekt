@@ -1,0 +1,328 @@
+\documentclass[12pt]{article}
+
+\usepackage[ngerman]{babel}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage[a4paper, lmargin=2.5cm, rmargin=2.5cm, top=2.5cm, bottom=3cm]{geometry}
+\usepackage{setspace}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{stmaryrd}
+\usepackage{bibgerm}
+\usepackage{caption}
+\usepackage{aligned-overset}
+\usepackage{subcaption}
+\usepackage[utf8]{inputenc}
+\pagestyle{plain}
+\pagenumbering{arabic}
+\usepackage[square,sort,comma,numbers]{natbib}
+
+\newcommand{\qenc}{q_{\boldsymbol\phi}(\mathbf{z}|\mathbf{x}_i)}
+\newcommand{\penc}{p_{\boldsymbol\theta}(\mathbf{z}|\mathbf{x}_i)}
+\newcommand{\pdec}{p_{\boldsymbol\theta}(\mathbf{x}_i|\mathbf{z})}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\z}{\mathbf{z}}
+\newcommand{\x}{\mathbf{x}_i}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\allowdisplaybreaks
+
+\begin{document}
+	\setlength{\parindent}{0em}
+	\onehalfspacing
+\begin{titlepage}
+	\begin{center}
+		\huge\textbf{Missing Data Imputation mit \\Variational Autoencodern}\\
+		\vspace{1.5cm}
+		\LARGE\textbf{{Projektarbeit}}\\
+		\vspace{0.5cm}
+		\normalsize
+		Im Rahmen der Vorlesung\\
+		Stochastic Machine Learning\\
+		\vspace{0.3cm}
+		vorgelegt am 10. Februar 2021 \\
+		\vspace{0.7cm}
+		
+		\begin{figure}[h!]
+			\centering
+			\includegraphics[scale=0.4]{"C:/Users/Admin/Desktop/Bachelorarbeit/Arbeit/frauw.jpg"}
+		\end{figure}
+	
+		\vspace{0.7cm}
+		\large \textbf{Albert-Ludwigs-Universität Freiburg}\\
+   		\vspace{0.2cm}
+		\large {Institut für Mathematik}\\
+		\vspace{1cm}
+		\large {Niklas Brunn}\\
+		\large {Ben Deitmar}\\
+		\large {Sebastian Hahn}\\
+		\large {Jannis Klingler}\\
+		\large {Clemens Schächter}\\
+
+		\vspace{1.8cm}
+	\end{center}
+\end{titlepage}
+
+	\tableofcontents
+	\newpage
+	\section[Einleitung]{Einleitung}
+	Der \emph{Variational Autoencoder} (kurz: VAE) ist ein unsupervised Deep-Learning Algorithmus, welcher es ermöglicht niedrigdimensinale latente Darstellungen aus hochdimensionales Daten zu erlernen. Nach der Trainingsphase kann der VAE schließlich als probabilistisches Generatives Modell zum erzeugen neuer Daten verwendet werden.\\
+	Da das Modell selbst erlernen muss, 
+	wie die Datenpunkte am besten gruppiert werden, wird auch das Erkennen unbekannter Eigenschaften ermöglicht.\\
+	Beim generieren von Bildern wie menschlichen Gesichtern kann die Performance dabei durchaus mit state-of-the-art Modellen wie Genrative Adversarial Networks mithalten. Die Anwendungsmöglichkeiten des Modells sind vielseitig, so werden VAEs unter anderem zum Modellieren chemischer Moleküle, zur Verarbeitung menschlicher Sprache oder zum erkennen beschädigter Daten und Schätzung von Unsicherheit eingesetzt.\\
+	Im Rahmen dieser Projektarbeit wollen wir Variational Autoencoder darauf trainieren Vorhersagen für hochdimensionale Daten mit zeitlicher Abhängigkeit, sogenannten \emph{Time-Series} zu treffen.\\
+	Jedoch ist dies nicht ohne Anpassungen möglich, da ein Variational Autoencoder unter der Annahme trainiert wird, einen unabhängigen und identisch verteilten Trainingsdatensatz vorliegen zu haben.\\ 
+	Eine Möglichkeit die häufig komplexen Zusammenhängen zwischen den Zeitschritten in Time-Series trotzdem zu erlernen bietet der \emph{Ordinary Differential Equation Variational Auto-Encoder} (kurz: ODE$^2$-VAE). Die zeitlichen Abhängigkeiten unter den Datenpunkten werden hier mit Differentialgleichungen zweiter Ordnung modelliert, welche im Trainingsprozess erlernt werden. \\
+	\\
+	In dieser Arbeit werden wir in einem theoretischen Teil die mathematischen Grundlagen einführen, auf denen der Variational Autoencoder und der ODE$^2$-VAE aufbauen.\\ 
+	In einem praktischen Teil werden schließlich Anwendungsmöglichkeiten der beiden Modelle auf unsere Problemstellung präsentiert.\\
+	Dabei wird sowohl auf die Implementierung der
+	theoretischen Resultate, als auch auf die experimentellen Ergebnisse eingegangen.\\
+	Die in dieser Arbeit verwendeten Quellen sind die Paper \emph{Auto-Encoding Variational Bayes} \cite{vae}, sowie \emph{An Introduction to Variational Autoencoders}, \cite{intvae} beide von Diederik P. Kingma und Max Welling und \emph{ODE$^{\ 2}$-VAE: Deep generative second order ODEs with Bayesian neural networks} \cite{ode2vae} von Ç. Yıldız, M. Heinonen und H. Lähdesmäki.
+	\newpage
+	
+	\section[Theoretische Ausarbeitung]{Theoretische Ausarbeitung}
+	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N}$, der aus $N$ unterschiedlichen i.i.d. verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
+	Um den Prozess, der die Daten erzeugt besser modellieren und später erlernen zu können, werden sogenannte \emph{latenten Variablen} $\z$ eingeführt. Diese sind stetige und nicht beobachtbare Zufallsvariablen, welche die Eigenschaften des Bildes festlegen, die es charakterisiert.  \\
+	Der sogenannte \emph{latente Raum} $\mathcal{Z}$, über den die latenten Variablen $\z$ definiert sind, ist nach Wahl von viel geringerer Dimension als der Raum $\mathcal{X}$ der ursprünglichen Verteilung.\\
+	Schauen wir uns einmal an, wie die Datenpunkte des Datensatzes in einem solchen latenten Variablen Modell entstehen.\\
+	Zuerst wird eine latente Darstellung $\z \sim  p(\z)$  gezogen. Mit dieser wird  $\x \sim  p(\x|\z)$ nun durch eine bedingte Verteilung ermittelt. So lässt sich nun die Dichtefunktion von $p(\x)$ über Marginalisierung durch ein Integral über alle latenten Werte beschreiben.
+	\begin{align*}
+	p(\x)= \int_{\z} p(\x,\z) d\textbf{z} = \int_{\z} p(\x|\z)p(\z) d\z
+	\end{align*}
+	Dieses Integral ist jedoch unberechenbar und kann aufgrund der hohen Dimension des Raumes $\mathcal{X}$ in der Regel auch nicht sinnvoll approximiert werden. 
+	Die bedingte Verteilung $p(\z|\x)$, mit welcher sich für Datenpunkte $\x$ eine zugehörige latente Darstellung $\z$ finden lässt, ist ebenfalls nicht berechenbar. Dies und die Unberechenbarkeit der marginalen Wahrscheinlichkeit impliziert sich durch den Satz von Bayes gegenseitig: 
+	\begin{align*}
+	p(\z|\x)= \frac{p(\x|\z)p(\z)}{p(\x)}
+	\end{align*}
+	Die gemeinsame Verteilung $p(\x,\z) = p(\x|\z)p(\z)$ lässt sich anhand der Daten approximieren, dabei sind die Datenpunkte Realisierungen dieser Verteilung. Wäre $p(\x)$ beobachtbar, könnten wir auch $p(\z|\x)$ errechnen. Eine Umkehrung dieser Überlegung gilt ebenfalls. \\ 
+	
+	Die Verteilungen $p(\x|\z),\ p(\z|\x),\ p(\z)$ und $p(\x)$ fassen wir als durch ${\boldsymbol\theta}$ parametrisierte Familien auf. Für die optimalen Parameter $\boldsymbol\theta^{*}$ soll dabei gelten $p_{\boldsymbol\theta^{*}}(\x) \approx p(\x)$.\\
+	Weiter führen wir wegen der Unberechenbarkeit von $p_{\boldsymbol\theta}(\z|\x)$ das Inferenzmodell $q_{\boldsymbol\phi}(\z|\x)$ ein und suchen die Parameter $\boldsymbol\phi^{*}$ für die $q_{\boldsymbol\phi^{*}}(\z|\x) \approx p_{\boldsymbol\theta}(\z|\x)$ gilt.\\ 
+	Mit einem Variational Autoencoder werden die Verteilungen $q_{\boldsymbol\phi}(\z|\x)$ und $p_{\boldsymbol\theta}(\x|\z)$ durch neuronale Netze dargestellt und approximiert.\\
+	Im AEVB-Algorithmus (kurz für \emph{Auto-Encoding Variational Bayes}) können die geeigneten Parameter $\boldsymbol\phi^{*}$ und $\boldsymbol\theta^{*}$ gemeinsam erlernt werden.
+	\subsection[Variational Autoencoder]{AEVB-Algorithmus und Variational Autoencoder}
+	Wir betrachten dafür für einen beliebigen Datenpunkt $\x \in \mathbf{X}$ die Reverse KL-Divergenz der Approximation $\qenc$ nach $\penc$:
+	\begin{align*}
+	D_{KL}\big[\qenc || \penc\big] \overset{\text{Def.}}&{=} \E_{\z\sim q_{\boldsymbol\phi}}\left[\log\left(\frac{\qenc}{\penc}\right)\right] \\
+	\overset{\text{Bayes}}&{=} \E_{\z\sim q_{\boldsymbol\phi}}\left[\log\left(\frac{p_{\boldsymbol\theta}(\x)\qenc}{
+		\pdec p_{\boldsymbol\theta}(\z)}\right)\right]\\
+	&=\E_{\z\sim q_{\boldsymbol\phi}}\left[\log\big(p_{\boldsymbol\theta}(\x)+\log\left(\frac{\qenc}{p_{\boldsymbol\theta}(\z)} \right) -\log\big(\pdec\big)\right]\\
+	&=\log\big(p_{\boldsymbol\theta}(\x)\big) + D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big]-\E_{\z\sim q_{\boldsymbol\phi}}\big[\log\pdec\big]
+	\end{align*}
+	Durch Äquivalenzumformung erhalten wir schließlich:
+	\begin{align*}
+	\log\big(p_{\boldsymbol\theta}(\x)\big) - \underbrace{D_{KL}\big[\qenc || \penc\big]}_{\ge 0} =\underbrace{ \E_{\z\sim q_{\boldsymbol\phi}}\big[\log\pdec\big] - D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big]}_{=:\ \mathrm{ELBO}\ =\ -\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\mathbf{x}_i)}
+	\end{align*}
+	Die rechte Seite wird auch \emph{Evidence Lower Bound} (kurz: ELBO) genannt und dient als (negative) Verlustfunktion des Variational Autoencoder. Als untere Schranke der Loglikelihood führt eine Maximierung der ELBO dazu, dass zum einen die Reverse KL-Divergenz der Approximation zur wahren Verteilung verringert wird, was eine immer besser werdende Beschreibung von $\penc$ durch $\qenc$ impliziert und zum anderen die Likelihood Daten des Datensatzes zu erzeugen groß wird.\\
+	Wir haben in $\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\x)$ also eine zur Minimierung geeignete Funktion gefunden und wollen einen geeigneten Algorithmus verwenden, der uns das Finden der optimalen Parameter
+	\begin{align*}
+	\boldsymbol\theta^{*},\boldsymbol\phi^{*} = \argmin_{\boldsymbol\theta,\boldsymbol\phi} \mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\x).
+	\end{align*}
+	in einer angemessenen Berechnungsdauer ermöglicht. Dazu müssen während des Lernprozesses die Gradienten bezüglich der Parameter berechnet werden.
+	\begin{align*}
+	\nabla_{\boldsymbol\theta,\boldsymbol\phi} \mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\x) = \nabla_{\boldsymbol\theta,\boldsymbol\phi} \Bigl[D_{KL}\big[\qenc || p_{\boldsymbol\theta}(\textbf{z})\big]\Bigl]- \nabla_{\boldsymbol\theta,\boldsymbol\phi}\Bigl[\mathbb{E}_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big]\Bigl] 
+	\end{align*}
+	Die KL-Divergenz ist in vielen Fällen mit analytischen Methoden berechen- und differenzierbar, genauer betrachtet werden muss aber der Gradient des Erwartungswertes bezüglich $\boldsymbol\phi$. \\
+	Gegeben $\textbf{x}_{i}$ ist die latente Darstellung $\z$ kein deterministisch festgelegter Wert, sondern wird durch die von diesen Parametern abhängige Verteilung $\z \sim \qenc$ bestimmt. Da der Gradient später durch Backpropagation berechnet wird, müssen auch die Layer durchschritten werden, die diesen Zufallsprozess enthalten. Monte-Carlo Schätzungen sind außerdem nicht immer mit zufriedenstellender Genauigkeit möglich, denn der Gradient des Erwartungswertes lässt sich in der Regel nicht zu einem neuen Erwartungswert umschreiben, da die Dichtefunktion von $\boldsymbol\phi$ abhängig ist.
+	\begin{align*}
+	\nabla_{\boldsymbol\phi}\Bigl[\mathbb{E}_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big]\Bigl] &= \nabla_{\boldsymbol\phi} \int_{\textbf{z}}\qenc\log\big(\penc)\big)d\textbf{z} \notag \\
+	&= \int_{\textbf{z}}\nabla_{\boldsymbol\phi}\qenc\log\big(\pdec)\big)d\textbf{z}  
+	\end{align*}
+	
+	Der \emph{Reparametrisierungs Trick} bietet eine Lösung für diese Problematik. \cite{repara}
+	Wir reparametrisieren die latente Variable $\textbf{z} = g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i})$ mit einer differenzierbaren, durch $\boldsymbol\phi$ parametrisierten Funktion $g$ und einer Zufallsvariablen $\boldsymbol\epsilon \sim p(\boldsymbol\epsilon)$, deren Dichtefunktion jedoch nicht von $\boldsymbol\phi$ abhängig ist. Somit erhalten wir nach Anwendung
+	\begin{align*}
+	\nabla_{\boldsymbol\phi}\Bigl[\mathbb{E}_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big]\Bigl] &= \nabla_{\boldsymbol\phi}\Bigl[\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]\Bigl] \notag\\
+	&= \nabla_{\boldsymbol\phi} \int_{\boldsymbol\epsilon}p(\boldsymbol\epsilon)\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)d\boldsymbol{\epsilon} \notag \\
+	&=  \int_{\boldsymbol\epsilon}p(\boldsymbol\epsilon)\nabla_{\boldsymbol\phi}\log\big(p_{\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)d\boldsymbol{\epsilon} \notag \\
+	&=\mathbb{E}_{\epsilon\sim p(\boldsymbol\epsilon)}\big[\nabla_{\boldsymbol\phi}\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big] \notag \\
+	\overset{\text{M.C.}}&{\simeq} \frac{1}{L}\sum_{l=1}^{L}\nabla_{\boldsymbol\phi}\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon_{l},\textbf{x}_{i}))\big).
+	\end{align*}
+	Was eine Berechnung der Gradienten, sowie Monte-Carlo-Schätzung des Erwartungswertes ermöglicht.\\
+	Die negative ELBO soll in unserem gesuchten Algorithmus nicht nur für einen einzigen Datenpunkt $\textbf{x}_{i}$, sondern vielmehr auf dem gesamten Datensatz $\textbf{X}$, also für alle $\textbf{x}_{i}$ minimiert werden, denn wir haben
+	\begin{align*}
+	\log\big(p_{\boldsymbol\theta}(\textbf{X})\big)&=\log\big(p_{\boldsymbol\theta}(\textbf{x}_{1},\ldots,\textbf{x}_{N})\big)\overset{\text{i.i.d.}}{=}\log\left(\prod_{i=1}^{N}p_{\boldsymbol\theta}(\x)\right) =\sum_{i=1}^{N}\log\big(p_{\boldsymbol\theta}(\x)\big) \notag \\&= \sum_{i=1}^{N} D_{KL}\big[\qenc||\penc\big] -
+	\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\x).
+	\end{align*}
+	 
+	Der kürzeren Berechnungsdauer geschuldet, werden dafür Minibatches $\textbf{M} = \{\textbf{x}_{i}\}_{i=1}^{M} \subset \textbf{X}$ gezogen und die ELBO nur auf diesen optimiert.
+	\begin{align*}
+	&\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{X}) \simeq \mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{M}) = \mathbb{E}\lbrack\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{x}_{i})\rbrack \simeq \frac{N}{M}\sum_{i=1}^{M}\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{x}_{i})\\
+	&\simeq \frac{N}{M}\sum_{i=1}^{M}  \left(D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big] - \frac{1}{L}\sum_{l=1}^{L}\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon_{l},\textbf{x}_{i}))\big)\right)
+	\end{align*}
+	
+	Experimentell hat sich gezeigt, dass ein groß gewähltes $M$, z.B. $M=100$ es zulässt die Anzahl der Stichproben von $\boldsymbol\epsilon$ für die Monte-Carlo Schätzung des Erwartungswertes $\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]$ als $L=1$ zu wählen.
+	\\
+	Wir erhalten den AEVB-Algorithmus \emph{(Auto Encoding Variational Bayes)}: \\
+	
+	\hrule
+	\vspace{0,15cm}
+	\textbf{AEVB-Algorithmus}
+	\vspace{0,05cm}
+	\hrule
+	\vspace{0,20cm}
+	\textbf{1)}  $\boldsymbol\phi,\boldsymbol\theta \leftarrow$ Ziehe die Parameter zufällig.\\
+	\textbf{2)} $\mathbf{M} \leftarrow$ Ziehe ein Minibatch $\textbf{M} = \{\textbf{x}_{i}\}_{i=1}^{M}$ mit $|\textbf{M}| \ge 100$. \\
+	\textbf{3)} $\boldsymbol\epsilon \leftarrow$ Ziehe einen Wert für $\boldsymbol\epsilon \sim p(\boldsymbol\epsilon)$.\\
+	\textbf{4)} $\mathbf{g} \leftarrow$ Berechne die Gradienten $\nabla_{\boldsymbol\theta,\boldsymbol\phi} \mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{M})$. \\
+	\textbf{5)} $\boldsymbol\phi,\boldsymbol\theta \leftarrow$ Aktualisiere die Parameter.\\
+	\textbf{6)} Wiederhole ab Schritt \textbf{2)}, bis zur Konvergenz des Verfahrens.
+	\vspace{0,05cm}
+	\hrule
+	\vspace{0,3cm}
+	\ \\
+	Beim Variational Autoencoder werden die Verteilungen $\qenc$ und $\pdec$ durch Neuronale Netze mit den Parametern $\boldsymbol\theta$ und $\boldsymbol\phi$ approximiert und durch den AEVB-Algorithmus trainiert. In diesem Kontext wird $\pdec$ auch \emph{probabilistischer Decoder} genannt und $\qenc$ \emph{probabilistischer Encoder}. \\
+	Nach der Trainingsphase können Decoder und Encoder jedoch voneinander getrennt werden. Mit dem Decoder lassen sich nun neue Daten erzeugen, indem hypotetische latente Darstellungen als Input genutzt werden.\\
+	Für das Inferenzmodell $\qenc$ wird in einem Variational Autoencoder häufig (aber nicht zwingenderweise) eine Multivariate Normalverteilung $\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})$ mit diagonaler Kovarianzmatrix gewählt. \\
+	Hier bildet
+	der Encoder einen Input $\textbf{x}_{i}$ auf den Lageparameter $\boldsymbol\mu_{i}$ und den Streuungsparameter $\boldsymbol\sigma_{i}$ ab. Diese Parameter sind deterministische Funktionswerte des Encodernetzwerkes, es gilt also $\boldsymbol\mu_{i} = \boldsymbol\mu_{\boldsymbol\phi}(\textbf{x}_{i})$ und $\boldsymbol\sigma_{i} = \boldsymbol\sigma_{\boldsymbol\phi}(\textbf{x}_{i})$.\\ 
+	Auf diesen Output wird der Reparametrisation Trick angewandt, um die Berechnung des Gradienten mit Backpropagation zu ermöglichen.\\
+	Gegeben ein Datenpunkt $\textbf{x}_{i}$ erhalten wir eine latente Darstellung deshalb durch $\textbf{z} = g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i})  =\boldsymbol\mu_{\boldsymbol\phi}(\textbf{x}_{i}) +\boldsymbol\sigma_{\boldsymbol\phi}(\textbf{x}_{i}) \odot \boldsymbol\epsilon$ mit $\boldsymbol\epsilon \sim p(\boldsymbol\epsilon) = \mathcal{N}(\textbf{0},\textbf{I})$. Hierbei steht $\odot$ für eine elementweise Multiplikation der beiden Vektoren.\\
+	Die Verteilung $p_{\boldsymbol\theta}(\z)$ wird als multivariate Standardnormalverteilung $\mathcal{N}(\mathbf{0},\mathbf{I})$ festgelegt und nicht durch ein Neuronales Netz dargestellt. Interessanterweise ist diese Wahl einer parameterfreien, recht einfachen Verteilung möglich. Es lässt sich durch Abbilden von Realisierungen einer multivariat standardnormalverteilten Zufallsvariable tatsächlich eine beliebige andere Verteilung erzeugen. 
+	\vspace*{0.1cm}
+	\begin{figure}[h!]
+	\centering
+	\includegraphics[scale=0.4]{"C:/Users/Admin/Desktop/Bachelorarbeit/Arbeit/normalverteilt.PNG"}
+	\captionsetup{labelformat=empty}
+	\caption{Gegeben die Realisierungen einer Zufallsvariablen $\z\sim \mathcal{N}(\mathbf{0},\mathbf{I})$  (Links) lässt sich mit Abbildung durch eine Funktion, hier $g(\textbf{z})= \frac{\textbf{z}}{15}+\frac{\textbf{z}}{||\textbf{z}||}$ eine ganz andere Verteilung erzeugen (Rechts). Dies nutzt der VAE aus, um aus Realisierungen einer normalverteilten Zufallsvariablen komplexe Verteilungen in großer Dimension zu modellieren. Die Funktion g, beim VAE der Decoder wird aus den Daten erlernt. \textbf{}\cite{tutvae}}
+	\end{figure}
+	
+	Welche Verteilung für den Decoder $\pdec$ dafür am besten geeignet ist, hängt vom Typ der zu erzeugenden Daten ab.\\ Für binäre Daten  $\textbf{x}_{i} \in \{0,1\}^{P}$ werden wir eine multivariate Bernoulliverteilung verwenden, also $p_{\theta}(\textbf{x}_{i}|\textbf{z}) =  \mathcal{B}(\boldsymbol{p}_{i})$. Gemeint ist hiermit eine elementweise Auswertung univariater Bernoulliverteilungen.\\
+	Für stetige Daten $\textbf{x}_{i} \in \mathbb{R}^{P}$ wählen wir eine multivariate Normalverteilung $p_{\theta}(\textbf{x}_{i}|\textbf{z}) = \mathcal{N}(\boldsymbol{\hat{\mu}}_{i},\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I})$.\\
+	Hierbei sind $\boldsymbol{\hat{\mu}}_{i} = \boldsymbol{\hat{\mu}}_{\boldsymbol\theta}(\textbf{z})$ und $\boldsymbol{\hat{\sigma}}_{i}^{2} = \boldsymbol{\hat{\sigma}}_{\boldsymbol\theta}^{2}(\textbf{z}) $ bzw. $\textbf{p}_{i} = \textbf{p}_{\boldsymbol\theta}(\textbf{z})$ die Ausgaben des Decodernetzwerkes.\newpage
+	\begin{figure}[h!]
+	\centering
+	\includegraphics[scale=0.41]{VAE-Modell}
+	\captionsetup{labelformat=empty}
+	\caption{Schematische Darstellung eines Variational Autoencoders. Der hochdimensionale Input $\mathbf{x}_i$ wird durch den Encoder auf einen Erwartungswertvektor $\boldsymbol{\mu}$ und Streuungsparameter $\boldsymbol{\sigma}$ abgebildet. Anschließend wird eine niedrigdimensionale latente Darstellung \textbf{z} gezogen. Dabei wird der Reparametrisierungstrick $\textbf{z}=\boldsymbol{\mu}+\boldsymbol{\sigma} \odot \boldsymbol{\epsilon}$ angewandt. Der Decoder rekonstruiert nun mit dieser Darstellung einen Output $\hat{\mathbf{x}}_i$. Der Modellverlust ist durch die negative ELBO gegeben, durch Minimierung dieser kann das Modell optimiert werden.\\}
+	\centering
+	\begin{minipage}{.5\textwidth}
+		\centering
+		\includegraphics[scale=0.43]{latent_space_2D}
+	\end{minipage}%
+	\begin{minipage}{.5\textwidth}
+		\centering
+		\includegraphics[scale=0.36]{latent_space_2D_reconstructions}
+	\end{minipage}
+	\captionsetup{labelformat=empty}
+	\caption{Erlernte latente Darstellung des MNIST-Trainingsdatensatzes im zweidimensionalen\\ latenten Raum (links) und durch das Decodernetzwerk erzeugte Daten. (rechts) Die \\latenten Darstellungen $\mathbf{z}$ wurden mit linearem Abstand im Quadrat $[-2,2]^2$ gewählt. Auf die verwendete Modellstruktur und den dazu geschriebenen Code gehen wir im praktischen Teil dieser Arbeit genauer ein. } 
+	\end{figure}
+	Für eine konkrete Berechnung der ELBO betrachten wir zuerst die KL-Divergenz der nun parameterfreien Verteilung $p(\textbf{z})$ nach $q_{\boldsymbol\phi}(\textbf{z}|\textbf{x}_{i})$. $Z$ notiert hierbei die Dimension der latenten Darstellung und $p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})$ bzw. $p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z})$ die Auswertung der jeweiligen Dichtefunktion an der Stelle $\textbf{z}$.
+
+	\begin{align*}
+	D_{KL}\big(q_{\boldsymbol\phi}(\textbf{z}|\textbf{x}_{i}) || p(\textbf{z})\big) &= \mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\left[\log\left(\frac{p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})}{p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z})}\right)\right].\\
+	&= \mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[\log\big(p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})\big)
+	- \log\big(p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z})\big)\big].
+	\end{align*}
+	Die jeweiligen Dichtefunktionen sind durch
+	\begin{align*}
+	p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})&= \frac{1}{\sqrt{2\pi^{Z} \det(\boldsymbol\sigma_{i}^{2}\mathbf{I})}}\exp\left(-\frac{1}{2}(\textbf{z}-\boldsymbol\mu_{i})^{\mathsf{t}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\right) \notag \\
+	\log(p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z}))&= -\frac{1}{2}\big(\log(2\pi^{Z} \det(\boldsymbol\sigma_{i}^{2}\mathbf{I}))+(\textbf{z}-\boldsymbol\mu_{i})^{\mathsf{t}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\big)\\ \notag 
+	\log(p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z}))&= -\frac{1}{2}\left(\log(2\pi^{Z} )+\textbf{z}^{\mathsf{t}}\mathbf{I}\textbf{z}\right)
+	\end{align*}
+	gegeben. Einsetzen und aufteilen des Erwartungswertes liefert uns
+	\begin{align*}
+	&\mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\Big[-\frac{1}{2}\Big(\log\big(\det(\boldsymbol\sigma_{i}^{2}\mathbf{I})\big)+(\textbf{z}-\boldsymbol\mu_{i})^{\mathsf{t}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})-\textbf{z}^{\mathsf{t}}\mathbf{I}\textbf{z}\Big)\Big]\\
+	=
+	&-\frac{1}{2}\Big(\log\big(\det(\boldsymbol\sigma_{i}^{2}\mathbf{I})\big)+\mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[(\textbf{z}-\boldsymbol\mu_{i})^{\mathsf{t}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\big]-\mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[\textbf{z}^{\mathsf{t}}\mathbf{I}\textbf{z}\big]\Big).
+	\end{align*}
+	Da $\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2})$ gilt für die Quadratischen Formen \cite{matrix}:
+	\begin{align*}
+	\mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[\textbf{z}^{\mathsf{t}}\mathbf{I}\textbf{z}\big] &= \boldsymbol\mu_{i}^{\mathsf{t}}\mathbf{I}\boldsymbol\mu_{i}+\mathrm{tr}(\boldsymbol\sigma_{i}^{2}\mathbf{I})\\ \mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[(\textbf{z}-\boldsymbol\mu_{i})^{\mathsf{t}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\big] &= \mathrm{tr}((\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}\boldsymbol\sigma_{i}^{2}\mathbf{I}).
+	\end{align*}
+
+	
+	Nun lässt sich mit ${\boldsymbol\sigma_{i}^{2}\mathbf{I}} =  \begin{psmallmatrix}\sigma_{i,1}^{2} & \ &\ \\ \ & \ddots &\ \\ \ & \ &\sigma_{i,Z}^{2}\end{psmallmatrix}$ die KL-Divergenz ausrechnen.
+	\begin{align*}
+	&-\frac{1}{2}\Big(\log\big(\det(\boldsymbol\sigma_{i}^{2}\mathbf{I})\big)+\mathrm{tr}((\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}\boldsymbol\sigma_{i}^{2}\mathbf{I})-\boldsymbol\mu_{i}^{\mathsf{t}}\textbf{I}\boldsymbol\mu_{i}-\mathrm{tr}(\boldsymbol\sigma_{i}^{2}\mathbf{I})\Big) \notag \\
+	= &-\frac{1}{2}\left(\log\Big(\prod_{j=1}^{Z}\sigma_{i,j}^{2}\Big)+Z-\sum_{j=1}^{Z}\mu_{i,j}^{2}-\sum_{j=1}^{Z}\sigma_{i,j}^{2}\right) \notag \\
+	= &-\frac{1}{2}\sum_{j=1}^{Z}\Big(\log\big(\sigma_{i,j}^{2}\big)+1-\mu_{i,j}^{2}-\sigma_{i,j}^{2}\Big).
+	\end{align*}
+	
+	Auch $\pdec$ kann mit unserer Wahl der Verteilungen explizit ausgerechnet werden.
+	Mit $P$ wird dazu die Dimension des Inputs und Outputs notiert.
+	Für die Verwendung einer multivariaten Normalverteilung im Decoder ergibt sich:
+	\begin{align*}
+	\log\big(\pdec)\big) &=  \log\big(p_{\mathcal{N}(\boldsymbol{\hat{\mu}}_{i},\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I})}(\textbf{x}_{i})\big)\notag \\
+	&= -\frac{1}{2}\left(\log(2\pi^{P} \det(\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I}))+(\textbf{x}_{i}-\boldsymbol{\hat{\mu}}_{i})^{\mathsf{t}}(\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I})^{-1}(\textbf{x}_{i}-\boldsymbol{\hat{\mu}}_{i})\right) \notag \\
+	&= -\frac{1}{2}\left(\log(2\pi^{P})+\log\Big( \prod_{p=1}^{P}\hat{\sigma}_{i,p}^{2}\Big)+  \begin{pmatrix}  \frac{x_{i,1}-\hat{\mu}_{i,1}}{\hat{\sigma}_{i,1}^{2}}&\cdots& \frac{x_{i,P}-\hat{\mu}_{i,P}}{\hat{\sigma}_{i,P}^{2}}\end{pmatrix} 
+	\boldsymbol{\cdot}(\textbf{x}_{i}-\boldsymbol{\hat{\mu}}_{i})\right) \notag \\
+	&= -\frac{1}{2}\left(P\log(2\pi)+\sum_{p=1}^{P}\log\left( \hat{\sigma}_{i,p}^{2}\right)+ 
+	\sum_{p=1}^{P}\frac{\big(x_{i,p}-\hat{\mu}_{i,p}\big)^{2}}{\hat{\sigma}_{i,p}^{2}}\right) \notag \\
+	&= -\frac{1}{2}\sum_{p=1}^{P} \left(\log\left(2\pi \hat{\sigma}_{i,p}^{2}\right) + \frac{\big(x_{i,p}-\hat{\mu}_{i,p}\big)^{2}}{\hat{\sigma}_{i,p}^{2}}\right)
+	\end{align*}
+	
+	Für eine bernoulliverteilte Zufallsvariable ist die Dichtefunktion  durch $p_{\mathcal{B}(\mathrm{p}_{i})}(x_{i}) = \mathrm{p}_{i}^{x_{i}}(1-\mathrm{p}_{i})^{(1-x_{i})}$ definiert. Somit ergibt sich für die Verwendung der multivariaten Bernoulliverteilung im Decoder: \\
+	\begin{align*}
+	\log\big(p_{\theta}(\textbf{x}_{i}|\textbf{z})\big) &=  \log\big(p_{\mathcal{B}(\boldsymbol{p}_{i})}(\textbf{x}_{i})\big)\notag \\
+	&= \log\left(p_{\mathcal{B}(\mathrm{p}_{1})}\left(x_{i,1}\right)\ \cdot\ldots\cdot \ p_{\mathcal{B}(\mathrm{p}_{P})}\left(x_{i,P}\right)\right)\notag \\
+	&= \log\left(\prod_{p=1}^{P}\left(p_{i,p}\right)^{x_{i,p}}\left(1-p_{i,p}\right)^{\left(1-x_{i,p}\right)}\right) \notag \\
+	&=  \sum_{p=1}^{P}x_{i,p}\log\left(p_{i,p}\right)+\left(1-x_{i,p}\right)\log\left(1-p_{i,p}\right)
+	\end{align*}			
+	\subsection[ODE$^2$-VAE]{Ordinary Differential Equation Variational Autoencoder}
+
+	
+	\section[Empirische Untersuchung]{Empirische Untersuchung}
+	\subsection[Problemstellung]{Problemstellung}
+	\subsection[Ergebnisse]{Ergebnisse}
+	\section[Code]{Code}
+%	\begin{figure}[h!]
+%		\centering
+%		\begin{minipage}{.3\textwidth}
+%			\captionsetup{labelformat=empty}
+%			\caption{Modellinput}
+%			\includegraphics[scale=0.562]{Modellinput}
+%		\end{minipage}%
+%		\begin{minipage}{.7\textwidth}
+%			\captionsetup{labelformat=empty}	
+%			\caption{Rekonstruktionen}
+%			\includegraphics[scale=0.56]{Reconstructions}
+%		\end{minipage}
+%		\captionsetup{labelformat=empty}
+%		\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$-VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der Time Series, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
+%	\end{figure}	
+	\section[Quellenangabe]{Quellenangabe}
+	\begin{thebibliography}{9}
+		\bibitem{vae}
+		Diederik P. Kingma, Max Welling,
+		\textit{Auto-Encoding Variational Bayes},
+		2013,\\
+		arXiv:1312.6114v10
+		
+		\bibitem{intvae}
+		Diederik P. Kingma, Max Welling,
+		\textit{An Introduction to Variational Autoencoders}, 
+		2019,
+		arXiv:1906.02691v3
+		
+		\bibitem{ode2vae}
+		Çağatay Yıldız, Markus Heinonen, Harri Lähdesmäki,
+		\textit{ODE$^{\ 2}$-VAE: Deep generative second order ODEs with Bayesian neural networks}, 
+		2019,
+		arXiv:1905.10994v2
+		
+		\bibitem{repara}
+		https://gabrielhuang.gitbooks.io/machine-learning/content/reparametrization-trick.html
+
+		\bibitem{tutvae}
+		Carl Doersch,
+		\textit{Tutorial on Variational Autoencoders},
+		2016,\\
+		arXiv:1606.05908,
+		Ähnliche Grafik zu finden auf S.5
+
+		\bibitem{matrix}
+		Kaare B. Petersen, Michael S. Pedersen,
+		\textit{The Matrix Cookbook},
+		2012,
+		http://matrixcookbook.com, Verwendete Rechentricks auf S.43
+
+	\end{thebibliography}
+	\section[Anhang]{Anhang}
+	\subsection[Analytische Berechnung der ELBO]{Analytische Berechnung der ELBO}
+	\subsection[Analytische Berechnung der Lossfunktion des ODE$^2$-VAE]{Analytische Berechnung der Lossfunktion des ODE$^2$-VAE}
+\end{document}
