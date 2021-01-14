@@ -20,6 +20,13 @@
 \pagenumbering{arabic}
 \usepackage[square,sort,comma,numbers]{natbib}
 
+\usepackage{xcolor}
+\usepackage[framemethod,tikz]{mdframed}
+\usetikzlibrary{shadows}
+
+\mdfdefinestyle{outer}{outerlinewidth=0.5pt,backgroundcolor=blue!5,roundcorner=10pt,outerlinecolor=blue,innerlinewidth=0.5pt,innerlinecolor=black}
+\mdfdefinestyle{inner}{leftmargin=0.1cm,rightmargin=0.1cm,outerlinewidth=0.5pt,innerlinewidth=0.5pt,innerlinecolor=black,outerlinecolor=black,backgroundcolor=lightgray!10,roundcorner=5pt,linecolor=black}
+
 \newcommand{\qenc}{q_{\boldsymbol\phi}(\mathbf{z}|\mathbf{x}_i)}
 \newcommand{\penc}{p_{\boldsymbol\theta}(\mathbf{z}|\mathbf{x}_i)}
 \newcommand{\pdec}{p_{\boldsymbol\theta}(\mathbf{x}_i|\mathbf{z})}
@@ -73,9 +80,18 @@
 	Da das Modell selbst erlernen muss, 
 	wie die Datenpunkte am besten gruppiert werden, wird auch das Erkennen unbekannter Eigenschaften ermöglicht.\\
 	Beim generieren von Bildern wie menschlichen Gesichtern kann die Performance dabei durchaus mit state-of-the-art Modellen wie Genrative Adversarial Networks mithalten. Die Anwendungsmöglichkeiten des Modells sind vielseitig, so werden VAEs unter anderem zum Modellieren chemischer Moleküle, zur Verarbeitung menschlicher Sprache oder zum erkennen beschädigter Daten und Schätzung von Unsicherheit eingesetzt.\\
-	Im Rahmen dieser Projektarbeit wollen wir Variational Autoencoder darauf trainieren Vorhersagen für hochdimensionale Daten mit zeitlicher Abhängigkeit, sogenannten \emph{Time-Series} zu treffen.\\
-	Jedoch ist dies nicht ohne Anpassungen möglich, da ein Variational Autoencoder unter der Annahme trainiert wird, einen unabhängigen und identisch verteilten Trainingsdatensatz vorliegen zu haben.\\ 
-	Eine Möglichkeit die häufig komplexen Zusammenhängen zwischen den Zeitschritten in Time-Series trotzdem zu erlernen bietet der \emph{Ordinary Differential Equation Variational Auto-Encoder} (kurz: ODE$^2$-VAE). Die zeitlichen Abhängigkeiten unter den Datenpunkten werden hier mit Differentialgleichungen zweiter Ordnung modelliert, welche im Trainingsprozess erlernt werden. \\
+	Im Rahmen dieser Projektarbeit wollen wir Variational Autoencoder darauf trainieren Vorhersagen für hochdimensionale Daten mit zeitlicher Abhängigkeit, sogenannten \emph{time series} zu treffen. Hierbei 
+	spezialisieren wir uns auf Serien von Bildern und 
+	konzentrieren uns zunächst auf das Rekonstruieren beschädigter Daten bzw. fehlender Datenpunkte. \\
+	Da dem \emph{Variational Autoencoder} die Annahme zugrunde liegt, dass die Verteilung der Datenpunkte 
+	unabhängig und identisch verteilt ist, ist eine Anwendung auf unsere Problemstellung nicht ohne weitere 
+	Anpassungen sinnvoll. Ein praktischer Ansatz hierfür ist es, die zeitliche Komponente in den Daten zu 
+	vernachlässigen und die Serie zusammengefasst dem VAE als einen Datenvektor zu übergeben. 
+	Die Ergebnisse verbessern sich, wenn man die zeitlichen Zusammenhänge der Serie 
+	im Latenten Raum linear interpoliert.\\
+	Eine bessere Möglichkeit die häufig komplexen Zusammenhängen zwischen den Zeitschritten in \emph{time series} trotzdem zu erlernen bietet der \emph{Ordinary Differential Equation Variational Auto-Encoder} (kurz: ODE$^2$-VAE). Die zeitlichen Abhängigkeiten unter den Datenpunkten werden hier mit Differentialgleichungen zweiter Ordnung modelliert, welche im Trainingsprozess erlernt werden. \\
+	\textbf{TODO: Einleitung SDE-VAE}
+	\\
 	\\
 	In dieser Arbeit werden wir in einem theoretischen Teil die mathematischen Grundlagen einführen, auf denen der Variational Autoencoder und der ODE$^2$-VAE aufbauen.\\ 
 	In einem praktischen Teil werden schließlich Anwendungsmöglichkeiten der beiden Modelle auf unsere Problemstellung präsentiert.\\
@@ -104,7 +120,7 @@
 	Weiter führen wir wegen der Unberechenbarkeit von $p_{\boldsymbol\theta}(\z|\x)$ das Inferenzmodell $q_{\boldsymbol\phi}(\z|\x)$ ein und suchen die Parameter $\boldsymbol\phi^{*}$ für die $q_{\boldsymbol\phi^{*}}(\z|\x) \approx p_{\boldsymbol\theta}(\z|\x)$ gilt.\\ 
 	Mit einem Variational Autoencoder werden die Verteilungen $q_{\boldsymbol\phi}(\z|\x)$ und $p_{\boldsymbol\theta}(\x|\z)$ durch neuronale Netze dargestellt und approximiert.\\
 	Im AEVB-Algorithmus (kurz für \emph{Auto-Encoding Variational Bayes}) können die geeigneten Parameter $\boldsymbol\phi^{*}$ und $\boldsymbol\theta^{*}$ gemeinsam erlernt werden.
-	\subsection[Variational Autoencoder]{AEVB-Algorithmus und Variational Autoencoder}
+	\subsection[VAE]{AEVB-Algorithmus und Variational Autoencoder}
 	Wir betrachten dafür für einen beliebigen Datenpunkt $\x \in \mathbf{X}$ die Reverse KL-Divergenz der Approximation $\qenc$ nach $\penc$:
 	\begin{align*}
 	D_{KL}\big[\qenc || \penc\big] \overset{\text{Def.}}&{=} \E_{\z\sim q_{\boldsymbol\phi}}\left[\log\left(\frac{\qenc}{\penc}\right)\right] \\
@@ -264,27 +280,47 @@
 	&=  \sum_{p=1}^{P}x_{i,p}\log\left(p_{i,p}\right)+\left(1-x_{i,p}\right)\log\left(1-p_{i,p}\right)
 	\end{align*}			
 	\subsection[ODE$^2$-VAE]{Ordinary Differential Equation Variational Autoencoder}
+	
+	\subsection[SDE-VAE]{Stochastic Differential Equation Variational Autoencoder}
 
 	
 	\section[Empirische Untersuchung]{Empirische Untersuchung}
-	\subsection[Problemstellung]{Problemstellung}
-	\subsection[Ergebnisse]{Ergebnisse}
+	\subsection[VAE]{Ergebnisse: VAE}
+	
+	\textbf{TODO: Bild einfügen VAE Rekonstruktion ohne Interpolation}
+	\begin{figure}[!htbp]
+		\centering
+%		\includegraphics[scale=1]{DreieckLemma}
+		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+	\end{figure}
+	\textbf{TODO: Bild einfügen VAE Rekonstruktion mit Interpolation}
+	\begin{figure}[!htbp]
+		\centering
+		%		\includegraphics[scale=1]{DreieckLemma}
+		\caption{Rekonstruktion der \emph{time series} mittels VAE mit Interpolation.}
+	\end{figure}
+	\newpage
+	\subsection[ODE$^2$-VAE]{Ergebnisse: ODE$^2$-VAE}
+	\begin{figure}
+		\begin{minipage}[position=l]{0.33\textwidth}
+			\begin{mdframed}[style=inner]
+				\center{Modellinput\vspace{0.2cm}}
+				\includegraphics[scale=0.5]{Modellinput}
+			\end{mdframed}
+		\end{minipage}
+		\begin{minipage}[position=r]{0.67\textwidth}
+			\begin{mdframed}[style=inner]
+				\center{Rekonstruktionen\vspace{0.2cm}}
+				\includegraphics[scale=0.499]{Reconstructions}
+			\end{mdframed}
+		\end{minipage}
+	\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$-VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
+	\end{figure}
+	\newpage
+	\subsection[SDE-VAE]{Ergebnisse: SDE-VAE}
+	\newpage
 	\section[Code]{Code}
-%	\begin{figure}[h!]
-%		\centering
-%		\begin{minipage}{.3\textwidth}
-%			\captionsetup{labelformat=empty}
-%			\caption{Modellinput}
-%			\includegraphics[scale=0.562]{Modellinput}
-%		\end{minipage}%
-%		\begin{minipage}{.7\textwidth}
-%			\captionsetup{labelformat=empty}	
-%			\caption{Rekonstruktionen}
-%			\includegraphics[scale=0.56]{Reconstructions}
-%		\end{minipage}
-%		\captionsetup{labelformat=empty}
-%		\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$-VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der Time Series, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
-%	\end{figure}	
+	
 	\section[Quellenangabe]{Quellenangabe}
 	\begin{thebibliography}{9}
 		\bibitem{vae}
