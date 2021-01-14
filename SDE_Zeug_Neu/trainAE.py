@@ -20,7 +20,7 @@ tf.compat.v1.keras.backend.set_session(session)
 
 ########################################################
 # %% hyperparameter
-epochs = 3
+epochs = 1
 latent_dim = 5  # Dimensionality for latent variables. 20-30 works fine.
 batch_size = 10  # ≥100 as suggested by Kingma in Autoencoding Variational Bayes.
 train_size = 500  # Data points in train set. Choose accordingly to dataset size.
@@ -36,7 +36,7 @@ pictureWidth = 28
 pictureHeight = 28
 pictureColors = 1
 M = 1
-complexity = 5
+complexity = 10
 
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
@@ -68,22 +68,22 @@ print('new_train_shape:',x_train_longlist.shape)
 ######################################
 
 P_dec = AE_Tools.FramewiseDecoder(latent_dim, pictureWidth, pictureHeight, pictureColors, act, complexity=complexity)
-P_enc = AE_Tools.LocalEncoder(latent_dim, M, pictureWidth, pictureHeight, pictureColors, act, complexity=complexity, variational=False)
-AE = AE_Tools.SimpleAutoencoder(P_enc, P_dec)
-#AE = AE_Tools.VariationalAutoencoder(P_enc, P_dec)
+P_enc = AE_Tools.LocalEncoder(latent_dim, M, pictureWidth, pictureHeight, pictureColors, act, complexity=complexity, variational=True)
+#AE = AE_Tools.SimpleAutoencoder(P_enc, P_dec)
+VAE = AE_Tools.VariationalAutoencoder(P_enc, P_dec)
 
 #ms_Net = SDE_Tools.mu_sig_Net(latent_dim, n, act, 10)
 #reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(latent_dim*pictureColors, n, T, frames, ms_Net, batch_size)
 
 loss = AE_Tools.make_binary_crossentropy_rec_loss(M)
 
-AE.compile(optimizer='adam', loss=loss)
-AE.fit(x_train_longlist, x_train_longlist[:,:,:,:,:], epochs=epochs, batch_size=batch_size, shuffle=False)
+#AE.compile(optimizer='adam', loss=loss)
+#AE.fit(x_train_longlist, x_train_longlist[:,:,:,:,:], epochs=epochs, batch_size=batch_size, shuffle=False)
 
 
 
-#VAE.compile(optimizer='adam', loss=loss)
-#VAE.fit(x_train_longlist, x_train_longlist[:,:,:,0], epochs=epochs, batch_size=batch_size, shuffle=False)
+VAE.compile(optimizer='adam', loss=loss)
+VAE.fit(x_train_longlist, x_train_longlist[:,:,:,:,:], epochs=epochs, batch_size=batch_size, shuffle=False)
 
 
 
@@ -94,11 +94,11 @@ k = 0
 x_org = x_train_longlist[0:10,0,:,:,0]
 print('x_org:',x_org.shape)
 enc_imgs = list(map(lambda i: P_enc(x_train_longlist[i,:,:,:,:]), range(10)))
-enc_imgs = tf.stack(enc_imgs, axis=0)
+enc_imgs = tf.stack(enc_imgs, axis=0)[:,:,-1,:]
 #enc_imgs = P_enc(x_train_longlist[:,0,:,:,:])
 print(enc_imgs.shape)
 
-rec_imgs = AE.predict(x_train_longlist[0:10,:,:,:,:])
+rec_imgs = VAE.predict(x_train_longlist[0:10,:,:,:,:])
 
 print('rec_imgs:',rec_imgs.shape)
 

@@ -46,12 +46,12 @@ class LocalEncoder(tf.keras.Model):
         forwardList = []
         w,h = pictureWidth, pictureHeight
         i=0
-        while (2*w*w > pictureWidth and 2*h*h > pictureHeight):
+        while (w*w > pictureWidth and h*h > pictureHeight):
             r_w, r_h = w%2, h%2
-            forwardList.append(tf.keras.layers.Conv2DTranspose((2**i)*complexity*pictureColors, (3+r_w, 3+r_h), activation=act))
+            forwardList.append(tf.keras.layers.Conv2D((2**i)*complexity*pictureColors, (3+r_w, 3+r_h), activation=act))
             forwardList.append(tf.keras.layers.MaxPooling2D((2, 2)))
-            w = w//2 - 1
-            h = h//2 - 1
+            w = (w-r_w)//2 -1
+            h = (h-r_h)//2 -1
             i += 1
 
         self.layerList = [tf.keras.layers.Conv2D(complexity*pictureColors, (3, 3), padding="same",activation=act)]
@@ -69,7 +69,7 @@ class LocalEncoder(tf.keras.Model):
         a = z
         for l in self.layerList:
             a = l(a)
-            #print('applied layer:',a)
+            print('applied layer:',a)
         if self.variational:
             v_mu = a[:,0,:]
             v_log_sig = a[:,1,:]
@@ -78,7 +78,7 @@ class LocalEncoder(tf.keras.Model):
             v = K.map_fn(lambda x: x[0]*x[1], [v, v_sig], dtype=tf.float32)
             v = K.map_fn(lambda x: x[0]+x[1], [v, v_mu], dtype=tf.float32)
             a = tf.stack([v_mu, v_log_sig, v], axis=1)
-        #print('Encoder built')
+        print('Encoder built')
         return a
 
 class FramewiseDecoder(tf.keras.Model):
@@ -89,20 +89,21 @@ class FramewiseDecoder(tf.keras.Model):
         backwardList = []
         w,h = pictureWidth, pictureHeight
         i=0
-        while (2*w*w > pictureWidth and 2*h*h > pictureHeight):
+        while (w*w > pictureWidth and h*h > pictureHeight):
             r_w, r_h = w%2, h%2
-            backwardList.append(tf.keras.layers.Conv2DTranspose((2**i)*complexity*pictureColors, (3+r_w, 3+r_h), activation=act))
+            backwardList.append(tf.keras.layers.Conv2DTranspose((2**(i-1))*complexity*pictureColors, (3+r_w, 3+r_h), activation=act))
             backwardList.append(tf.keras.layers.UpSampling2D(size=(2, 2)))
-            w = w//2 - 1
-            h = h//2 - 1
+            w = (w-r_w)//2 - 1
+            h = (h-r_h)//2 - 1
             i += 1
         backwardList.reverse()
 
         self.layerList = []
-        self.layerList.append(tf.keras.layers.Dense(w * h *(2**i)*complexity*pictureColors, activation=act))
-        self.layerList.append(tf.keras.layers.Reshape((w, h, (2**i)*complexity*pictureColors)))
+        self.layerList.append(tf.keras.layers.Dense((2**(i))*complexity*pictureColors, activation=act))
+        self.layerList.append(tf.keras.layers.Dense(w * h *(2**(i-1))*complexity*pictureColors, activation=act))
+        self.layerList.append(tf.keras.layers.Reshape((w, h, (2**(i-1))*complexity*pictureColors)))
         self.layerList += backwardList
-        self.layerList.append(tf.keras.layers.Conv2D(pictureColors, (3, 3), padding="same",activation=act))
+        self.layerList.append(tf.keras.layers.Conv2DTranspose(pictureColors, (3, 3), padding="same",activation=act))
 
 
     def call(self, z):
@@ -110,8 +111,8 @@ class FramewiseDecoder(tf.keras.Model):
         #print('Decoding input:',z)
         for l in self.layerList:
             a = l(a)
-            #print('applied layer:',a)
-        #print('Decoder built')
+            print('applied layer:',a)
+        print('Decoder built')
         return a
 
 
