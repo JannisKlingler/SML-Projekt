@@ -20,10 +20,10 @@ tf.compat.v1.keras.backend.set_session(session)
 
 ########################################################
 # %% hyperparameter
-epochs = 10
+epochs = 1
 latent_dim = 5  # Dimensionality for latent variables. 20-30 works fine.
 batch_size = 10  # ≥100 as suggested by Kingma in Autoencoding Variational Bayes.
-train_size = 5000  # Data points in train set. Choose accordingly to dataset size.
+train_size = 500  # Data points in train set. Choose accordingly to dataset size.
 test_size = 10 # Data points in test set. Choose accordingly to dataset size.
 batches = int(train_size / batch_size)
 frames = 10  # Number of images in every datapoint. Choose accordingly to dataset size.

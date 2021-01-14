@@ -137,10 +137,20 @@ class VariationalAutoencoder(tf.keras.Model):
         self.encoder = encoder
         self.decoder = decoder
 
-    def call(self, z):
-        out = self.encoder(z)
-        v_mu, v_log_sig, v = tf.split(out, 3, axis=1)
-        return self.decoder(v)
+    def call(self, inputs):
+        print('VAE_Net input:',inputs.shape)
+        frames_List = tf.split(inputs, len(inputs[0]), axis=1)
+        rec_List = []
+        for x in frames_List:
+            enc = self.encoder(x[:,0,:,:,:])
+            print('VAE enc:',enc.shape)
+            mean, variance, v = tf.split(enc, 3, axis=1)
+            rec_List.append(self.decoder(v))
+        rec_List = tf.stack(rec_List, axis=1)
+        print('VAE_Net output:',rec_List.shape)
+        #out = self.encoder(z)
+        #v_mu, v_log_sig, v = tf.split(out, 3, axis=1)
+        return rec_List
 
 
 ######################################
