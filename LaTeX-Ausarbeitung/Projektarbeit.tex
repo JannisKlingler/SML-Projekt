@@ -80,16 +80,18 @@
 	Da das Modell selbst erlernen muss, 
 	wie die Datenpunkte am besten gruppiert werden, wird auch das Erkennen unbekannter Eigenschaften ermöglicht.\\
 	Beim generieren von Bildern wie menschlichen Gesichtern kann die Performance dabei durchaus mit state-of-the-art Modellen wie Genrative Adversarial Networks mithalten. Die Anwendungsmöglichkeiten des Modells sind vielseitig, so werden VAEs unter anderem zum Modellieren chemischer Moleküle, zur Verarbeitung menschlicher Sprache oder zum erkennen beschädigter Daten und Schätzung von Unsicherheit eingesetzt.\\
-	Im Rahmen dieser Projektarbeit wollen wir Variational Autoencoder darauf trainieren Vorhersagen für hochdimensionale Daten mit zeitlicher Abhängigkeit, sogenannten \emph{time series} zu treffen. Hierbei 
+	Im Rahmen dieser Projektarbeit wollen wir Variational Autoencoder darauf trainieren Vorhersagen für hochdimensionale Daten mit zeitlicher Abhängigkeit, sogenannten \emph{Time Series} zu treffen. Hierbei 
 	spezialisieren wir uns auf Serien von Bildern und 
 	konzentrieren uns zunächst auf das Rekonstruieren beschädigter Daten bzw. fehlender Datenpunkte. \\
 	Da dem \emph{Variational Autoencoder} die Annahme zugrunde liegt, dass die Verteilung der Datenpunkte 
 	unabhängig und identisch verteilt ist, ist eine Anwendung auf unsere Problemstellung nicht ohne weitere 
-	Anpassungen sinnvoll. Ein praktischer Ansatz hierfür ist es, die zeitliche Komponente in den Daten zu 
-	vernachlässigen und die Serie zusammengefasst dem VAE als einen Datenvektor zu übergeben. 
-	Die Ergebnisse verbessern sich, wenn man die zeitlichen Zusammenhänge der Serie 
-	im Latenten Raum linear interpoliert.\\
-	Eine bessere Möglichkeit die häufig komplexen Zusammenhängen zwischen den Zeitschritten in \emph{time series} trotzdem zu erlernen bietet der \emph{Ordinary Differential Equation Variational Auto-Encoder} (kurz: ODE$^2$-VAE). Die zeitlichen Abhängigkeiten unter den Datenpunkten werden hier mit Differentialgleichungen zweiter Ordnung modelliert, welche im Trainingsprozess erlernt werden. \\
+	Anpassungen sinnvoll.\\
+	Ein recht trivialer Ansatz hierfür ist es, die zeitliche Komponente in den Daten zu 
+	vernachlässigen und die gesamte Time Series dem VAE zusammengefasst als einen Datenvektor zu übergeben. Wenn der Trainingsdatensatz unbeschädigt ist, wird der beschädigten Time Series die latente Darstellung zugewiesen, die einer unbeschädigten Time Series am nächsten kommt. Vom Decoder wird die Time Series nun vollständig rekonstruiert, da ihm beschädigte Daten nach dem Trainingsprozess unbekannt sind.\\
+	Ein weiterer Ansatz ergibt sich, wenn man die zeitlichen Zusammenhänge der Time Series 
+	im Latenten Raum linear interpoliert. Hier bilden die einzelnen Frames der Time Series unseren Trainingsdatensatz. Durch lineare Interpolation lassen sich die Übergänge nun auch in stetiger Zeit modellieren. \\
+	Wie wir sehen werden, können beide Ansätze jedoch auf etwas komplexeren Datensätzen keine zufriedenstellende Ergebnisse mehr liefern.
+	Eine Möglichkeit diese komplexen Zusammenhängen zwischen den Zeitschritten in \emph{time series} besser zu erlernen bietet der \emph{Ordinary Differential Equation Variational Auto-Encoder} (kurz: ODE$^2$-VAE). Die zeitlichen Abhängigkeiten unter den Datenpunkten werden hier mit Differentialgleichungen zweiter Ordnung modelliert, welche im Trainingsprozess erlernt werden. Schon nur aus drei Inputbildern kann die gesamte Time Series in stetiger Zeit rekonstruiert werden.\\
 	\textbf{TODO: Einleitung SDE-VAE}
 	\\
 	\\
@@ -127,11 +129,11 @@
 	\overset{\text{Bayes}}&{=} \E_{\z\sim q_{\boldsymbol\phi}}\left[\log\left(\frac{p_{\boldsymbol\theta}(\x)\qenc}{
 		\pdec p_{\boldsymbol\theta}(\z)}\right)\right]\\
 	&=\E_{\z\sim q_{\boldsymbol\phi}}\left[\log\big(p_{\boldsymbol\theta}(\x)+\log\left(\frac{\qenc}{p_{\boldsymbol\theta}(\z)} \right) -\log\big(\pdec\big)\right]\\
-	&=\log\big(p_{\boldsymbol\theta}(\x)\big) + D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big]-\E_{\z\sim q_{\boldsymbol\phi}}\big[\log\pdec\big]
+	&=\log\big(p_{\boldsymbol\theta}(\x)\big) + D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big]-\E_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big]
 	\end{align*}
 	Durch Äquivalenzumformung erhalten wir schließlich:
 	\begin{align*}
-	\log\big(p_{\boldsymbol\theta}(\x)\big) - \underbrace{D_{KL}\big[\qenc || \penc\big]}_{\ge 0} =\underbrace{ \E_{\z\sim q_{\boldsymbol\phi}}\big[\log\pdec\big] - D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big]}_{=:\ \mathrm{ELBO}\ =\ -\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\mathbf{x}_i)}
+	\log\big(p_{\boldsymbol\theta}(\x)\big) - \underbrace{D_{KL}\big[\qenc || \penc\big]}_{\ge 0} =\underbrace{ \E_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big] - D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big]}_{=:\ \mathrm{ELBO}\ =\ -\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\mathbf{x}_i)}
 	\end{align*}
 	Die rechte Seite wird auch \emph{Evidence Lower Bound} (kurz: ELBO) genannt und dient als (negative) Verlustfunktion des Variational Autoencoder. Als untere Schranke der Loglikelihood führt eine Maximierung der ELBO dazu, dass zum einen die Reverse KL-Divergenz der Approximation zur wahren Verteilung verringert wird, was eine immer besser werdende Beschreibung von $\penc$ durch $\qenc$ impliziert und zum anderen die Likelihood Daten des Datensatzes zu erzeugen groß wird.\\
 	Wir haben in $\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\x)$ also eine zur Minimierung geeignete Funktion gefunden und wollen einen geeigneten Algorithmus verwenden, der uns das Finden der optimalen Parameter
@@ -280,6 +282,31 @@
 	&=  \sum_{p=1}^{P}x_{i,p}\log\left(p_{i,p}\right)+\left(1-x_{i,p}\right)\log\left(1-p_{i,p}\right)
 	\end{align*}			
 	\subsection[ODE$^2$-VAE]{Ordinary Differential Equation Variational Autoencoder}
+	Als Trainingkriterium des ODE2-VAE verwenden wir wieder die ELBO, müssen die des
+	Vanilla-VAEs entsprechend des neuen Modells jedoch abändern:
+	\begin{align*}
+	\log\left(\mathbf{x}_{0:T}\right)&\ge \E_{\mathbf{z}_{0:T}\sim q_{\boldsymbol\phi,\boldsymbol\psi}}
+	\left[\log\left(p_{\boldsymbol\theta}\left(\mathbf{x}_{0:T}|\mathbf{z}_{0:T}\right)\right)\right] - D_{KL}\big[q_{\boldsymbol\phi,\boldsymbol\psi}(\mathbf{z}_{0:T}|\mathbf{x}_{0})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{0:T})\big]\\
+	&=\underbrace{\E_{\mathbf{z}_{0}\sim q_{\text{enc}\boldsymbol\phi}}
+	\left[\log\left(p_{\boldsymbol\theta}\left(\mathbf{x}_{0}|\mathbf{z}_{0}\right)\right)\right] - D_{KL}\big[q_{\text{enc}\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0})||p_{\boldsymbol\theta}(\mathbf{z}_{0})\big]}_{\text{Vanilla-VAE ELBO}}\\ &+ \underbrace{\sum_{t=1}^T \E_{\mathbf{z}_{t}\sim q_{\text{flow}\boldsymbol\psi}}
+	\left[\log\left(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\right)\right] - D_{KL}\big[q_{\text{flow}\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t})\big]}_{\text{Dynamischer Loss}}
+	\end{align*}	
+	\begin{align*}
+	\dfrac{\partial \log\left(q_{\text{flow}\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0})\right)}{\partial t}&= - \text{Tr}\left(\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{z}_{t})}{\partial\mathbf{z}_{t}}\right) \\ &=
+	- \text{Tr} \left(\begin{array}{cc} 
+	\dfrac{\partial\mathbf{v}_{t}}{\partial\mathbf{s}_{t}} & 
+	\dfrac{\partial\mathbf{s}_{t}}{\partial\mathbf{v}_{t}}\\ 
+	\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{s}_{t}} & 
+	\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}  
+	\end{array}\right)\\
+	&=
+	-\text{Tr}\left(\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\right)\\
+	&= \E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\boldsymbol\epsilon^\mathrm{t}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{z}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\right]
+	\end{align*}		
+	\begin{align*}
+	\log\left(q_{\text{flow}\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0})\right)&=\log\left(q_{\text{enc}\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0})\right)-\int_0^t \E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\boldsymbol\epsilon^\mathrm{t}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\right]\text{d}t\\
+	&= \log\left(q_{\text{enc}\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0})\right)-\E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\int_0^t \boldsymbol\epsilon^\mathrm{t}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\ \text{d}t\right]
+	\end{align*}		
 	
 	\subsection[SDE-VAE]{Stochastic Differential Equation Variational Autoencoder}
 
@@ -301,21 +328,22 @@
 	\end{figure}
 	\newpage
 	\subsection[ODE$^2$-VAE]{Ergebnisse: ODE$^2$-VAE}
-	\begin{figure}
-		\begin{minipage}[position=l]{0.33\textwidth}
-			\begin{mdframed}[style=inner]
-				\center{Modellinput\vspace{0.2cm}}
-				\includegraphics[scale=0.5]{Modellinput}
-			\end{mdframed}
-		\end{minipage}
-		\begin{minipage}[position=r]{0.67\textwidth}
-			\begin{mdframed}[style=inner]
-				\center{Rekonstruktionen\vspace{0.2cm}}
-				\includegraphics[scale=0.499]{Reconstructions}
-			\end{mdframed}
-		\end{minipage}
-	\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$-VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
-	\end{figure}
+
+	%\begin{figure}
+	%	\begin{minipage}[position=l]{0.33\textwidth}
+	%		\begin{mdframed}[style=inner]
+	%			\center{Modellinput\vspace{0.2cm}}
+	%			\includegraphics[scale=0.5]{Modellinput}
+	%		\end{mdframed}
+	%	\end{minipage}
+	%	\begin{minipage}[position=r]{0.67\textwidth}
+	%		\begin{mdframed}[style=inner]
+	%			\center{Rekonstruktionen\vspace{0.2cm}}
+	%%			\includegraphics[scale=0.499]{Reconstructions}
+	%		\end{mdframed}
+	%	\end{minipage}
+	%\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$-VAE (untere %Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das %Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen %Zeitpunkte zu treffen.}
+%	\end{figure}
 	\newpage
 	\subsection[SDE-VAE]{Ergebnisse: SDE-VAE}
 	\newpage
