@@ -10,6 +10,7 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{amsthm}
+\usepackage[utf8]{inputenc}
 \usepackage{stmaryrd}
 \usepackage{bibgerm}
 \usepackage{caption}
@@ -34,7 +35,7 @@
 \newcommand{\z}{\mathbf{z}}
 \newcommand{\x}{\mathbf{x}_i}
 \DeclareMathOperator*{\argmin}{arg\,min}
-
+\newtheorem{theorem}{Theorem}
 \allowdisplaybreaks
 
 \begin{document}
@@ -282,17 +283,67 @@
 	&=  \sum_{p=1}^{P}x_{i,p}\log\left(p_{i,p}\right)+\left(1-x_{i,p}\right)\log\left(1-p_{i,p}\right)
 	\end{align*}			
 	\subsection[ODE$^2$-VAE]{Ordinary Differential Equation Variational Autoencoder}
-	Als Trainingkriterium des ODE2-VAE verwenden wir wieder die ELBO, müssen die des
-	Vanilla-VAEs entsprechend des neuen Modells jedoch abändern:
+	Als Trainingskriterium des ODE$^2$-VAE verwenden wir erneut die ELBO (eine genauere Erklärung ist im Kapitel zum VAE zu finden). 
+	Wir erhalten:
 	\begin{align*}
 	\log\left(\mathbf{x}_{0:T}\right)&\ge \E_{\mathbf{z}_{0:T}\sim q_{\boldsymbol\phi,\boldsymbol\psi}}
-	\left[\log\left(p_{\boldsymbol\theta}\left(\mathbf{x}_{0:T}|\mathbf{z}_{0:T}\right)\right)\right] - D_{KL}\big[q_{\boldsymbol\phi,\boldsymbol\psi}(\mathbf{z}_{0:T}|\mathbf{x}_{0})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{0:T})\big]\\
-	&=\underbrace{\E_{\mathbf{z}_{0}\sim q_{\text{enc}\boldsymbol\phi}}
-	\left[\log\left(p_{\boldsymbol\theta}\left(\mathbf{x}_{0}|\mathbf{z}_{0}\right)\right)\right] - D_{KL}\big[q_{\text{enc}\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0})||p_{\boldsymbol\theta}(\mathbf{z}_{0})\big]}_{\text{Vanilla-VAE ELBO}}\\ &+ \underbrace{\sum_{t=1}^T \E_{\mathbf{z}_{t}\sim q_{\text{flow}\boldsymbol\psi}}
-	\left[\log\left(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\right)\right] - D_{KL}\big[q_{\text{flow}\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t})\big]}_{\text{Dynamischer Loss}}
+	\left[\log\left(p_{\boldsymbol\theta}\left(\mathbf{x}_{0:T}|\mathbf{z}_{0:T}\right)\right)\right] - D_{KL}\big[q_{\boldsymbol\phi,\boldsymbol\psi}(\mathbf{z}_{0:T}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{0:T})\big]\\
+	&=\underbrace{\E_{\mathbf{z}_{0}\sim q_{\text{enc }\boldsymbol\phi}}
+	\left[\log\left(p_{\boldsymbol\theta}\left(\mathbf{x}_{0}|\mathbf{z}_{0}\right)\right)\right] - D_{KL}\big[q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta}(\mathbf{z}_{0})\big]}_{\text{Vanilla-VAE ELBO}}\\ &+ \underbrace{\sum_{t=1}^T \E_{\mathbf{z}_{t}\sim q_{\text{flow }\boldsymbol\psi}}
+	\left[\log\left(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\right)\right] - D_{KL}\big[q_{\text{flow }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t})\big]}_{\text{Dynamischer Loss}}
 	\end{align*}	
+	Der erste Teil ist die ELBO eines Standard-VAEs.
+	Als dem latenten Raum zugrundeliegenden Verteilung $p_{\boldsymbol\theta}(\mathbf{z}_{0})$ wählen wir erneut eine parameterfreie Standardnormalverteilung $\mathcal{N}(\mathbf{0},\mathbf{I})$.\\
+	Die Encoder-Verteilung ist als Normalverteilung mit $\mathbf{z}_{0} = (\mathbf{s}_{0},\mathbf{v}_{0})^t$ durch
 	\begin{align*}
-	\dfrac{\partial \log\left(q_{\text{flow}\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0})\right)}{\partial t}&= - \text{Tr}\left(\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{z}_{t})}{\partial\mathbf{z}_{t}}\right) \\ &=
+	q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m}) =	 
+	\mathcal{N}\left(\left(\begin{array}{cc} 
+	\boldsymbol\mu_{\text{pos }\boldsymbol\phi}(\textbf{x}_{0}) \\ 
+	\boldsymbol\mu_{\text{vel }\boldsymbol\phi}(\textbf{x}_{0:m}) 
+	\end{array}\right),\left(\begin{array}{cc} 
+	\text{diag}(\boldsymbol\sigma_{\text{pos }\boldsymbol\phi}(\textbf{x}_{0})) & 
+	\mathbf{0}\\ 
+	\mathbf{0} & 
+	\text{diag}(\boldsymbol\sigma_{\text{vel }\boldsymbol\phi}(\textbf{x}_{0:m}))  
+	\end{array}\right)\right)
+	\end{align*}	
+	gegeben. Wie erläutert hängt der Output des Velocity-Encoders dabei von den ersten $m\ge3$ Zuständen ab, während der Output des Position-Encoders nur durch den ersten Zustand bestimmt wird.\\
+	Die Berechnung des Reconstruction Loss ist von der Wahl der im Decoder verwendeten Verteilung abhängig.
+	Die analytische Berechnung ist nun mit den Resultaten des letzten Kapitels möglich. (S.XYZ)\\  
+	Die Berechnung des sogenannten Dynamischen Loss ist komplizierter.
+	Der Reconstruction Loss $\E_{\mathbf{z}_{t}\sim q_{\text{flow }\boldsymbol\psi}}
+	\left[\log\left(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\right)\right] $ lässt sich zwar ebenfalls mit den Resultaten des ersten Kapitels berechnen. (S.XYZ) \\
+	Für die approximative Berechnung KL-Divergenz 
+	\begin{align*}
+	D_{KL}\big[q_{\text{flow }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t})\approx \log\left(q_{\text{flow }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m}) \right) - \log\left(p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) \right)
+	\end{align*}
+	benötigen wir jedoch die Dichten der Flow-Verteilung $q_{\text{flow }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})$ und die der Prior-Verteilung $p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t})$.\\
+	Die latenten Werte $\mathbf{z}_{t} = (\mathbf{s}_{t},\mathbf{v}_{t})^t$ sind nun nicht mehr von den Encoder-Netzwerken abhängig, sondern werden durch die Neuronale Differentialgleichung $f_{\boldsymbol\psi}(\mathbf{s}_{t},\mathbf{v}_{t})$ bestimmt. 
+	Zur Berechnung der Dichte der Flow-Verteilung lassen sich folgende hilfreiche Theoreme anwenden.
+	\begin{theorem}
+	Sei $\mathbf{z}(t)$ eine stetige Zufallsvariable mit einer von der Zeit abhängigen Dichtefunktion $q(\mathbf{z}(t))$. Sei $\tfrac{\partial \mathbf{z}(t)}{\partial t}=f(\mathbf{z}(t),t)$ eine in $\mathbf{z}$ Lipschitzstetige und in $t$ stetige Differentialgleichung, welche die Veränderung von $\mathbf{z}(t)$ mit der Zeit beschreibt.
+	Die Veränderung der Dichte folgt nun ebenfalls einer Differentialgleichung:
+	\begin{align*}
+	\dfrac{\partial \log\left(q(\mathbf{z}(t)\right)}{\partial t}&= - \mathrm{Tr}\left(\dfrac{\partial f}{\partial\mathbf{z}}(t)\right).
+	\end{align*}
+	\end{theorem}
+	\begin{proof}
+	Zu finden in \emph{Neural Ordinary Differential Equations} \cite{neuralode}, S.13
+	\end{proof}
+		\begin{theorem}%{$\mathrm{(Hutchinsons\ Spur\ Schätzer)}$}
+		Sei $\mathbf{M}\in \mathbb{R}^d \times \mathbb{R}^d$ eine beliebige Matrix und $\boldsymbol\epsilon \sim p(\boldsymbol\epsilon)$ eine Zufallsvariable mit $\E[\boldsymbol\epsilon] = \mathbf{0}$ und $Cov(\boldsymbol\epsilon) =\mathbf{I}$. Die Spur der Matrix $\mathbf{M}$ lässt sich erwartungstreu durch ein doppeltes Matrix-Vektorprodukt der Matrix  $\mathbf{M}$ mit dem Zufallvektor $\boldsymbol\epsilon$ schätzen:
+		\begin{align*}
+		\mathrm{Tr}(\mathbf{M}) = 
+		\E_{\boldsymbol\epsilon \sim p(\boldsymbol\epsilon)}\big[\boldsymbol\epsilon^t \mathbf{M} \boldsymbol\epsilon \big].
+		\end{align*}
+	\end{theorem}
+	\begin{proof}
+		TO-DO %http://blog.shakirm.com/2015/09/machine-learning-trick-of-the-day-3-hutchinsons-trick/
+	\end{proof}
+	
+	Wir erhalten somit für die Veränderung der Log-Dichte der Flow-Verteilung:
+	\begin{align*}
+	\dfrac{\partial \log\left(q_{\text{flow }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})\right)}{\partial t}\overset{\text{T.1}}&{=} - \text{Tr}\left(\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{z}_{t})}{\partial\mathbf{z}_{t}}\right) \\ &=
 	- \text{Tr} \left(\begin{array}{cc} 
 	\dfrac{\partial\mathbf{v}_{t}}{\partial\mathbf{s}_{t}} & 
 	\dfrac{\partial\mathbf{s}_{t}}{\partial\mathbf{v}_{t}}\\ 
@@ -301,11 +352,12 @@
 	\end{array}\right)\\
 	&=
 	-\text{Tr}\left(\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\right)\\
-	&= \E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\boldsymbol\epsilon^\mathrm{t}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{z}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\right]
+	\overset{\text{T.2}}&{=} \E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\boldsymbol\epsilon^\mathrm{t}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{z}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\right].
 	\end{align*}		
+	Durch Integration ergibt sich nun:
 	\begin{align*}
-	\log\left(q_{\text{flow}\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0})\right)&=\log\left(q_{\text{enc}\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0})\right)-\int_0^t \E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\boldsymbol\epsilon^\mathrm{t}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\right]\text{d}t\\
-	&= \log\left(q_{\text{enc}\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0})\right)-\E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\int_0^t \boldsymbol\epsilon^\mathrm{t}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\ \text{d}t\right]
+	\log\left(q_{\text{flow }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})\right)&=\log\left(q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})\right)-\int_0^t \E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\boldsymbol\epsilon^\mathrm{t}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\right]\text{d}t\\
+	&= \log\left(q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})\right)-\E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\int_0^t \boldsymbol\epsilon^\mathrm{t}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\ \text{d}t\right].
 	\end{align*}		
 	
 	\subsection[SDE-VAE]{Stochastic Differential Equation Variational Autoencoder}
@@ -384,6 +436,11 @@
 		\textit{The Matrix Cookbook},
 		2012,
 		http://matrixcookbook.com, Verwendete Rechentricks auf S.43
+		
+		\bibitem{neuralode}
+		Ricky T. Q. Chen, Yulia Rubanova, Jesse Bettencourt, David Duvenaud,\\
+		\textit{Neural Ordinary Differential Equations},
+		2019, arXiv:1806.07366v5
 
 	\end{thebibliography}
 	\section[Anhang]{Anhang}
