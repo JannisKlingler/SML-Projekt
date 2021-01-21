@@ -18,7 +18,7 @@ frames = 10  # Number of images in every datapoint. Choose accordingly to datase
 armortized_len = 4  # Sequence size seen by velocity encoder network. Needs to be ≥3
 act = 'relu'  # Activation function 'tanh' is used in odenet.
 
-ode_integration = 'DormandPrince'  # options: 'DormandPrince' , 'trivialsum'
+ode_integration = 'trivialsum'  # options: 'DormandPrince' , 'trivialsum'
 # we suggest 'trivialsum' as it is very fast and yields good results.
 eval_interval = 20  # Time between evaluation on test batch during training.
 data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
@@ -138,16 +138,6 @@ class ODE2VAE(tf.keras.Model):
     def latent_trajectory(self, z_t, log_qz_t, ode_integration):
         latent_states_ode = [z_t]
         log_qz_ode = [log_qz_t]
-
-#        if ode_integration == 'DormandPrince':
-#            for i in range(latent_dim - 1):
-#                epsilon = tf.random.normal(shape=(batch_size, latent_dim))
-#                latent_trajectory = tfp.math.ode.DormandPrince().solve(
-#                    self.ode_system, 0, (z_t, log_qz_t), tf.constant([1]), constants={'epsilon': epsilon})
-#                z_t = latent_trajectory.states[0][0]
-#                log_qz_t = latent_trajectory.states[1][0]
-#                latent_states_ode.append(z_t)
-#                log_qz_ode.append(log_qz_t)
 
         if ode_integration == 'DormandPrince':
             epsilon = tf.random.normal(shape=(batch_size, latent_dim))
@@ -299,11 +289,11 @@ for epoch in range(1, epochs + 1):
             print('Batch: {}/{} | Epoch: {}/{}'.format(str(batch+1).zfill(3),
                                                        batches, epoch, epochs), end='')
             if ode_integration == 'trivialsum':
-            print(' | ETA: {}:{} | Metrics on random test batch: Reconstruction Loss {}, MSE per pixel {:.5f}'.format(
-                min, str(sec).zfill(2), rec, mse))
+                print(' | ETA: {}:{} | Metrics on random test batch: Reconstruction Loss {}, MSE per pixel {:.5f}'.format(
+                    min, str(sec).zfill(2), rec, mse))
             if ode_integration == 'DormandPrince':
-            print(' | ETA: {}:{} | Metrics on random test batch: ELBO {}, Reconstruction Loss {}, MSE per pixel {:.5f}'.format(
-                min, str(sec).zfill(2), elbo, rec, mse))
+                print(' | ETA: {}:{} | Metrics on random test batch: ELBO {}, Reconstruction Loss {}, MSE per pixel {:.5f}'.format(
+                    min, str(sec).zfill(2), elbo, rec, mse))
     min, sec, min_el, sec_el = evaluate_during_training(
         model, test_sample, ode_integration, time_history, epoch - 1, int(batch), batches)
     print('Epoch {}/{} completed. Time elapsed this epoch: {}:{}'.format(epoch,
