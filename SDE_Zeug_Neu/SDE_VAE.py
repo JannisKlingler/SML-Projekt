@@ -20,7 +20,7 @@ tf.compat.v1.keras.backend.set_session(session)
 
 ########################################################
 # %% hyperparameter
-epochs = 5
+epochs = 1
 latent_dim = 6  # Dimensionality for latent variables. 20-30 works fine.
 batch_size = 50  # ≥100 as suggested by Kingma in Autoencoding Variational Bayes.
 train_size = 5000  # Data points in train set. Choose accordingly to dataset size.
@@ -40,6 +40,7 @@ M = 2
 CNN_complexity = 20
 SDE_Net_complexity = 50
 forceHigherOrder = False
+alpha = 0.5
 
 
 ode_integration = 'trivialsum'  # options: 'DormandPrince' , 'trivialsum'
@@ -123,7 +124,7 @@ ms_rec_loss = SDE_Tools.make_reconstruction_Loss(M, n, T, frames, batch_size, re
 def CustomLoss(inputs, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_rec_List, X_rec_List):
     S = 10*rec_loss(inputs, X_rec_List)
     #S += 1*ms_rec_loss(Z_enc_List,None)
-    S += 0.5*ms_rec_loss(Z_enc_List,Z_rec_List)
+    S += alpha*ms_rec_loss(Z_enc_List,Z_rec_List)
     return S
 
 
@@ -256,9 +257,9 @@ np.save('C:/Users/bende/Documents/Uni/SML-Projekt/SDE_Daten', Z_org)
 
 #x_test = data.create_dataset(dataset_size=100, frames=10, picture_size=28, object_number=3)
 k = 0
-x_test_org = x_train[0:batch_size]
+x_test_org = x_train[2:batch_size]
 print('x_test_org:',x_test_org.shape)
-_,_,enc_lat,rec_lat,rec_imgs = Model.fullcall(x_train[0:batch_size,:,:,:,:])
+_,_,enc_lat,rec_lat,rec_imgs = Model.fullcall(x_test_org)
 print('rec_imgs:',rec_imgs.shape)
 #enc_lat = list(map(lambda i: encoder(x_train[i,:,:,:,:])[-1], range(batch_size)))
 #enc_lat = tf.stack(enc_lat, axis=0)
