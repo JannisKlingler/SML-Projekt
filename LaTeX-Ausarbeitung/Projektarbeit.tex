@@ -104,11 +104,13 @@
 	\newpage
 	
 	\section[Theoretische Ausarbeitung]{Theoretische Ausarbeitung}
+	\emph{Bemerkung:} Wie es in der Literatur, die wir beim recherchieren zum Thema gelesen haben üblich scheint, werden auch wir in der Notation nicht zwischen Verteilung und Dichtefunktion unterscheiden.\\
+	
 	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N}$, der aus $N$ unterschiedlichen i.i.d. verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
 	Um den Prozess, der die Daten erzeugt besser modellieren und später erlernen zu können, werden sogenannte \emph{latenten Variablen} $\z$ eingeführt. Diese sind stetige und nicht beobachtbare Zufallsvariablen, welche die Eigenschaften des Bildes festlegen, die es charakterisiert.  \\
 	Der sogenannte \emph{latente Raum} $\mathcal{Z}$, über den die latenten Variablen $\z$ definiert sind, ist nach Wahl von viel geringerer Dimension als der Raum $\mathcal{X}$ der ursprünglichen Verteilung.\\
 	Schauen wir uns einmal an, wie die Datenpunkte des Datensatzes in einem solchen latenten Variablen Modell entstehen.\\
-	Zuerst wird eine latente Darstellung $\z \sim  p(\z)$  gezogen. Mit dieser wird  $\x \sim  p(\x|\z)$ nun durch eine bedingte Verteilung ermittelt. So lässt sich nun die Dichtefunktion von $p(\x)$ über Marginalisierung durch ein Integral über alle latenten Werte beschreiben.
+	Zuerst wird eine latente Darstellung $\z \sim  p(\z)$  gezogen. Mit dieser wird  $\x \sim  p(\x|\z)$ nun durch eine bedingte Verteilung ermittelt. So lässt sich $p(\x)$ über Marginalisierung durch ein Integral über alle latenten Werte beschreiben.
 	\begin{align*}
 	p(\x)= \int_{\z} p(\x,\z) d\textbf{z} = \int_{\z} p(\x|\z)p(\z) d\z
 	\end{align*}
@@ -148,7 +150,7 @@
 	Die KL-Divergenz ist in vielen Fällen mit analytischen Methoden berechen- und differenzierbar, genauer betrachtet werden muss aber der Gradient des Erwartungswertes bezüglich $\boldsymbol\phi$. \\
 	Gegeben $\textbf{x}_{i}$ ist die latente Darstellung $\z$ kein deterministisch festgelegter Wert, sondern wird durch die von diesen Parametern abhängige Verteilung $\z \sim \qenc$ bestimmt. Da der Gradient später durch Backpropagation berechnet wird, müssen auch die Layer durchschritten werden, die diesen Zufallsprozess enthalten. Monte-Carlo Schätzungen sind außerdem nicht immer mit zufriedenstellender Genauigkeit möglich, denn der Gradient des Erwartungswertes lässt sich in der Regel nicht zu einem neuen Erwartungswert umschreiben, da die Dichtefunktion von $\boldsymbol\phi$ abhängig ist.
 	\begin{align*}
-	\nabla_{\boldsymbol\phi}\Bigl[\mathbb{E}_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big]\Bigl] &= \nabla_{\boldsymbol\phi} \int_{\textbf{z}}\qenc\log\big(\penc)\big)d\textbf{z} \notag \\
+	\nabla_{\boldsymbol\phi}\Bigl[\mathbb{E}_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big]\Bigl] &= \nabla_{\boldsymbol\phi} \int_{\textbf{z}}\qenc\log\big(\pdec)\big)d\textbf{z} \notag \\
 	&= \int_{\textbf{z}}\nabla_{\boldsymbol\phi}\qenc\log\big(\pdec)\big)d\textbf{z}
 	\end{align*}
 	
@@ -321,11 +323,11 @@
 	\end{array}\right)
 	\mathrm{d}t.
 	\end{align*}
-	Die Autoren des Papers verwenden ein Bayensisches Neuronales Netzwerk zur Modellierung der Differentialgleichung um Unsicherheit besser darstellen zu können. Wir werden aber auf ein gewöhnliches Neuronales Netzwerk zurückgreifen und im nächsten Kapitel auf modellierung von Stochastischen Differentialgleichung eingehen. \\ \\
+	Die Autoren des Papers verwenden ein Bayensisches Neuronales Netzwerk zur Modellierung der Differentialgleichung um Unsicherheit besser darstellen zu können. Wir werden aber auf ein gewöhnliches Neuronales Netzwerk zurückgreifen und im nächsten Kapitel auf Modellierung von Stochastischen Differentialgleichung eingehen. \\ \\
 	Als Trainingskriterium des ODE$^2$-VAE verwenden wir erneut die negative ELBO.
 	Wir erhalten:
 	\begin{align*}
-	\log\left(p_{\boldsymbol{\theta}}(\mathbf{x}_{0:T})\right)&\ge \E_{\mathbf{z}_{0:T}\sim q_{\boldsymbol\phi,\boldsymbol\psi}}
+	\log\big(p_{\boldsymbol{\theta}}(\mathbf{x}_{0:T})\big)&\ge \E_{\mathbf{z}_{0:T}\sim q_{\boldsymbol\phi,\boldsymbol\psi}}
 	\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{0:T}|\mathbf{z}_{0:T}\right)\big)\right] - D_{KL}\big[q_{\boldsymbol\phi,\boldsymbol\psi}(\mathbf{z}_{0:T}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{0:T})\big]\\
 	&=\underbrace{\E_{\mathbf{z}_{0}\sim q_{\text{enc }\boldsymbol\phi}}
 		\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{0}|\mathbf{z}_{0}\right)\big)\right] - D_{KL}\big[q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta}(\mathbf{z}_{0})\big]}_{\text{Vanilla-VAE ELBO}}\\ &+ \underbrace{\sum_{t=1}^T \E_{\mathbf{z}_{t}\sim q_{\text{ode }\boldsymbol\psi}}
@@ -394,25 +396,32 @@
 	Mit diesen Resultaten können wir die log-Dichte der ODE-Verteilung mit relativ geringem Rechenaufwand berechnen.
 	Wir erhalten für die Veränderung dieser:
 	\begin{align*}
-	\dfrac{\partial \log\big(q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})\big)}{\partial t}\overset{\text{T.1}}&{=} - \text{Tr}\left(\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{z}_{t})}{\partial\mathbf{z}_{t}}\right) \\ &=
+	\dfrac{\partial \log\big(q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})\big)}{\partial t}\overset{\text{T.1}}&{=} - \text{Tr}\left(\dfrac{\partial f_{\boldsymbol\psi}(\mathbf{z}_{t})}{\partial\mathbf{z}_{t}}\right) \\ &=
 	- \text{Tr} \left(\begin{array}{cc}
 	\dfrac{\partial\mathbf{v}_{t}}{\partial\mathbf{s}_{t}} &
 	\dfrac{\partial\mathbf{s}_{t}}{\partial\mathbf{v}_{t}}\\
-	\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{s}_{t}} &
-	\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}
+	\dfrac{\partial f_{\boldsymbol\psi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{s}_{t}} &
+	\dfrac{\partial f_{\boldsymbol\psi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}
 	\end{array}\right)\\
 	&=
-	-\text{Tr}\left(\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\right)\\
-	\overset{\text{T.2}}&{=} -\E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\boldsymbol\epsilon^\mathrm{T}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{z}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\right].
+	-\text{Tr}\left(\dfrac{\partial f_{\boldsymbol\psi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\right)\\
+	\overset{\text{T.2}}&{=} -\E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\boldsymbol\epsilon^\mathrm{T}\dfrac{\partial f_{\boldsymbol\psi}(\mathbf{z}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\right].
 	\end{align*}
 	Durch Integration ergibt sich nun
 	\begin{align*}
-	\log\big(q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})\big)&=\log\big(q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})\big)-\int_0^t \E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\boldsymbol\epsilon^\mathrm{T}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\right]\text{d}t\\
-	&= \log\big(q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})\big)-\E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\int_0^t \boldsymbol\epsilon^\mathrm{T}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\ \text{d}t\right]\\
-	\overset{\text{M.C.}}&{\simeq} \log\big(q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})\big)-\frac{1}{L}\sum_{i=1}^L\int_0^t \boldsymbol\epsilon^\mathrm{T}\dfrac{\partial f_{\boldsymbol\phi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\ \text{d}t.
+	\log\big(q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})\big)&=\log\big(q_{\text{enc }\boldsymbol\psi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})\big)-\int_0^t \E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\boldsymbol\epsilon^\mathrm{T}\dfrac{\partial f_{\boldsymbol\psi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\right]\text{d}t\\
+	&= \log\big(q_{\text{enc }\boldsymbol\psi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})\big)-\E_{\boldsymbol\epsilon\sim\mathcal{N}(0,\text{I})}\left[\int_0^t \boldsymbol\epsilon^\mathrm{T}\dfrac{\partial f_{\boldsymbol\psi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\ \text{d}t\right]\\
+	\overset{\text{M.C.}}&{\simeq} \log\big(q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})\big)-\frac{1}{L}\sum_{i=1}^L\int_0^t \boldsymbol\epsilon^\mathrm{T}\dfrac{\partial f_{\boldsymbol\psi}(\mathbf{s}_{t},\mathbf{v}_{t})}{\partial\mathbf{v}_{t}}\boldsymbol\epsilon\ \text{d}t.
 	\end{align*}
 	Die Randbedingung $\log\big(q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})\big)$ ist durch die Encoder-Verteilung gegeben.
-	Der Erwartungswert wird durch Monte-Carlo Schätzung approximiert und das Integral mit ODE-Integratoren numerisch berechnet.\\
+	Der Erwartungswert wird durch Monte-Carlo Schätzung approximiert, $\boldsymbol\epsilon$ wird außerhalb des Integrals aus einer Standartnormalverteilung gezogen und das Integral numerisch durch ODE-Integratoren zusammen mit unserer Differentialgleichung berechnet.\\
+	\begin{align*}
+	\dfrac{\partial h(t)}{\partial t}&=\begin{cases*}
+	\tfrac{\partial \mathbf{s}(t)}{\partial t}=\mathbf v(t) \\
+	\tfrac{\partial \mathbf{v}(t)}{\partial t}=f_{\boldsymbol{\psi}}(\mathbf s(t), \mathbf v(t), t) \\
+	\tfrac{\partial (\log\mathbf{q}(t))}{\partial t}= -\boldsymbol\epsilon^\mathrm{T}\tfrac{\partial f_{\boldsymbol\psi}(\mathbf{s},\mathbf{v},t)}{\partial\mathbf{v}}(t)\boldsymbol\epsilon
+	\end{cases*}\\ h(t_T)&=\text{ODEintegrate}\big(h,h(t_0),t_1,t_2,\ldots,t_T,\boldsymbol\epsilon,f_{\boldsymbol\psi}\big)
+	\end{align*}
 	Der Wert
 	$\log\big(p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) \big)$, der ebenfalls für die Berechnung der KL-Divergenz benötigt wird ist nicht bestimmbar. Müsste man doch die log-Dichten mit der unbekannten, "wahren" Funktion $f_{\boldsymbol\psi^{*}}(\mathbf{s}_{t},\mathbf{v}_{t})$ mit oben hergeleiteter Formel ausrechnen.
 	Die Autoren des Papers treffen eine vereinfachende Annahme und legen wie bereits für den ersten Zustand geltend $p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) = \mathcal{N}(\mathbf{0},\mathbf{I})$ als parameterfreie multivariate Normalverteilung fest.
@@ -420,7 +429,9 @@
 	Wir schlagen ähnlich dem Ansatz zur alternativen Lossfunktion des Papers daher vor direkt die KL-Divergenz zur Encoderverteilung $q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{t}|\mathbf{x}_{t:(t+m)})$ zu minimieren. Eine wie wir finden vertretbare Annahme, da so auch sichergestellt wird, dass Encodernetzwerk und ODE-Netzwerk der selben Sequenz latente Werte mit ähnlicher Dichte zuweisen.\\
 	Nun lässt sich die ELBO analytisch berechnen und die Parameter $\boldsymbol\phi,\boldsymbol\psi,\boldsymbol\theta$ lassen sich anhand dieses Trainingskriterium aktualisieren.\\
 	
-	\emph{Anmerkung:} Ebenfalls gute Ergebnisse liefert bei uns die Approximation der Integrale durch eine Summe mit Schrittweite $\mathrm{d}t=1$ ($f_{\boldsymbol\psi}$ ist nun ein RES-Net) und das Verwenden des Reconstruction Loss als alleiniges Trainingskriterium. Visuell sind die Rekonstruktionen bei deutlich geringerer Trainingszeit (Bei uns ca. Faktor 100) auf unseren Datensätzen etwa gleich gut, wie mit einem Neural-ODE. Jedoch gehen einige praktische Eigenschaften des Modells verloren, wie das Erzeugen neuer Daten durch ziehen aus einer Normalverteilung, das Anfertigen von Rekonstruktionen in stetiger Zeit, die mathematische Interpretation des Modells als Verteilung und somit auch das Schätzen der Wahrscheinlichkeitsdichte und schließlich noch die größere Resistenz des Modells gegenüber Overfitting.
+	\emph{Anmerkung:} Ebenfalls gute Ergebnisse liefert bei uns die Approximation der Integrale durch eine Summe mit Schrittweite $\mathrm{d}t=1$ und das Verwenden des Reconstruction Loss als alleiniges Trainingskriterium. Visuell sind die Rekonstruktionen bei deutlich geringerer Trainingszeit (Bei uns ca. Faktor 30) auf unseren Datensätzen sogar etwas besser, als mit einem Neural-ODE. Dies haben wir mit unserer Lossfunktion beobachtet, aber vor allem auch mit der Lossfunktion des Papers. Wir vermuten, dass das auch an einem Implementierungsfehler unsererseits liegen könnte.
+	Durch verwenden einer Summe und Simplifizierung des Trainingskriterium gehen einige praktische Eigenschaften des Modells verloren, wie das Erzeugen neuer Daten durch ziehen aus einer Normalverteilung, das Anfertigen von Rekonstruktionen in stetiger Zeit, die mathematische Interpretation des Modells als Verteilung und somit auch das Schätzen der Wahrscheinlichkeitsdichte und schließlich noch die größere Resistenz des Modells gegenüber Overfitting.
+	Um einige dieser Modelleigenschaften zu erhalten könnte man auch als Trainingskriterium auch den Reconstruction Loss mit der Vanilla-VAE ELBO verwenden.
 	
 	
 	\subsection[SDE-VAE]{Stochastic Differential Equation Variational Autoencoder}
