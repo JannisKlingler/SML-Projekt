@@ -20,10 +20,10 @@ tf.compat.v1.keras.backend.set_session(session)
 
 ########################################################
 # %% hyperparameter
-epochs = 1
+epochs = 5
 latent_dim = 5  # Dimensionality for latent variables. 20-30 works fine.
-batch_size = 10  # ≥100 as suggested by Kingma in Autoencoding Variational Bayes.
-train_size = 500  # Data points in train set. Choose accordingly to dataset size.
+batch_size = 100  # ≥100 as suggested by Kingma in Autoencoding Variational Bayes.
+train_size = 10000  # Data points in train set. Choose accordingly to dataset size.
 test_size = 100 # Data points in test set. Choose accordingly to dataset size.
 batches = int(train_size / batch_size)
 frames = 1  # Number of images in every datapoint. Choose accordingly to dataset size.
@@ -67,15 +67,22 @@ print('new_train_shape:',x_train_longlist.shape)
 
 ######################################
 
-P_dec = AE_Tools.FramewiseDecoder(latent_dim, pictureWidth, pictureHeight, pictureColors, act, complexity=complexity)
-P_enc = AE_Tools.LocalEncoder(latent_dim, M, pictureWidth, pictureHeight, pictureColors, act, complexity=complexity, variational=True)
-#AE = AE_Tools.SimpleAutoencoder(P_enc, P_dec)
-VAE = AE_Tools.VariationalAutoencoder(P_enc, P_dec)
+
+#decoder = AE_Tools.FramewiseDecoder(latent_dim, pictureWidth, pictureHeight, pictureColors, act, complexity=complexity)
+#encoder = AE_Tools.LocalEncoder(latent_dim, M, pictureWidth, pictureHeight, pictureColors, act, complexity=complexity, variational=True)
+
+encoder = AE_Tools.make_Clemens_encoder(latent_dim, M)
+decoder = AE_Tools.make_Clemens_decoder(latent_dim)
+
+#AE = AE_Tools.SimpleAutoencoder(encoder, decoder)
+VAE = AE_Tools.VariationalAutoencoder(encoder, decoder)
+Model = VAE
 
 #ms_Net = SDE_Tools.mu_sig_Net(latent_dim, n, act, 10)
 #reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(latent_dim*pictureColors, n, T, frames, ms_Net, batch_size)
 
 loss = AE_Tools.make_binary_crossentropy_rec_loss(M)
+#loss = AE_Tools.make_VAE_loss(encoder, decoder, frames)
 
 #AE.compile(optimizer='adam', loss=loss)
 #AE.fit(x_train_longlist, x_train_longlist[:,:,:,:,:], epochs=epochs, batch_size=batch_size, shuffle=False)
@@ -93,12 +100,12 @@ VAE.fit(x_train_longlist, x_train_longlist[:,:,:,:,:], epochs=epochs, batch_size
 k = 0
 x_org = x_train_longlist[0:10,0,:,:,0]
 print('x_org:',x_org.shape)
-enc_imgs = list(map(lambda i: P_enc(x_train_longlist[i,:,:,:,:]), range(10)))
-enc_imgs = tf.stack(enc_imgs, axis=0)[:,:,-1,:]
-#enc_imgs = P_enc(x_train_longlist[:,0,:,:,:])
-print(enc_imgs.shape)
+enc_imgs = list(map(lambda i: encoder(x_train_longlist[i,:,:,:,:]), range(10)))
+enc_imgs = tf.stack(enc_imgs, axis=0)[:,:,0,:]
+#enc_imgs = tf.stack(enc_imgs, axis=0)[:,0,:,:]
+print('enc_imgs:',enc_imgs.shape)
 
-rec_imgs = VAE.predict(x_train_longlist[0:10,:,:,:,:])
+rec_imgs = Model.predict(x_train_longlist[0:10,:,:,:,:])
 
 print('rec_imgs:',rec_imgs.shape)
 
@@ -110,6 +117,7 @@ axs[0, 3].set_title('batch_size:{}'.format(batch_size))
 for i in range(5):
     axs[0, i].imshow(x_org[i,:,:], cmap='gray', vmin=0, vmax=1)
     axs[1, i].imshow(rec_imgs[i,0,:,:,0], cmap='gray', vmin=0, vmax=1)
-    axs[2, i].plot(np.linspace(1,latent_dim,latent_dim),enc_imgs[i,0,:],'o')
+    axs[2, i].plot(np.linspace(1,latent_dim,latent_dim),enc_imgs[i,2,:],'o')
+    axs[2, i].plot(np.linspace(1,latent_dim,latent_dim),enc_imgs[i,1,:],'o')
 
 plt.show()
