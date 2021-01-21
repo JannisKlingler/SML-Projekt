@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
+#import tensorflow_probability as tfp
 import scipy as sp
 from keras import backend as K
 import SDE_Tools
-tfd = tfp.distributions
+#tfd = tfp.distributions
 # import datasets as data
 
 

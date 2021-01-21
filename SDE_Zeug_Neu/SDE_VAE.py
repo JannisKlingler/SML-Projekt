@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
+#import tensorflow_probability as tfp
 import scipy as sp
 from keras import backend as K
 import SDE_Tools
 import AE_Tools
-tfd = tfp.distributions
+#tfd = tfp.distributions
 # import datasets as data
 
 '''
@@ -46,7 +46,7 @@ ode_integration = 'trivialsum'  # options: 'DormandPrince' , 'trivialsum'
 dt = 0.1  # Step size for numerical integration. Increasing dt reduces training time
 # but may impact predictive qualitiy. 'trivialsum'  uses dt = 1 and only reconstruction
 # loss as training criteria. This is very fast and works surprisingly well.
-data_path = 'C:/Users/Admin/Documents/Uni/SML-Projekt/'
+data_path = 'C:/Users/bende/Documents/Uni/SML-Projekt/'
 job = 'rotatingMNIST'  # Dataset for training. Options: 'rotatingMNIST' , 'bouncingBalls'
 
 # %%
@@ -54,8 +54,8 @@ job = 'rotatingMNIST'  # Dataset for training. Options: 'rotatingMNIST' , 'bounc
 # Datensatz laden oder erstellen
 try:
     #raise Exception('Ich will den Datensatz neu erstellen')
-    x_train = np.load('C:/Users/bende/Documents/Uni/SML-Projekt/rotatingMNIST_train.npy')
-    x_test = np.load('C:/Users/bende/Documents/Uni/SML-Projekt/rotatingMNIST_test.npy')
+    x_train = np.load(data_path+'rotatingMNIST_train.npy')
+    x_test = np.load(data_path+'rotatingMNIST_test.npy')
     x_train = x_train[0:train_size]
     x_test = x_test[0:test_size]
 except:
@@ -73,8 +73,8 @@ except:
     x_train = np.transpose(np.array(x_train_rot), [0, 2, 3, 1])
     x_test = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
     try:
-        np.save('C:/Users/bende/Documents/Uni/SML-Projekt/rotatingMNIST_train', x_train)
-        np.save('C:/Users/bende/Documents/Uni/SML-Projekt/rotatingMNIST_test', x_test)
+        np.save(data_path+'rotatingMNIST_train', x_train)
+        np.save(data_path+'rotatingMNIST_test', x_test)
     except:
         print('could not save Dataset')
     print('Dataset generated')
