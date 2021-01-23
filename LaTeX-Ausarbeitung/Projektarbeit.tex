@@ -104,7 +104,7 @@
 	\newpage
 	
 	\section[Theoretische Ausarbeitung]{Theoretische Ausarbeitung}
-	\emph{Bemerkung:} Wie es in der Literatur, die wir beim recherchieren zum Thema gelesen haben üblich scheint, werden auch wir in der Notation nicht zwischen Verteilung und Dichtefunktion unterscheiden.\\
+	\emph{Bemerkung:} Entsprechend der Notation, die uns beim recherchieren zum Thema in der Fachliteratur begegnet ist, werden auch wir in der Notation nicht zwischen Verteilung und Dichtefunktion unterscheiden.\\
 	
 	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N}$, der aus $N$ unterschiedlichen i.i.d. verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
 	Um den Prozess, der die Daten erzeugt besser modellieren und später erlernen zu können, werden sogenannte \emph{latenten Variablen} $\z$ eingeführt. Diese sind stetige und nicht beobachtbare Zufallsvariablen, welche die Eigenschaften des Bildes festlegen, die es charakterisiert.  \\
@@ -172,11 +172,11 @@
 	
 	Der kürzeren Berechnungsdauer geschuldet, werden dafür Minibatches $\textbf{M} = \{\textbf{x}_{i}\}_{i=1}^{M} \subset \textbf{X}$ gezogen und die ELBO nur auf diesen optimiert.
 	\begin{align*}
-	&\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{X}) \simeq \mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{M}) = \mathbb{E}\lbrack\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{x}_{i})\rbrack \simeq \frac{N}{M}\sum_{i=1}^{M}\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{x}_{i})\\
+	&\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{X}) \simeq  \frac{N}{M}\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{M}) = N\mathbb{E}\lbrack\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{x}_{i})\rbrack \simeq \frac{N}{M}\sum_{i=1}^{M}\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{x}_{i})\\
 	&\simeq \frac{N}{M}\sum_{i=1}^{M}  \left(D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big] - \frac{1}{L}\sum_{l=1}^{L}\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon_{l},\textbf{x}_{i}))\big)\right)
 	\end{align*}
 	
-	Experimentell hat sich gezeigt, dass ein groß gewähltes $M$, z.B. $M=100$ es zulässt die Anzahl der Stichproben von $\boldsymbol\epsilon$ für die Monte-Carlo Schätzung des Erwartungswertes $\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]$ als $L=1$ zu wählen.
+	Praktischerweise sorgt eine groß gewählte Batchsize $|\textbf{M}| = M$, z.B. $M=100$ dafür, dass der Erwartungswert implizit durch die Batches des Stochatich Gradient Verfahrens geschätzt wird. Wir können daher die Anzahl der Stichproben von $\boldsymbol\epsilon$ für die Monte-Carlo Schätzung des Erwartungswertes $\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]$ als $L=1$ festlegen.
 	\\
 	Wir erhalten den AEVB-Algorithmus \emph{(Auto Encoding Variational Bayes)}: \\
 	
@@ -203,7 +203,7 @@
 	der Encoder einen Input $\textbf{x}_{i}$ auf den Lageparameter $\boldsymbol\mu_{i}$ und den Streuungsparameter $\boldsymbol\sigma_{i}$ ab. Diese Parameter sind deterministische Funktionswerte des Encodernetzwerkes, es gilt also $\boldsymbol\mu_{i} = \boldsymbol\mu_{\boldsymbol\phi}(\textbf{x}_{i})$ und $\boldsymbol\sigma_{i} = \boldsymbol\sigma_{\boldsymbol\phi}(\textbf{x}_{i})$.\\
 	Auf diesen Output wird der Reparametrisation Trick angewandt, um die Berechnung des Gradienten mit Backpropagation zu ermöglichen.\\
 	Gegeben ein Datenpunkt $\textbf{x}_{i}$ erhalten wir eine latente Darstellung deshalb durch $\textbf{z} = g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i})  =\boldsymbol\mu_{\boldsymbol\phi}(\textbf{x}_{i}) +\boldsymbol\sigma_{\boldsymbol\phi}(\textbf{x}_{i}) \odot \boldsymbol\epsilon$ mit $\boldsymbol\epsilon \sim p(\boldsymbol\epsilon) = \mathcal{N}(\textbf{0},\textbf{I})$. Hierbei steht $\odot$ für eine elementweise Multiplikation der beiden Vektoren.\\
-	Die Verteilung $p_{\boldsymbol\theta}(\z)$ wird als multivariate Standardnormalverteilung $\mathcal{N}(\mathbf{0},\mathbf{I})$ festgelegt und nicht durch ein Neuronales Netz dargestellt. Interessanterweise ist diese Wahl einer parameterfreien, recht einfachen Verteilung möglich. Es lässt sich durch Abbilden von Realisierungen einer multivariat standardnormalverteilten Zufallsvariable tatsächlich eine beliebige andere Verteilung erzeugen.
+	Die Verteilung $p_{\boldsymbol\theta}(\z)$ wird als multivariate Standardnormalverteilung $\mathcal{N}(\mathbf{0},\mathbf{I})$ festgelegt und nicht durch ein Neuronales Netz dargestellt. Interessanterweise ist diese Wahl einer parameterfreien, recht einfachen Verteilung möglich. Es lässt sich durch Abbilden von Realisierungen einer multivariat standardnormalverteilten Zufallsvariable tatsächlich eine beliebige andere Verteilung erzeugen.\\ Werden komplexere Priorverteilungen gesucht, lassen sich simple Priorverteilungen auch durch erlernbare, bijektive Transformationen verändern. Diese Theorie übersteigt im Umfang aber den Rahmen der Projektarbeit.
 	\vspace*{0.1cm}
 	\begin{figure}[h!]
 		\centering
@@ -253,13 +253,13 @@
 	\end{align*}
 	Da $\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2})$ gilt für die Quadratischen Formen \cite{matrix}:
 	\begin{align*}
-	\mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[\textbf{z}^{\mathrm{T}}\mathbf{I}\textbf{z}\big] &= \boldsymbol\mu_{i}^{\mathrm{T}}\mathbf{I}\boldsymbol\mu_{i}+\mathrm{tr}(\boldsymbol\sigma_{i}^{2}\mathbf{I})\\ \mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[(\textbf{z}-\boldsymbol\mu_{i})^{\mathrm{T}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\big] &= \mathrm{tr}((\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}\boldsymbol\sigma_{i}^{2}\mathbf{I}).
+	\mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[\textbf{z}^{\mathrm{T}}\mathbf{I}\textbf{z}\big] &= \boldsymbol\mu_{i}^{\mathrm{T}}\mathbf{I}\boldsymbol\mu_{i}+\mathrm{Tr}(\boldsymbol\sigma_{i}^{2}\mathbf{I})\\ \mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[(\textbf{z}-\boldsymbol\mu_{i})^{\mathrm{T}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\big] &= \mathrm{Tr}((\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}\boldsymbol\sigma_{i}^{2}\mathbf{I}).
 	\end{align*}
 	
 	
 	Nun lässt sich mit ${\boldsymbol\sigma_{i}^{2}\mathbf{I}} =  \begin{psmallmatrix}\sigma_{i,1}^{2} & \ &\ \\ \ & \ddots &\ \\ \ & \ &\sigma_{i,Z}^{2}\end{psmallmatrix}$ die KL-Divergenz ausrechnen.
 	\begin{align*}
-	&-\frac{1}{2}\Big(\log\big(\det(\boldsymbol\sigma_{i}^{2}\mathbf{I})\big)+\mathrm{tr}((\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}\boldsymbol\sigma_{i}^{2}\mathbf{I})-\boldsymbol\mu_{i}^{\mathrm{T}}\textbf{I}\boldsymbol\mu_{i}-\mathrm{tr}(\boldsymbol\sigma_{i}^{2}\mathbf{I})\Big) \notag \\
+	&-\frac{1}{2}\Big(\log\big(\det(\boldsymbol\sigma_{i}^{2}\mathbf{I})\big)+\mathrm{Tr}((\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}\boldsymbol\sigma_{i}^{2}\mathbf{I})-\boldsymbol\mu_{i}^{\mathrm{T}}\textbf{I}\boldsymbol\mu_{i}-\mathrm{Tr}(\boldsymbol\sigma_{i}^{2}\mathbf{I})\Big) \notag \\
 	= &-\frac{1}{2}\left(\log\Big(\prod_{j=1}^{Z}\sigma_{i,j}^{2}\Big)+Z-\sum_{j=1}^{Z}\mu_{i,j}^{2}-\sum_{j=1}^{Z}\sigma_{i,j}^{2}\right) \notag \\
 	= &-\frac{1}{2}\sum_{j=1}^{Z}\Big(\log\big(\sigma_{i,j}^{2}\big)+1-\mu_{i,j}^{2}-\sigma_{i,j}^{2}\Big).
 	\end{align*}
