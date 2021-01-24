@@ -117,6 +117,52 @@ def make_Clemens_decoder(latent_dim):
     return Clemens_decoder
 
 
+class FramewiseEncoder(tf.keras.Model):
+    def __init__(self, latent_dim, pictureWidth, pictureHeight, pictureColors, act, complexity=1, variational=False):
+        super(FramewiseEncoder, self).__init__()
+        self.variational = variational
+        self.d = latent_dim
+        self.inp = z = tf.keras.layers.Input(shape=(pictureWidth, pictureHeight, pictureColors))
+        forwardList = []
+        w,h = pictureWidth, pictureHeight
+        i=0
+        while (w*w > pictureWidth and h*h > pictureHeight):
+            r_w, r_h = w%2, h%2
+            forwardList.append(tf.keras.layers.Conv2D((2**i)*complexity*pictureColors, (3+r_w, 3+r_h), activation=act))
+            forwardList.append(tf.keras.layers.MaxPooling2D((2, 2)))
+            w = (w-r_w)//2 -1
+            h = (h-r_h)//2 -1
+            i += 1
+
+        self.layerList = [tf.keras.layers.Conv2D(complexity*pictureColors, (3, 3), padding="same",activation=act)]
+        self.layerList += forwardList
+        self.layerList.append(tf.keras.layers.Flatten())
+        self.layerList.append(tf.keras.layers.Dense((2**i)*complexity*pictureColors, activation=act))
+        #self.layerList.append(tf.keras.layers.Dense(complexity*self.d, activation=act))
+        if self.variational:
+            self.layerList.append(tf.keras.layers.Dense(2*self.d, activation=act))
+            self.layerList.append(tf.keras.layers.Reshape((2,self.d)))
+        else:
+            self.layerList.append(tf.keras.layers.Dense(self.d, activation=act))
+
+    def call(self, z):
+        #print('Ecoding:',z.shape)
+        a = z
+        for l in self.layerList:
+            a = l(a)
+            #print('applied layer:',a)
+        if self.variational:
+            v_mu = a[:,0,:]
+            v_log_sig = a[:,1,:]
+            v_sig = K.exp(v_log_sig)
+            v = K.random_normal(shape=[len(v_mu),self.d])
+            v = tf.map_fn(lambda x: x[0]*x[1], [v, v_sig], dtype=tf.float32)
+            v = tf.map_fn(lambda x: x[0]+x[1], [v, v_mu], dtype=tf.float32)
+            #a = v
+            #a = tf.stack([v_mu, v_log_sig, v], axis=1)
+            return [v_mu, v_log_sig, v]
+        #print('Encoder built')
+        return a
 
 class FramewiseDecoder(tf.keras.Model):
     def __init__(self, latent_dim, pictureWidth, pictureHeight, pictureColors, act, complexity=1):

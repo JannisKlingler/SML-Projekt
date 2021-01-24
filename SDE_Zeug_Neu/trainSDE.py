@@ -16,7 +16,7 @@ tf.random.set_seed(1)
 
 latent_dim = 6
 nrBrMotions = 1
-epochs = 5
+epochs = 20
 M = 2
 forceHigherOrder = False
 
@@ -24,10 +24,12 @@ akt_fun = 'tanh'
 
 frames = 20
 simulated_frames = frames
-T = 50
+T = 200
+#T = 2*pi
 fps = frames//T
 Ntrain = 5000
 Ntest = 10
+
 d = M*latent_dim
 n = nrBrMotions
 batch_size = 50
@@ -44,13 +46,14 @@ X_0 = np.transpose(X_0, [1,0])
 
 #mu : R^d -> R^d
 def mu(x):
-    m = np.array([x[1],-x[0]])
+    m = np.array([x[1],-(2*pi/T)**2*x[0]])
+    #m = np.array([x[1],1])
     return m
 
 #sigma: R^d -> R^(nxd)
 def sigma(x):
-    #s = np.array([[0.5],[0.2]])
-    s = np.zeros((d,n))
+    s = np.array([[0],[1]])
+    #s = np.zeros((d,n))
     return s
 
 
@@ -92,20 +95,25 @@ print('new train shape:',x_train_derivatives.shape)
 derivatives = SDE_Tools.make_tensorwise_derivatives(M, frames, fps)
 ms = SDE_Tools.mu_sig_Net(M,latent_dim,n,akt_fun,complexity,forceHigherOrder=forceHigherOrder)
 
-p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, T, frames, ms, None)
-cv_loss = SDE_Tools.make_covariance_Loss(T, frames, batch_size, ms, None)#, norm=lambda x: tf.math.sqrt(abs(x)))
-ss_loss = SDE_Tools.make_sigma_size_Loss(ms, None)
+p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, T, frames, ms)
+cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, T, frames, batch_size, ms)#, norm=lambda x: tf.math.sqrt(abs(x)))
+ss_loss = SDE_Tools.make_sigma_size_Loss(latent_dim, ms)
 
 reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(d, latent_dim, n, T, frames, ms, batch_size)
 rec_loss = SDE_Tools.make_reconstruction_Loss(M, n, T, frames, batch_size, reconstructor, derivatives)
 
-#loss = lambda x_org,ms_rec: 1*p_loss(x_org) + 5*cv_loss(x_org) + 0.9*ss_loss(x_org) #+ 0*rec_loss(x_org[:,0,:])
-loss = lambda x_org,ms_rec: 1*rec_loss(x_org,None) #+ 1*p_loss(x_org, ms_rec) + 0*cv_loss(x_org) + 0*ss_loss(x_org) #+ 0*rec_loss(x_org[:,0,:])
+#loss = lambda x_org,ms_rec: 1*rec_loss(x_org,None) + 1*p_loss(x_org, ms_rec) + 0.1*cv_loss(x_org, ms_rec) + 0*ss_loss(x_org, ms_rec)
+def loss(x_org,ms_rec):
+    S = 0
+    #S += 1*rec_loss(x_org,None)
+    S += 10*p_loss(x_org, ms_rec)
+    S += 0.5*cv_loss(x_org, ms_rec)
+    S += 1000*ss_loss(x_org, ms_rec)
+    return S
 
-
-ms.compile(optimizer='adam', loss=loss)#, metrics=[lambda x,m: ss_loss(x)])  #, metrics=[lambda x,m: rec_loss(x[:,0,:])])
+ms.compile(optimizer='adam', loss=loss, metrics=[ss_loss, lambda x,m: rec_loss(x,None)])  #, metrics=[lambda x,m: rec_loss(x[:,0,:])])
 ms.fit(x_train_derivatives, x_train_derivatives, epochs=epochs, batch_size=batch_size, shuffle=False)
-
+ms.summary()
 
 
 ########################################################

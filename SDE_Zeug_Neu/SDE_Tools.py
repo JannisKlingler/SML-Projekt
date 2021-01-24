@@ -29,7 +29,7 @@ def make_tensorwise_derivatives(M, frames, fps):
             x_last = dList[-1]
             x_derived = x_last[:,1:,:]-x_last[:,:-1,:]
             x_derived = x_derived*fps
-            print('ZZZZ', x_derived.shape)
+            #print('ZZZZ', x_derived.shape)
             dList.append(x_derived)
         dList = list(map(lambda arg: arg[:,:length-M+1,:],dList))
         return tf.stack(dList,axis=2)
@@ -127,27 +127,29 @@ class mu_sig_Net(tf.keras.Model):
         self.forceHigherOrder = forceHigherOrder
         d = M*latent_dim
         #self.inp = z = tf.keras.layers.Input(shape=(latent_dim))
+        self.mu_layerList = []
+        self.sig_layerList = []
 
         #Netzwerk um mu zu lernen
         if forceHigherOrder:
-            self.mu_layer1 = tf.keras.layers.Flatten()
-            self.mu_layer2 = tf.keras.layers.Dense(complexity, activation=akt_fun)
-            self.mu_layer3 = tf.keras.layers.Dense(complexity, activation=akt_fun)
-            self.mu_layer4 = tf.keras.layers.Dense(latent_dim, activation=akt_fun)
-            self.mu_layer5 = tf.keras.layers.Reshape((1,latent_dim))
+            self.mu_layerList.append(tf.keras.layers.Flatten())
+            self.mu_layerList.append(tf.keras.layers.Dense(complexity, activation=akt_fun))
+            self.mu_layerList.append(tf.keras.layers.Dense(complexity, activation=akt_fun))
+            self.mu_layerList.append(tf.keras.layers.Dense(latent_dim, activation=akt_fun))
+            self.mu_layerList.append(tf.keras.layers.Reshape((1,latent_dim)))
         else:
-            self.mu_layer1 = tf.keras.layers.Flatten()
-            self.mu_layer2 = tf.keras.layers.Dense(complexity*M, activation=akt_fun)
-            self.mu_layer3 = tf.keras.layers.Dense(complexity*M, activation=akt_fun)
-            self.mu_layer4 = tf.keras.layers.Dense(M*latent_dim, activation=akt_fun)
-            self.mu_layer5 = tf.keras.layers.Reshape((M,latent_dim))
+            self.mu_layerList.append(tf.keras.layers.Flatten())
+            self.mu_layerList.append(tf.keras.layers.Dense(complexity*M, activation=akt_fun))
+            self.mu_layerList.append(tf.keras.layers.Dense(complexity*M, activation=akt_fun))
+            self.mu_layerList.append(tf.keras.layers.Dense(M*latent_dim, activation=akt_fun))
+            self.mu_layerList.append(tf.keras.layers.Reshape((M,latent_dim)))
 
         #Netzwerk um sigma zu lernen
-        self.sig_layer1 = tf.keras.layers.Flatten()
-        self.sig_layer2 = tf.keras.layers.Dense(complexity*M*n, activation=akt_fun)
-        self.sig_layer3 = tf.keras.layers.Dense(complexity*M*n, activation=akt_fun)
-        self.sig_layer4 = tf.keras.layers.Dense(M*latent_dim*n, activation=akt_fun)
-        self.sig_layer5 = tf.keras.layers.Reshape((M, latent_dim, n))
+        self.sig_layerList.append(tf.keras.layers.Flatten())
+        self.sig_layerList.append(tf.keras.layers.Dense(complexity*M*n, activation=akt_fun))
+        self.sig_layerList.append(tf.keras.layers.Dense(complexity*M*n, activation=akt_fun))
+        self.sig_layerList.append(tf.keras.layers.Dense(M*latent_dim*n, activation=akt_fun))
+        self.sig_layerList.append(tf.keras.layers.Reshape((M, latent_dim, n)))
 
         #Netzwerke zusammenfügen
         #self.merge_layer = tf.keras.layers.Concatenate(axis=-1)([mu,sig])
@@ -157,46 +159,26 @@ class mu_sig_Net(tf.keras.Model):
     def call(self, inputs):
         #inputs hat dim: batch_size x frames-M+1 x M x latent_dim
         print('called ms_Net on:',inputs.shape)
-        frames_List = tf.split(inputs, len(inputs[0]), axis=1)
+        frames_List = tf.split(inputs, inputs.shape[1], axis=1)
         #print('changed:',frames_List)
         ms_List = []
         for x in frames_List:
             #x hat dim: batch_size x 1 x M x latent_dim
+
+            mu = x[:,0,:,:]
+            for l in self.mu_layerList:
+                mu = l(mu)
             if self.forceHigherOrder:
-                #print('mu-input:',x[:,0,:,:])
-                mu = self.mu_layer1(x[:,0,:,:])
-                #print('applied layer:',mu)
-                mu = self.mu_layer2(mu)
-                #print('applied layer:',mu)
-                mu = self.mu_layer3(mu)
-                #print('applied layer:',mu)
-                mu = self.mu_layer4(mu)
-                #print('applied layer:',mu)
-                mu = self.mu_layer5(mu)
-                #print('applied layer:',mu)
-
-                #ACHTUNG: Mogeln
                 mu = tf.keras.layers.Concatenate(axis=1)([x[:,0,1:,:], mu])
-                #mu = tf.concat([x[:,0,1:,:], mu], axis=1)
-                #mu = tf.concat([x[:,0,1:,:], -x[:,0,:1,:]], axis=1)
+            #mu hat dim: batch_size x M x latent_dim
 
-                #mu hat dim: batch_size x M x latent_dim
-            else:
-                mu = self.mu_layer1(x[:,0,:,:])
-                mu = self.mu_layer2(mu)
-                mu = self.mu_layer3(mu)
-                mu = self.mu_layer4(mu)
-                mu = self.mu_layer5(mu)
-                #mu hat dim: batch_size x M x latent_dim
             #eine dim an mu anhängen, um später mit sig concat machen zu können
             mu = tf.transpose([mu],(1,2,3,0))
             #mu hat dim: batch_size x M x latent_dim x 1
 
-            sig = self.sig_layer1(x[:,0,:,:])
-            sig = self.sig_layer2(sig)
-            sig = self.sig_layer3(sig)
-            sig = self.sig_layer4(sig)
-            sig = self.sig_layer5(sig)
+            sig = x[:,0,:,:]
+            for l in self.sig_layerList:
+                sig = l(sig)
             #sig hat dim: batch_size x M x latent_dim x n
             print('mu and sig:', mu.shape, sig.shape)
             mu_sig = tf.keras.layers.Concatenate(axis=-1)([mu,sig])
@@ -244,7 +226,7 @@ def make_reconstruction_Loss(M, n, Time, frames, batch_size, T_reconstructor, de
             #Z_derivatives = derivatives(Z_org)
             #print('CCCC0:',Z_derivatives.shape)
             Z_0 = Z_org[:,0,:,:]
-            print('CCCC0:',Z_0.shape)
+            #print('CCCC0:',Z_0.shape)
             Z_rec = T_reconstructor(Z_0)[:,:Z_org.shape[1],0,:]
             Z_org = Z_org[:,:,0,:]
         print('SDE_rec_loss_inp2:',Z_org.shape, Z_rec.shape)
@@ -256,89 +238,78 @@ def make_reconstruction_Loss(M, n, Time, frames, batch_size, T_reconstructor, de
     return reconstruction_loss
 
 
-def make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, Model, norm=abs, getOwnInputs=False):
+def make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net,norm=abs):
     def pointwise_loss(Z_org, ms_rec):
-        #if getOwnInputs:
-            #Z_org = Model.fullcall(Z_org)[-3]
-        print('p_loss-inp:', Z_org.shape, ms_rec.shape)
+        print('p_loss-inp1:', Z_org.shape)
+        if ms_rec is None:
+            ms_rec = ms_Net(Z_org)
+        print('p_loss-inp2:', ms_rec.shape)
         Z_delta = Z_org[:,1:,:,:] - Z_org[:,:-1,:,:]
         mu = ms_rec[:,:-1,:,:,0]
         fps = frames/Time
         rec_delta = mu/fps
         Difference = Z_delta - rec_delta
-        Diff = tf.map_fn(lambda arg1: tf.map_fn(lambda arg2: tf.map_fn(lambda arg3: tf.map_fn(abs,arg3),arg2),arg1),Difference)
+        #Diff = tf.map_fn(lambda arg1: tf.map_fn(lambda arg2: tf.map_fn(lambda arg3: tf.map_fn(abs,arg3),arg2),arg1),Difference)
+        Diff = tf.map_fn(abs, Difference)
         Diff = K.mean(Diff)
         return Diff
-
-        '''
-        print('p_loss-inp:', X_org.shape)
-        #mu = mu_sig[:,:,0]
-        X_delta = X_org[:,1:,:]-X_org[:,:-1,:]
-        mu = ms_Net(X_org)[:,:-1,:latent_dim,0]
-        print('mu:', mu.shape)
-        fps = frames/Time
-        rec_delta = mu/fps
-        Difference = X_delta - rec_delta
-        Diff = tf.map_fn(norm,Difference)
-        Diff = K.mean(Diff)
-        return Diff
-        '''
     return pointwise_loss
 
-def make_covariance_Loss(Time, frames, batch_size, ms_Net, Model, norm=abs, getOwnInputs=False):
-    def covariance_loss(X_org):
-        if getOwnInputs:
-            X_org = Model.fullcall(X_org)[-3]
-        print('cv_loss-inp:', X_org.shape)
-        X_value = X_org[:,:-1,:]
-        #print('X_value:',X_value.shape)
-        X_delta = X_org[:,1:,:]-X_org[:,:-1,:]
-        #print('X_delta:',X_delta.shape)
-        mu_sig = ms_Net(X_value)
-        #print('ms:',mu_sig.shape)
-        mu = mu_sig[:,:,:,0]
-        sig = mu_sig[:,:,:,1:]
+def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, norm=abs):
+    def covariance_loss(Z_org, ms_rec):
+        #Z_org hat dim: batch_size x frames-M+1 x M x latent_dim
+        Z_delta = Z_org[:,1:,:,:]-Z_org[:,:-1,:,:]
+        #Z_org hat dim: batch_size x frames-M x M x latent_dim
+        if ms_rec is None:
+            ms_rec = ms_Net(Z_org)
+        #ms_rec hat dim: batch_size x frames-M+1 x M x latent_dim x 1+n
+        mu = ms_rec[:,:,:,:,0]
+        #mu hat dim: batch_size x frames-M+1 x M x latent_dim
+        sig = ms_rec[:,:,:,:,1:]
+        #sig hat dim: batch_size x frames-M+1 x M x latent_dim x n
 
         fps = frames/Time
         rec_delta = mu/fps
-        random_delta = [X_delta - rec_delta]
+        random_delta = [Z_delta[:,:,0,:] - rec_delta[:,:-1,0,:]]
+        #print('random_delta:',random_delta.shape)
         random_delta = tf.transpose(random_delta, [1,2,3,0])
-        print('random_delta:',random_delta.shape)
-        covar = list(map(lambda i: tf.keras.layers.Dot(axes=2)([random_delta[:,i,:,:],random_delta[:,i,:,:]]), range(frames-1)))
+        #random_delta hat dim: batch_size x frames[lokal] x latent_dim x 1
+        covar = list(map(lambda i: tf.keras.layers.Dot(axes=2)([random_delta[:,i,:,:],random_delta[:,i,:,:]]), range(random_delta.shape[1])))
         covar = tf.stack(covar, axis=1)
-        #print('covar:',covar.shape)
         covar = K.sum(covar,axis=1)
-        #print('covar:',covar.shape)
+        #covar hat dim: batch_size x frames[lokal] x latent_dim x latent_dim
 
-        #print('sig:',sig.shape)
-        sum_sig = list(map(lambda i: tf.keras.layers.Dot(axes=2)([sig[:,i,:,:],sig[:,i,:,:]]), range(frames-1)))
+        sig = sig[:,:,0,:,:]
+        #sig hat dim: batch_size x frames[lokal] x latent_dim x n
+        sum_sig = list(map(lambda i: tf.keras.layers.Dot(axes=2)([sig[:,i,:,:],sig[:,i,:,:]]), range(sig.shape[1])))
         sum_sig = tf.stack(sum_sig, axis=1)
-        #print('A:',sum_sig)
         theoretical_covar = K.sum(sum_sig, axis=1)/fps
+        #theoretical_covar hat dim: batch_size x frames[lokal] x latent_dim x latent_dim
         #print('theoretical_covar:',theoretical_covar.shape)
 
         Diff_sq_var = covar - theoretical_covar
         Diff_sq_var = tf.map_fn(norm,Diff_sq_var)
         #print('Diff_sq_var:',Diff_sq_var.shape)
-        Diff_sq_var = K.mean(Diff_sq_var)
+        Diff_sq_var = K.mean(Diff_sq_var)/(latent_dim**2)
         return Diff_sq_var
 
     return covariance_loss
 
 
-def make_sigma_size_Loss(ms_Net, Model, norm=abs, getOwnInputs=False):
-    def sigma_size_loss(X_org):
-        if getOwnInputs:
-            X_org = Model.fullcall(X_org)[-3]
-        X_value = X_org[:,:-1,:]
-        sig = ms_Net(X_value)[:,:,:,1:]
+def make_sigma_size_Loss(latent_dim, ms_Net, norm=abs):
+    def sigma_size_loss(Z_org, ms_rec):
+        #Z_org hat dim: batch_size x frames-M+1 x M x latent_dim
+        if ms_rec is None:
+            ms_rec = ms_Net(Z_org)
+        #ms_rec hat dim: batch_size x frames-M+1 x M x latent_dim x 1+n
+        sig = ms_rec[:,:,0,:,1:]
         sig_size = tf.map_fn(norm,sig)
-        sig_size = K.mean(sig_size)
+        sig_size = K.mean(sig_size)/latent_dim
         return sig_size
 
     return sigma_size_loss
 
-def make_anti_regularizer_Loss(ms_Net, Model, norm=abs):
+def make_anti_regularizer_Loss(latent_dim, s_Net, Model, norm=abs):
     def anti_regularizer_loss(X_org):
         _,_,_,X_rec,_ = Model.fullcall(X_org)
         print('ar_loss X_rec:',X_rec.shape)
