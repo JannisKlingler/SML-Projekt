@@ -6,10 +6,7 @@
 \usepackage{textcomp}
 \usepackage[a4paper, lmargin=2.5cm, rmargin=2.5cm, top=2.5cm, bottom=3cm]{geometry}
 \usepackage{setspace}
-\usepackage{amsmath}
 \usepackage{amsfonts}
-\usepackage{amssymb}
-\usepackage{amsthm}
 \usepackage[utf8]{inputenc}
 \usepackage{stmaryrd}
 \usepackage{bibgerm}
@@ -20,6 +17,21 @@
 \pagestyle{plain}
 \pagenumbering{arabic}
 \usepackage[square,sort,comma,numbers]{natbib}
+\usepackage{pifont}
+
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\usepackage{amsmath,amssymb,amstext,mathtools,amsthm,amsfonts}
+\usepackage{xcolor}
+\usepackage[ngerman]{babel}
+\usepackage{booktabs}
+\usepackage{chemformula} % Für die chemische Formel
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{bigints}
+\newcommand{\abs}[1]{{\left| #1 \right|}}
+
 
 \usepackage{xcolor}
 \usepackage[framemethod,tikz]{mdframed}
@@ -176,7 +188,7 @@
 	&\simeq \frac{N}{M}\sum_{i=1}^{M}  \left(D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big] - \frac{1}{L}\sum_{l=1}^{L}\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon_{l},\textbf{x}_{i}))\big)\right)
 	\end{align*}
 	
-	Praktischerweise sorgt eine groß gewählte Batchsize $|\textbf{M}| = M$, z.B. $M=100$ dafür, dass der Erwartungswert implizit durch die Batches des Stochatich Gradient Verfahrens geschätzt wird. Wir können daher die Anzahl der Stichproben von $\boldsymbol\epsilon$ für die Monte-Carlo Schätzung des Erwartungswertes $\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]$ als $L=1$ festlegen.
+	Praktischerweise sorgt eine groß gewählte Batchsize $|\textbf{M}| = M$, z.B. $M=100$ dafür, dass der Erwartungswert implizit durch die Batches des Stochatich Gradient Verfahrens geschätzt wird. Wir können dann die Anzahl der Stichproben von $\boldsymbol\epsilon$ für die Monte-Carlo Schätzung des Erwartungswertes $\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]$ als $L=1$ festlegen.
 	\\
 	Wir erhalten den AEVB-Algorithmus \emph{(Auto Encoding Variational Bayes)}: \\
 	
@@ -323,7 +335,14 @@
 	\end{array}\right)
 	\mathrm{d}t.
 	\end{align*}
-	Die Autoren des Papers verwenden ein Bayensisches Neuronales Netzwerk zur Modellierung der Differentialgleichung um Unsicherheit besser darstellen zu können. Wir werden aber auf ein gewöhnliches Neuronales Netzwerk zurückgreifen und im nächsten Kapitel auf Modellierung von Stochastischen Differentialgleichung eingehen. \\ \\
+	Die Autoren des Papers verwenden ein Bayensisches Neuronales Netzwerk zur Modellierung der Differentialgleichung um Unsicherheit besser darstellen zu können. Wir werden aber auf ein gewöhnliches Neuronales Netzwerk zurückgreifen und im nächsten Kapitel auf Modellierung von Stochastischen Differentialgleichung eingehen. 
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[scale=0.57]{ODE2VAE_ODE_Net}
+		\captionsetup{labelformat=empty}
+		\caption{Schematische Darstellung des ODE$^2$-VAE. Eine Inputsequenz wird von den Encodermodellen auf die Startwerte einer Beschleunigungs- und Positionskurve abgebildet. Die Änderung der Beschleuningungskurve (blau) wird durch ein ODE-Net Modelliert und mit einem ODEsolver berechnet. Die Änderung der Positionskurve ergibt sich durch Integration über die Beschleuningungskurve. Zu festgelegten Zeitpunkten rekonstruiert der Decoder aus den Positionswerten $\mathbf{s}_t$ die Inputsequenz.}
+	\end{figure}
+	
 	Als Trainingskriterium des ODE$^2$-VAE verwenden wir erneut die negative ELBO.
 	Wir erhalten:
 	\begin{align*}
@@ -429,52 +448,308 @@
 	Wir schlagen ähnlich dem Ansatz zur alternativen Lossfunktion des Papers daher vor direkt die KL-Divergenz zur Encoderverteilung $q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{t}|\mathbf{x}_{t:(t+m)})$ zu minimieren. Eine wie wir finden vertretbare Annahme, da so auch sichergestellt wird, dass Encodernetzwerk und ODE-Netzwerk der selben Sequenz latente Werte mit ähnlicher Dichte zuweisen.\\
 	Nun lässt sich die ELBO analytisch berechnen und die Parameter $\boldsymbol\phi,\boldsymbol\psi,\boldsymbol\theta$ lassen sich anhand dieses Trainingskriterium aktualisieren.\\
 	
-	\emph{Anmerkung:} Ebenfalls gute Ergebnisse liefert bei uns die Approximation der Integrale durch eine Summe mit Schrittweite $\mathrm{d}t=1$ und das Verwenden des Reconstruction Loss als alleiniges Trainingskriterium. Visuell sind die Rekonstruktionen bei deutlich geringerer Trainingszeit (Bei uns ca. Faktor 30) auf unseren Datensätzen sogar etwas besser, als mit einem Neural-ODE. Dies haben wir mit unserer Lossfunktion beobachtet, aber vor allem auch mit der Lossfunktion des Papers. Wir vermuten, dass das auch an einem Implementierungsfehler unsererseits liegen könnte.
+	Ebenfalls gute Ergebnisse liefert bei uns die Approximation der Integrale durch eine Summe mit Schrittweite $\mathrm{d}t=1$ und das Verwenden des Reconstruction Loss als alleiniges Trainingskriterium.\\
+		\begin{figure}[h!]
+		\centering
+		\includegraphics[scale=0.41]{ODE2VAE_Modell}
+		\captionsetup{labelformat=empty}
+		\caption{Das alternative Modell. Die Veränderung in der Zeit wird erneut durch das ODE-Net modelliert. Wir erhalten den Positionszustand $\mathbf{s}_{t+1} = \mathbf{s}_{t} + \mathbf{v}_{t} + f_{\boldsymbol\psi}(\mathbf{s}_{t}, \mathbf{v}_{t})$ aber durch Addition des Geschwindigkeitszustand und Auswertung des ODE-Nets, was den Rechenaufwand stark reduziert. Eine stetige Modellierung der Time Series ist nun zwar nicht mehr möglich, Einbußen in der Qualität der Rekonstruktionen konnten wir aber nicht beobachten.}
+	\end{figure}
+
+	Visuell sind die Rekonstruktionen bei deutlich geringerer Trainingszeit (Bei uns ca. Faktor 30) auf unseren Datensätzen sogar etwas besser, als mit einem Neural-ODE. Dies haben wir mit unserer Lossfunktion beobachtet, aber vor allem auch mit der Lossfunktion des Papers. Wir vermuten, dass das auch an einem Implementierungsfehler unsererseits liegen könnte.
 	Durch verwenden einer Summe und Simplifizierung des Trainingskriterium gehen einige praktische Eigenschaften des Modells verloren, wie das Erzeugen neuer Daten durch ziehen aus einer Normalverteilung, das Anfertigen von Rekonstruktionen in stetiger Zeit, die mathematische Interpretation des Modells als Verteilung und somit auch das Schätzen der Wahrscheinlichkeitsdichte und schließlich noch die größere Resistenz des Modells gegenüber Overfitting.
 	Um einige dieser Modelleigenschaften zu erhalten könnte man auch als Trainingskriterium auch den Reconstruction Loss mit der Vanilla-VAE ELBO verwenden.
 	
 	
+	\newpage
 	\subsection[SDE-VAE]{Stochastic Differential Equation Variational Autoencoder}
 	
 	
 	\section[Empirische Untersuchung]{Empirische Untersuchung}
 	\subsection[VAE]{Ergebnisse: VAE}
 	
-	\textbf{TODO: Bild einfügen VAE Rekonstruktion ohne Interpolation}
-	\begin{figure}[!htbp]
-		\centering
-		%		\includegraphics[scale=1]{DreieckLemma}
-		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
-	\end{figure}
+
+	
+	
+
+		
 	\textbf{TODO: Bild einfügen VAE Rekonstruktion mit Interpolation}
 	\begin{figure}[!htbp]
 		\centering
-		%		\includegraphics[scale=1]{DreieckLemma}
+		\includegraphics[scale=0.8]{interpolation}
 		\caption{Rekonstruktion der \emph{time series} mittels VAE mit Interpolation.}
 	\end{figure}
+	\textbf{TODO: Bild einfügen VAE Rekonstruktion ohne Interpolation}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.8]{whole_sequence_mnist}
+		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+	\end{figure}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.8]{whole_sequence_bouncingBalls}
+		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+	\end{figure}
 	\newpage
-	\subsection[ODE$^2$-VAE]{Ergebnisse: ODE$^2$-VAE}
+	\subsection[ODE$^2$-VAE]{Ergebnisse: ODE$^2$-VAE}	
 	
-%	\begin{figure}
-%		\begin{minipage}[position=l]{0.33\textwidth}
-%			\begin{mdframed}[style=inner]
-%				\center{Modellinput\vspace{0.2cm}}
-%				\includegraphics[scale=0.5]{Modellinput}
-%			\end{mdframed}
-%		\end{minipage}
-%		\begin{minipage}[position=r]{0.67\textwidth}
-%			\begin{mdframed}[style=inner]
-%				\center{Rekonstruktionen\vspace{0.2cm}}
-%				\includegraphics[scale=0.499]{Reconstructions}
-%			\end{mdframed}
-%		\end{minipage}
-		%\caption{Groundtruth (jeweils obere Reihe) und %Rekonstruktionen des ODE$^2$-VAE (untere Reihe) auf %den Testdatensätzen von Rotating MNIST und Bouncing %Balls. Wie erwähnt erhält das Modell nur die ersten %drei Bilder der \emph{time series}, um Vorhersagen %für die restlichen Zeitpunkte zu treffen.}
-%		\end{figure}
+	\begin{figure}
+		\begin{minipage}[position=l]{0.33\textwidth}
+			\begin{mdframed}[style=inner]
+				\center{Modellinput\vspace{0.2cm}}
+				\includegraphics[scale=0.5]{Modellinput}
+			\end{mdframed}
+		\end{minipage}
+		\begin{minipage}[position=r]{0.67\textwidth}
+			\begin{mdframed}[style=inner]
+				\center{Extrapolation\vspace{0.2cm}}
+				\includegraphics[scale=0.499]{Reconstructions}
+			\end{mdframed}
+		\end{minipage}
+		\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$-VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
+		\end{figure}
+	
+		\begin{figure}
+		\begin{minipage}[position=l]{0.5\textwidth}
+			\begin{mdframed}[style=inner]
+				\center{Modellinput\vspace{0.2cm}}
+				\includegraphics[scale=0.47]{movies_input}
+			\end{mdframed}
+		\end{minipage}
+		\begin{minipage}[position=r]{0.5\textwidth}
+			\begin{mdframed}[style=inner]
+				\center{Extrapolation\vspace{0.2cm}}
+				\includegraphics[scale=0.47]{movies_extrapolation}
+			\end{mdframed}
+		\end{minipage}
+		\caption{Blablabla}
+	\end{figure}
 	\newpage
+	
+		
+	\begin{table}[htb]
+		\begin{center}
+			\begin{tabular}{lccccc}\toprule
+				\textbf{\ }	&\textbf{VanillaVAE-}	&\textbf{Latente Interpolation} 
+				&\textbf{alternativerODE$^2$-VAE}
+				&\textbf{ODE$^2$-VAE} 
+				&\textbf{SDE-VAE} \\
+				
+				\textbf{Rekonstruktionen} \\ \textbf{in stetiger Zeit}& $\times$	& $\checkmark$ &$\times$ & $\checkmark$	& \\
+				\textbf{Beobachtungszeitpunkte}\\ \textbf{können unregelmäßig sein}	& $\times$	&  $\checkmark$ & $\times$ &$\checkmark$	& \\
+				\textbf{Extrapolation}	& $\times$	& $\times$ & $\checkmark$ & $\checkmark$	& \\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+	
 	\subsection[SDE-VAE]{Ergebnisse: SDE-VAE}
 	\newpage
-	\section[Code]{Code}
+	\section[Modellstrukturen]{Modellstrukturen}
+	VAE für gesamte Sequenz
 	
+		\begin{table}[htb]
+		\begin{center}
+			\begin{tabular}{llcccc}\toprule
+				\textbf{\ }	&\textbf{Encoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& (28, 28, 10)		& 0		& - 			&- \\
+				\textbf{2.}	&Conv2D 		& (28, 28, 32)		& 2912	& 3 $\times$ 3; padding	&relu \\
+				\textbf{3.}	&Max-Pooling2D	& (14, 14, 32)		& 0		& 2 $\times$ 2	&- \\
+				\textbf{4.}	&Conv2D			& (12, 12, 64)		& 18496	& 3 $\times$ 3	&relu \\
+				\textbf{5.}	&Max-Pooling2D	& (6, \ \ 6, \ 64)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{6.}	&Conv2D		& (4, \ \ 4,  128)	& 73856	& 3 $\times$ 3 	&relu \\
+				\textbf{7.}	&Flatten		& 2048				& 0		& - 			&- \\
+				\textbf{8.}	&Dense-Layer			& 256				& 262272	& - 			&relu \\
+				\textbf{9.}	&Dense-Layer 			& 20 + 20				& 10280	& - 			&- \\
+				\textbf{10.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (20, 20)				& 0	& - 			&- \\
+				\textbf{11.}&$\mathbf{z}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 20				& 0	& - 			&-\\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+
+	\begin{table}[htb]
+	\begin{center}
+		\begin{tabular}{llcccc}\toprule
+			\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+			\midrule
+			\textbf{1.}	&Input-Layer	& 20		& 0		& - 			&- \\
+			\textbf{2.}	&Dense-Layer 			& 256		& 5376	& -				&relu \\
+			\textbf{3.}	&Dense-Layer			& 2048		& 526336& -				&relu \\
+			\textbf{4.}	&Reshape-Layer		& (4, \ \ 4,  128)	& 0		& -		&- \\
+			\textbf{5.}	&Conv2DTranspose& (6, \ \ 6, \ 64)	& 73792	& 3 $\times$ 3 	&relu \\
+			\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 64)	& 0		& 2 $\times$ 2 	&- \\
+			\textbf{7.}	&Conv2DTranspose& (14, 14, \ 32)	& 18464		& 3 $\times$ 3 			&relu \\
+			\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
+			\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 10)	& 5130  	& 3 $\times$ 3; padding 			&sigmoid \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+\end{table}
+			ODE2VAE rotatingMNIST, bouncingBalls
+	\begin{table}[htb]
+		\begin{center}
+			\begin{tabular}{llcccc}\toprule
+				\textbf{\ }	&\textbf{Positionencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& (28, 28, \ 1)		& 0		& - 			&- \\
+				\textbf{2.}	&Conv2D 		& (28, 28, 32)		& 320	& 3 $\times$ 3; padding	&relu \\
+				\textbf{3.}	&Max-Pooling2D	& (14, 14, 32)		& 0		& 2 $\times$ 2	&- \\
+				\textbf{4.}	&Conv2D			& (12, 12, 64)		& 18496	& 3 $\times$ 3	&relu \\
+				\textbf{5.}	&Max-Pooling2D	& (6, \ \ 6, \ 64)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{6.}	&Conv2D		& (4, \ \ 4,  128)	& 73856	& 3 $\times$ 3 	&relu \\
+				\textbf{7.}	&Flatten		& 2048				& 0		& - 			&- \\
+				\textbf{8.}	&Dense-Layer			& 256				& 262272	& - 			&relu \\
+				\textbf{9.}	&Dense-Layer 			& 20 + 20				& 10280	& - 			&- \\
+				\textbf{10.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (20, 20)				& 0	& - 			&- \\
+				\textbf{11.}&$\mathbf{s}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 20				& 0	& - 			&-\\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+	
+	\begin{table}[htb]
+		\begin{center}
+			\begin{tabular}{llcccc}\toprule
+				\textbf{\ }	&\textbf{Velocityencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& (28, 28, \ 3)		& 0		& - 			&- \\
+				\textbf{2.}	&Conv2D 		& (28, 28, 32)		& 896	& 3 $\times$ 3; padding	&relu \\
+				\textbf{3.}	&Max-Pooling2D	& (14, 14, 32)		& 0		& 2 $\times$ 2	&- \\
+				\textbf{4.}	&Conv2D			& (12, 12, 64)		& 18496	& 3 $\times$ 3	&relu \\
+				\textbf{5.}	&Max-Pooling2D	& (6, \ \ 6, \ 64)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{6.}	&Conv2D		& (4, \ \ 4,  128)	& 73856	& 3 $\times$ 3 	&relu \\
+				\textbf{7.}	&Flatten		& 2048				& 0		& - 			&- \\
+				\textbf{8.}	&Dense-Layer			& 256				& 262272	& - 			&relu \\
+				\textbf{9.}	&Dense-Layer 			& 20 + 20				& 10280	& - 			&- \\
+				\textbf{10.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (20, 20)				& 0	& - 			&- \\
+				\textbf{11.}&$\mathbf{v}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 20				& 0	& - 			&-\\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+	
+	\begin{table}[htb]
+		\begin{center}
+			\begin{tabular}{llccc}\toprule
+				\textbf{\ }	&\textbf{ODE-Net}	&\textbf{Outputgröße} &\textbf{Parameter}  &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& (2, 20)		& 0			&- \\
+				\textbf{2.}	&Flatten	 	& 40			& 0			&- \\
+				\textbf{3.}	&Dense-Layer			& 100			& 4100		&tanh \\
+				\textbf{4.}	&Dense-Layer			& 100			& 10100		&tanh \\
+				\textbf{5.}	&Dense-Layer			& 20			& 2020		&- \\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+	
+	\begin{table}[htb]
+		\begin{center}
+			\begin{tabular}{llcccc}\toprule
+				\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& 20		& 0		& - 			&- \\
+				\textbf{2.}	&Dense-Layer 			& 256		& 5376	& -				&relu \\
+				\textbf{3.}	&Dense-Layer			& 2048		& 526336& -				&relu \\
+				\textbf{4.}	&Reshape-Layer		& (4, \ \ 4,  128)	& 0		& -		&- \\
+				\textbf{5.}	&Conv2DTranspose& (6, \ \ 6, \ 64)	& 73792	& 3 $\times$ 3 	&relu \\
+				\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 64)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{7.}	&Conv2DTranspose& (14, 14, \ 32)	& 18464		& 3 $\times$ 3 			&relu \\
+				\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
+				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 1)	& 513  	& 3 $\times$ 3; padding 			&sigmoid \\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+	\noindent	
+	\newpage
+	ODE2VAE Videosequenzen
+	\begin{table}[htb]
+		\begin{center}
+			\begin{tabular}{llcccc}\toprule
+				\textbf{\ }	&\textbf{Positionencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& (60, 60, \ 1)		& 0		& - 			&- \\
+				\textbf{2.}	&Conv2D 		& (56, 56, 32)		& 823	& 5 $\times$ 5	&relu \\
+				\textbf{3.}	&Max-Pooling2D	& (14, 14, 32)		& 0		& 2 $\times$ 2	&- \\
+				\textbf{3.}	&Conv2D 		& (28, 28, 32)		& 9248	& 3 $\times$ 3; padding	&relu \\
+				\textbf{4.}	&Max-Pooling2D	& (14, 14, 32)		& 0		& 2 $\times$ 2	&- \\
+				\textbf{5.}	&Conv2D			& (12, 12, 64)		& 18496	& 3 $\times$ 3	&relu \\
+				\textbf{6.}	&Max-Pooling2D	& (6, \ \ 6, \ 64)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{7.}	&Conv2D		& (5, \ \ 5,  128)	& 32896	& 2 $\times$ 2 	&relu \\
+				\textbf{8.}	&Flatten		& 3200				& 0		& - 			&- \\
+				\textbf{9.}	&Dense-Layer			& 384				& 1229184	& - 			&relu \\
+				\textbf{10.}	&Dense-Layer 			& 30 + 30				& 23100	& - 			&- \\
+				\textbf{11.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (30, 30)				& 0	& - 			&- \\
+				\textbf{12.}&$\mathbf{s}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 30				& 0	& - 			&-\\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+	
+	\begin{table}[htb]
+	\begin{center}
+		\begin{tabular}{llcccc}\toprule
+			\textbf{\ }	&\textbf{Velocityencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+			\midrule
+			\textbf{1.}	&Input-Layer	& (60, 60, \ 4)		& 0		& - 			&- \\
+			\textbf{2.}	&Conv2D 		& (56, 56, 64)		& 6464	& 5 $\times$ 5	&relu \\
+			\textbf{3.}	&Max-Pooling2D	& (14, 14, 64)		& 0		& 2 $\times$ 2	&- \\
+			\textbf{3.}	&Conv2D 		& (28, 28, 64)		& 36928	& 3 $\times$ 3; padding	&relu \\
+			\textbf{4.}	&Max-Pooling2D	& (14, 14, 64)		& 0		& 2 $\times$ 2	&- \\
+			\textbf{5.}	&Conv2D			& (12, 12, 128)		& 73856 & 3 $\times$ 3	&relu \\
+			\textbf{6.}	&Max-Pooling2D	& (6, \ \ 6, \ 128)	& 0		& 2 $\times$ 2 	&- \\
+			\textbf{7.}	&Conv2D		& (5, \ \ 5,  256)		& 131328& 2 $\times$ 2 	&relu \\
+			\textbf{8.}	&Flatten		& 6400				& 0		& - 			&- \\
+			\textbf{9.}	&Dense-Layer			& 640				& 4096640	& - 			&relu \\
+			\textbf{10.}	&Dense-Layer 			& 30 + 30				& 38460	& - 			&- \\
+			\textbf{11.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (30, 30)				& 0	& - 			&- \\
+			\textbf{12.}&$\mathbf{v}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 30				& 0	& - 			&-\\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+	\end{table}
+	
+	\begin{table}[htb]
+		\begin{center}
+			\begin{tabular}{llccc}\toprule
+				\textbf{\ }	&\textbf{ODE-Net}	&\textbf{Outputgröße} &\textbf{Parameter}  &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& (2, 30)		& 0			&- \\
+				\textbf{2.}	&Flatten	 	& 60			& 0			&- \\
+				\textbf{3.}	&Dense-Layer			& 120			& 7320		&tanh \\
+				\textbf{4.}	&Dense-Layer			& 120			& 14520		&tanh \\
+				\textbf{5.}	&Dense-Layer			& 30			& 3630		&- \\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+	
+	\begin{table}[htb]
+	\begin{center}
+		\begin{tabular}{llcccc}\toprule
+			\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+			\midrule
+			\textbf{1.}	&Input-Layer	& 20		& 0		& - 			&- \\
+			\textbf{2.}	&Dense-Layer 			& 384		& 11904 & -				&relu \\
+			\textbf{3.}	&Dense-Layer			& 3200		& 1232000& -				&relu \\
+			\textbf{4.}	&Reshape-Layer		& (4, \ \ 4,  128)	& 0		& -		&- \\
+			\textbf{5.}	&Conv2DTranspose& (6, \ \ 6, \ 64)	& 32832	& 2 $\times$ 2 	&relu \\
+			\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 64)	& 0		& 2 $\times$ 2 	&- \\
+			\textbf{7.}	&Conv2DTranspose& (14, 14, \ 32)	& 18464		& 3 $\times$ 3 			&relu \\
+			\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
+			\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 32)	& 16416  	& 3 $\times$ 3; padding 			&relu \\
+			\textbf{10.}	&Up-Sampling2D	& (56, 56, \ 32)	& 0	& 2 $\times$ 2 			&- \\
+			\textbf{11.}	&Conv2DTranspose& (60, 60,\ \ 1)	& 801  	& 5 $\times$ 5 &sigmoid \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+\end{table}	
+	\newpage
+	.
+	\newpage
 	\section[Quellenangabe]{Quellenangabe}
 	\begin{thebibliography}{9}
 		\bibitem{vae}
@@ -525,7 +800,4 @@
 		http://blog.shakirm.com/2015/09/machine-learning-trick-of-the-day-3-hutchinsons-trick/
 		
 	\end{thebibliography}
-	\section[Anhang]{Anhang}
-	\subsection[Analytische Berechnung der ELBO]{Analytische Berechnung der ELBO}
-	\subsection[Analytische Berechnung der Lossfunktion des ODE$^2$-VAE]{Analytische Berechnung der Lossfunktion des ODE$^2$-VAE}
 \end{document}
