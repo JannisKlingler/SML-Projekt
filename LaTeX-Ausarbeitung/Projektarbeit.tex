@@ -44,6 +44,11 @@
 \newcommand{\penc}{p_{\boldsymbol\theta}(\mathbf{z}|\mathbf{x}_i)}
 \newcommand{\pdec}{p_{\boldsymbol\theta}(\mathbf{x}_i|\mathbf{z})}
 \newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\tx}{\widetilde{x}}
+\newcommand{\tz}{\widetilde{z}}
+\newcommand{\bP}{\mathbb{P}}
+\newcommand{\N}{\mathbb{N}}
 \newcommand{\z}{\mathbf{z}}
 \newcommand{\x}{\mathbf{x}_i}
 \DeclareMathOperator*{\argmin}{arg\,min}
@@ -462,7 +467,65 @@
 	
 	
 	\newpage
-	\subsection[SDE-VAE]{Stochastic Differential Equation Variational Autoencoder}
+	\subsection[SDE-VAE]{M-th Order SDE-Variational Autoencoder}
+	Bisher wurden die Pfade der latenten Darstellungen $z : [0,\tau] \times \Omega \rightarrow \R^d$ als Lösungen von Differentialgleichungen der Form
+	\begin{align*}
+	\nabla z(\cdot,\omega) &= v(\cdot,\omega)\\
+	\nabla v(\cdot,\omega) &= f\big(z(\cdot,\omega),v(\cdot,\omega)\big)
+	\end{align*}
+	vorausgesetzt, wobei die Funktion $f$ dann durch ein Neuronales Netzwerk approximiert wurde.\\
+	Wir haben die folgenden Möglichkeiten in Betracht gezogen um den 2-ODE-VAE zu verallgemeinern:
+	\begin{itemize}
+		\item Die Pfade der latenten Darstellungen als Lösungen von Differentialgleichungen von Grad $M \geq 2$ voraussetzen. Z.B. hieße das für $M=3$:
+		\begin{align*}
+		\nabla z(\cdot,\omega) &= v(\cdot,\omega)\\
+		\nabla v(\cdot,\omega) &= w(\cdot,\omega)\\
+		\nabla w(\cdot,\omega) &= f\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)
+		\end{align*}
+		
+		\item Die Form der Differentialgleichung weniger einschränken, indem wir beliebige $M$-ODE zulassen.
+		\begin{align*}
+		\nabla z(\cdot,\omega) &= f_1\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)\\
+		\nabla v(\cdot,\omega) &= f_2\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)\\
+		\nabla w(\cdot,\omega) &= f_3\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)
+		\end{align*}
+		
+		\item Einen Variational Encoder auf jedes Frame (Datenpunkt $x_i$) separat anwenden. Bisher wurde der Encoder nur auf die ersten Frames angewendet um $z(0,\cdot), v(0,\cdot)$ zu finden. Dies geht, wie wir später sehen werden, mit der Betrachtung von Stochastic Differntial Equations (SDEs) einher.
+	\end{itemize}
+	
+	\newpage
+	\subsubsection[Notation]{Einführung der Notation}
+	Zunächst führen wir eine Notation ein, die eher an den Standards der Stochastik und weniger an denen von Machine-Learning orientiert ist. Dazu wiederholen wir auch grob die Idee eines 2-ODE-VAE.\\
+	\\
+	Sei $(\bP,\Omega,\mathcal{A})$ ein Wahrscheinlichkeitsraum mit den Prozessen
+	\begin{align*}
+	& \tx : [0,\tau] \times \Omega \rightarrow \R^D\\
+	& \tz : [0,\tau] \times \Omega \rightarrow \R^d
+	\end{align*}
+	für $d << D$. Seien $t_0,...,t_m \in [0,\tau]$ mit $0=t_0<t_1<...<t_m$, dann schreiben wir $x_i(\omega) = \tx(t_i,\omega) \in \R^D$ und $z_i(\omega) := \tz(t_i, \omega) \in \R^d$.\\
+	Das Ziel eines 2-ODE-VAE ist es anhand von den Zufallsvariablen $x_0,...,x_m$ einen passenden Prozess $\tz$, der Pfadweise in $C^2([0,\tau])$ liegt und die Lösung einer 2-ODE der Form
+	\begin{align*}
+	& \nabla \tz(\cdot,\omega) = \tz^{(1)}(\cdot,\omega)\\
+	& \nabla \tz^{(1)}(\cdot,\omega) = f\big( \tz(\cdot,\omega), \tz^{(1)}(\cdot,\omega) \big)
+	\end{align*}
+	ist, zu Modellieren, sodass $x_i$ hinreichend gut durch einen Schätzer der Form $g(z_i)$ approximiert werden kann. Dabei werden $f,g$ durch neuronale Netzwerke dargestellt.\\
+	\\
+	Selbst wenn man beliebige messbare Funktionen $f,g$ durch neuronale Netzwerke exakt darstellen könnte, müsste man noch die folgenden Annahmen treffen um die Existenz eines 'perfekten' 2-ODE-VAE (in dem Sinne, dass die Rekonstruktion fast sicher gleich den ursprünglichen Daten ist) zu folgern.\\
+	Voraussetzung: Es existieren ein Prozesse $\tx,\tz$ wie oben beschrieben mit
+	\begin{itemize}
+		\item[V1)] $x_i = \tx(t_i,\cdot)$
+		
+		\item[V2)] Für jedes $t \in [0,\tau]$ ist $\tz(t,\cdot)$ suffizient für $\tx(t,\cdot)$.
+		
+		\item[V3)] $\E[\tz(0,\cdot) \mid x_0]$ ist unabhängig von $x_1,...,x_m$ und verteilt wie $\mathcal{N}(\mu^{(0)}(x_0),\Sigma^{(0)}(x_0))$. Genauso ist $\E[\tz^{(1)}(0,\cdot) \mid x_0,x_1,x_2]$ unabhängig von $x_3,...,x_m$ und verteilt wie $\mathcal{N}(\mu^{(1)}(x_0,x_1,x_2),\Sigma^{(1)}(x_0,x_1,x_2))$. Dabei sind $\mu^{(0)},\mu^{(1)}$ Funktionen nach $\R^d$ und $\Sigma^{(0)},\Sigma^{(1)}$ Funktionen in den Raum der $d \times d$-Diagonalmatrizen.
+	\end{itemize}
+	Falls man nicht gerade die Existenz eines perfekten 2-ODE-VAE erreichen will, sondern es reicht, wenn die Rekonstruktionen sehr nahe an $x_0,...,x_m$ kommen sollen, dann lassen sich diese Voraussetzungen natürlich erheblich abschwächen, aber sie liefern eine gute Idee der Annahmen, die man implizit macht, wenn man einen 2-ODE-VAE verwendet.
+	
+	\newpage
+	\noindent
+	
+	Die Voraussetzung (V3) lässt sich auch noch weiter abschwächen, wenn man den 2-ODE-VAE so umschreibt, dass er auch noch die Verteilungen von $\E[\tz(0,\cdot) \mid x_0]$ und $\E[\tz^{(1)}(0,\cdot) \mid x_0,x_1,x_2]$ durch Neuronale Netzwerke zu finden versucht. Damit kann auch das generieren gänzlich neuer Daten, wozu VAEs auch verwendet werden, stark verbessert werden. Wir werden uns aber weniger damit beschäftigen und halten an (V3) fest.
+	
 	
 	
 	\section[Empirische Untersuchung]{Empirische Untersuchung}
