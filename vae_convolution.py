@@ -1,98 +1,126 @@
-from scipy.stats import gaussian_kde
-from matplotlib import rc
-from matplotlib import animation
-import matplotlib.pyplot as plt
-from keras import backend as K
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
+import matplotlib.pyplot as plt
+from matplotlib import animation
 
-# %%
+(x_train, y_train), _ = tf.keras.datasets.mnist.load_data()
+x_train = np.where(x_train > 127.5, 1.0, 0.0).reshape(60000, 28, 28, 1)
 
-latent_dim = 5
+latent_dim = 10
+epochs = 15
+batch_size = 100
 
-(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
-x_train = np.where(x_train > 127.5, 1.0, 0).astype('float32')
-x_test = np.where(x_test > 127.5, 1.0, 0).astype('float32')
-x_train = np.reshape(x_train, (len(x_train), 28, 28, 1))
-x_test = np.reshape(x_test, (len(x_test), 28, 28, 1))
-x_train = np.concatenate((x_train, x_test), axis=0)
-y_train = np.concatenate((y_train, y_test), axis=0)
+encoder_input = tf.keras.layers.Input(shape=(28, 28, 1))
+x = tf.keras.layers.Conv2D(32, (3, 3), padding='same', activation='relu')(encoder_input)
+x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+x = tf.keras.layers.Conv2D(64, (3, 3), activation='relu')(x)
+x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+x = tf.keras.layers.Conv2D(128, (3, 3), activation='relu')(x)
+x = tf.keras.layers.Flatten()(x)
+x = tf.keras.layers.Dense(128, activation='relu')(x)
+x = tf.keras.layers.Dense(latent_dim + latent_dim)(x)
 
-# %%
+μ, log_σ = tf.split(x, num_or_size_splits=2, axis=1)
 
-encoder_input = keras.Input(shape=(28, 28, 1))
-x = layers.Conv2D(32, (3, 3), padding="same", activation='relu')(encoder_input)
-x = layers.MaxPooling2D((2, 2))(x)
-x = layers.Conv2D(64, (3, 3), activation='relu')(x)
-x = layers.MaxPooling2D((2, 2))(x)
-x = layers.Conv2D(128, (3, 3), activation='relu')(x)
-x = layers.Flatten()(x)
-x = layers.Dense(128, activation='relu')(x)
+z = tf.keras.layers.Lambda(lambda arg: arg[0] + tf.exp(arg[1]) * tf.random.normal(
+    shape=(batch_size, latent_dim)))([μ, log_σ])
 
-μ = layers.Dense(latent_dim, name="mu")(x)
-log_σ = layers.Dense(latent_dim, name="log_sig")(x)
-
-
-def reparam(args):
-    μ, log_σ = args
-    epsilon = K.random_normal(shape=(K.shape(μ)[0], latent_dim), mean=0., stddev=1)
-    return μ + K.exp(log_σ) * epsilon
+decoder_input = tf.keras.layers.Input(shape=(latent_dim,))
+x = tf.keras.layers.Dense(128, activation='relu')(decoder_input)
+x = tf.keras.layers.Dense(4 * 4 * 128, activation='relu')(x)
+x = tf.keras.layers.Reshape((4, 4, 128))(x)
+x = tf.keras.layers.Conv2DTranspose(64, (3, 3), activation='relu')(x)
+x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
+x = tf.keras.layers.Conv2DTranspose(32, (3, 3), activation='relu')(x)
+x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
+decoder_output = tf.keras.layers.Conv2DTranspose(1, (4, 4), padding='same', activation='sigmoid')(x)
 
 
-z = layers.Lambda(reparam)([μ, log_σ])
-encoder = keras.Model(encoder_input, [μ, log_σ, z], name="Encoder")
+encoder = tf.keras.Model(encoder_input, [μ, log_σ, z])
 encoder.summary()
-
-decoder_input = layers.Input(shape=(latent_dim,))
-x = layers.Dense(128, activation='relu')(decoder_input)
-x = layers.Dense(4 * 4 * 128, activation='relu')(x)
-x = layers.Reshape((4, 4, 128))(x)
-x = layers.Conv2DTranspose(64, (3, 3), activation='relu')(x)
-x = layers.UpSampling2D(size=(2, 2))(x)
-x = layers.Conv2DTranspose(32, (3, 3), activation='relu')(x)
-x = layers.UpSampling2D(size=(2, 2))(x)
-x = layers.Conv2DTranspose(1, (4, 4), padding="same", activation='sigmoid')(x)
-
-decoder = keras.Model(decoder_input, x, name="Decoder")
+decoder = tf.keras.Model(decoder_input, decoder_output)
 decoder.summary()
+vae = tf.keras.Model(encoder_input, decoder(encoder(encoder_input)[2]))
 
-decoder_output = decoder(encoder(encoder_input)[2])
-vae = keras.Model(encoder_input, decoder_output)
 
-log_p_xz = K.mean(keras.losses.binary_crossentropy(encoder_input, decoder_output))
-#kl_div = .5 * K.sum(1 + 2 * log_σ - K.square(μ) - 2 * K.exp(log_σ), axis=-1)
-#elbo = (log_p_xz - kl_div)
-vae.add_loss(log_p_xz)
-vae.compile(optimizer='adam')
+def VAE_Loss(x, x_rec):
+    μ, log_σ, z = encoder(x)
+    x_rec = decoder(z)
+    log_p_xz = tf.reduce_sum(x * tf.math.log(1e-8 + x_rec) + (1. - x)
+                             * tf.math.log(1. - 1e-8 - x_rec))
+    kl_div = - 0.5 * tf.reduce_sum(2 * log_σ + 1 - μ ** 2 - 2 * tf.exp(log_σ))
+    return (- log_p_xz + kl_div) / batch_size
 
-# %%
-trainingsepochen = 5
-vae.fit(x_train,
-        epochs=trainingsepochen,
-        batch_size=100)
 
-# %%
-decoded_imgs = vae.predict(x_test)
-n = 15
-k = 0
+vae.compile(optimizer='adam',
+            loss=VAE_Loss,
+            metrics=[tf.keras.metrics.MeanSquaredError(name='MSE')])
+
+vae.fit(x_train, x_train, epochs=epochs, batch_size=batch_size)
+
+encoded_imgs = encoder.predict(x_train, batch_size=100)
+decoded_imgs = vae.predict(x_train, batch_size=100)
+
+
 plt.figure(figsize=(20, 4))
-for i in np.random.randint(len(x_test), size=n):
-    ax = plt.subplot(2, n, k + 1)
-    plt.imshow(x_test[i].reshape(28, 28))
+for k, i in enumerate(np.random.randint(len(x_train), size=15)):
+    ax = plt.subplot(2, 15, k + 1)
+    plt.imshow(x_train[i].reshape(28, 28))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 
-    ax = plt.subplot(2, n, k + 1 + n)
+    ax = plt.subplot(2, 15, k + 1 + 15)
     plt.imshow(decoded_imgs[i].reshape(28, 28))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    k = k + 1
 plt.show()
 
-# %%
-decoded_imgs = vae.predict(x_train, batch_size=100)
-encoded_imgs = encoder.predict(x_train, batch_size=100)
+if latent_dim == 2:
+    plt.figure(figsize=(10, 8))
+    plt.scatter(encoded_imgs[2][:, 0], encoded_imgs[2][:, 1], s=1, c=y_train,
+                cmap='tab10', marker='o')
+    plt.colorbar()
+    plt.xlim(-5, 5)
+    plt.ylim(-5, 5)
+    plt.grid()
+    plt.show()
+
+    figure = np.zeros((28 * 25, 28 * 25))
+    for i, yi in enumerate(np.linspace(-2, 2, 25)):
+        for j, xi in enumerate(np.linspace(-2, 2, 25)):
+            z_sample = np.array([[xi, yi]])
+            x_decoded = decoder.predict(z_sample)
+            digit = x_decoded[0].reshape(28, 28)
+            figure[i * 28: (i + 1) * 28, j * 28: (j + 1) * 28] = digit
+    plt.imshow(figure, cmap='gray')
+    plt.show()
+
+if latent_dim == 3:
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(encoded_imgs[2][:, 0][0:30000], encoded_imgs[2][:, 1][0:30000],
+               encoded_imgs[2][:, 2][0:30000], s=1, c=y_train[0:30000], cmap='tab10', marker='o')
+    plt.show()
+    plt.grid()
+
+    print('Generate animation of latent space')
+    frames = 45
+    fig = plt.figure(figsize=(10, 10))
+    ims = []
+    for k in range(frames):
+        figure = np.zeros((28 * 25, 28 * 25))
+        for i, yi in enumerate(np.linspace(-2, 2, 25)):
+            for j, xi in enumerate(np.linspace(-2, 2, 25)):
+                z_sample = np.array([[xi, yi, -2 + k * 4 / frames]])
+                x_decoded = decoder.predict(z_sample)
+                digit = x_decoded[0].reshape(28, 28)
+                figure[i * 28: (i + 1) * 28, j * 28: (j + 1) * 28] = digit
+        print('Frame {} of {}'.format(k+1, frames))
+        im = plt.imshow(figure, cmap='gray', animated=True)
+        ims.append([im])
+    ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
+                                    repeat_delay=1000)
+#    ani.save('latenter_raum.gif', writer='imagemagick', fps=30)
+    plt.show()
