@@ -131,7 +131,7 @@
 	\newpage
 
 	\section[Theoretische Ausarbeitung]{Theoretische Ausarbeitung}
-	\emph{Einführung der Notation:} Wir orientieren uns in den ersten beiden Kapiteln an den gängigen Notationen in der Machine-Learning Fachliteratur, da hier vor allem die Paper der Autoren zusammengefasst werden. Im Kapitel zu SDE-VAE werden wir uns von dieser Notation aber entfernen, um ein mathematisch genaues Grundgerüst definieren zu können.\\ \ 
+	\emph{Einführung der Notation:} Wir orientieren uns in den ersten beiden Kapiteln an den gängigen Notationen in der Machine-Learning Fachliteratur, da hier vor allem die Paper der Autoren zusammengefasst werden. Im Kapitel zu SDE-VAE werden wir uns von dieser Notation aber entfernen, um ein mathematisch genaueres Grundgerüst definieren zu können.\\ \ 
 	\\
 	\begin{tabular}{|c|p{11.9cm}|}
 			\hline
@@ -640,15 +640,15 @@
 	Bei dem Datensatz \emph{rotatingMNIST} handelt es sich um eine Modifikation des bekannten MNIST-Datensatzes. Die Grauwerte der Bilder 
 	des MNIST-Datensatzes wurden von uns zunächst binärisiert, um durch eine Bernoulli-Verteilung im Decoder dargestellt werden zu können. 
 	Hierbei wurden die Farbwerte 0 bis 127 auf den Wert 0 abgebildet und die Werte 128 bis 255 auf den Wert 1. \\
-	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 10}$ aus dem Datensatz enthält eine Sequenz von 10 Frames, welche von einem Frame auf das nachfolgende Frame um 36$^\circ$ gegen den Uhrzeigersinn rotieren. Insgesamt wird so eine Rotation um 360$^\circ$ dargestellt. \\
-	Der Testdatensatz besteht aus 10000 Sequenzen und der Trainingsdatensatz aus 60000 Sequenzen.\\
+	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 10}$ aus dem Datensatz enthält eine Sequenz von 10 Frames, von einem Frame auf das nachfolgende Frame rotiert die entsprechende Ziffer um 36$^\circ$ gegen den Uhrzeigersinn. Insgesamt wird so eine Rotation um 360$^\circ$ dargestellt. \\
+	Der Trainingsdatensatz besteht aus 60000 Sequenzen und der Testdatensatz aus 10000 Sequenzen.\\
 	\textbf{TODO eventuell ein Bild einer Sequenz}
 	\subsubsection{Bouncing Balls}
-	Der Datensatz \emph{bouncingBalls} besteht aus Bildsequenzen, die Bewegungen dreier gleichgroßer zweidimensionaler Bälle enthalten. Die Bälle befinden sich zum Anfangszeitpunkt in zufälliger Position im Bild und bewegen sich mit normiertem Bbeschleunigungsvektor in zufällige Richtungen. Dabei können sie miteinander und den Bildrändern kollidieren. 
-	Die zugrundeliegenden physikalischen Gesetze der Kollisionen zwischen den Bällen und mit den Bildrändern werden durch zweidimensionale elastische Kollisionen wie in \cite{ElastKol} beschrieben und sollen von unserem Modell erlent werden. \\
+	Der Datensatz \emph{bouncingBalls} besteht aus Bildsequenzen, die Bewegungen dreier gleichgroßer zweidimensionaler Bälle enthalten. Die Bälle befinden sich zum Anfangszeitpunkt in zufälliger Position im Bild und bewegen sich mit normiertem Beschleunigungsvektor in zufällige Richtungen. Dabei können sie miteinander und den Bildrändern kollidieren. 
+	Die zugrundeliegenden physikalischen Gesetze einer elastischen Kollisionen zwischen den Bällen und mit den Bildrändern können in \cite{ElastKol} nachgelesen werden und sollen von unserem Modell erlernt werden. \\
 	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 10}$ aus dem Datensatz enthält 10 Frames. Der Wert 1 bedeutet, dass sich an der jeweiligen 
 	Stelle auf dem Frame ein Ball befindet.\\
-	Der Testdatensatz besteht aus 10000 Sequenzen und der Trainingsdatensatz aus 60000 Sequenzen.\\
+	Der Trainingsdatensatz besteht aus 60000 Sequenzen und der Testdatensatz aus 10000 Sequenzen.\\
 	\textbf{TODO eventuell ein Bild einer Sequenz}
 	\subsubsection{AVI videosequences}
 	\textbf{TODO}
@@ -732,8 +732,8 @@
 	\subsection[SDE-VAE]{Ergebnisse: SDE-VAE}
 	\newpage
 	\section[Modellstrukturen]{Modellstrukturen}
-	Dieses Modell haben wir für die Implementierung eines VAE`s verwendet. Als Input dient hier die gesamte Videosequenz. Falls nur ein 
-	einzelnen Frame betrachtet werden soll, muss im Input-Layer die Outputgröße von 10 auf 1 reduziert werden.
+	Diese Modellstruktur haben wir für die Implementierung des Vanilla-VAEs verwendet. Als Input dient hier die gesamte Videosequenz. Falls nur ein 
+	einzelnes Frame betrachtet werden soll, (z.B. auf dem normalen MNIST-Datensatz oder für lineare Interpolation) muss im Input-Layer des Encoders und im Output-Layer des Decoders die Channelsize von 10 auf 1 reduziert werden.
 
 	\begin{table}[htb]
 		\small
@@ -773,7 +773,7 @@
 		\end{center}
 	\end{table}
 	\newpage
-	Die Modellstruktur des ODE$^2$VAE auf den Datensätzen rotatingMNIST und bouncingBalls. Im ODE-Net verwenden wir als Aktivierungsfunktion den 
+	Die Modellstruktur des ODE$^2$VAE für die Datensätze rotatingMNIST und bouncingBalls. Im ODE-Net verwenden wir als Aktivierungsfunktion den 
 	Tangens hyperbolicus, da die ReLu-Funktion zum Modellieren von Differentialgleichungen, aufgrund relu$'(x)=0$, ungeeignet ist.
 	\begin{table}[htb!]
 		\footnotesize
@@ -783,19 +783,17 @@
 				\toprule
 				\textbf{\ }	&\textbf{Positionencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
-				\textbf{1.}	&Input-Layer	& (60, 60, \ 1)		& 0		& - 			&- \\
-				\textbf{2.}	&Conv2D 		& (56, 56, 32)		& 823	& 5 $\times$ 5	&relu \\
+				\textbf{1.}	&Input-Layer	& (28, 28, \ 1)		& 0		& - 			&- \\
+				\textbf{2.}	&Conv2D 		& (28, 28, 32)		& 320	& 3 $\times$ 3; padding	&relu \\
 				\textbf{3.}	&Max-Pooling2D	& (14, 14, 32)		& 0		& 2 $\times$ 2	&- \\
-				\textbf{3.}	&Conv2D 		& (28, 28, 32)		& 9248	& 3 $\times$ 3; padding	&relu \\
-				\textbf{4.}	&Max-Pooling2D	& (14, 14, 32)		& 0		& 2 $\times$ 2	&- \\
-				\textbf{5.}	&Conv2D			& (12, 12, 64)		& 18496	& 3 $\times$ 3	&relu \\
-				\textbf{6.}	&Max-Pooling2D	& (6, \ \ 6, \ 64)	& 0		& 2 $\times$ 2 	&- \\
-				\textbf{7.}	&Conv2D			& (5, \ \ 5,  128)	& 32896	& 2 $\times$ 2 	&relu \\
-				\textbf{8.}	&Flatten		& 3200				& 0		& - 			&- \\
-				\textbf{9.}	&Dense-Layer	& 384				&1229184& - 			&relu \\
-				\textbf{10.}&Dense-Layer 	& 30 + 30			& 23100	& - 			&- \\
-				\textbf{11.}&Split-Layer($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)   & (30, 30)				& 0	& - 			&- \\
-				\textbf{12.}&$\mathbf{s}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$	& 30				& 0	& - 			&-\\
+				\textbf{4.}	&Conv2D			& (12, 12, 64)		& 18496	& 3 $\times$ 3	&relu \\
+				\textbf{5.}	&Max-Pooling2D	& (6, \ \ 6, \ 64)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{6.}	&Conv2D		& (4, \ \ 4,  128)	& 73856	& 3 $\times$ 3 	&relu \\
+				\textbf{7.}	&Flatten		& 2048				& 0		& - 			&- \\
+				\textbf{8.}	&Dense-Layer			& 256				& 262272	& - 			&relu \\
+				\textbf{9.}	&Dense-Layer 			& 20 + 20				& 10280	& - 			&- \\
+				\textbf{10.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (20, 20)				& 0	& - 			&- \\
+				\textbf{11.}&$\mathbf{s}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 20				& 0	& - 			&-\\
 				\bottomrule
 				\toprule
 				\textbf{\ }	&\textbf{Velocityencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
@@ -811,6 +809,8 @@
 				\textbf{9.}	&Dense-Layer 			& 20 + 20				& 10280	& - 			&- \\
 				\textbf{10.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (20, 20)				& 0	& - 			&- \\
 				\textbf{11.}&$\mathbf{v}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 20				& 0	& - 			&-\\
+				\toprule
+				\textbf{\ } &Concatenate $\mathbf{z}=(\mathbf{s},\mathbf{v})$& (2, 20) & 0 & - & -\\
 				\bottomrule
 				\toprule
 				\textbf{\ }	&\textbf{ODE-Net}	&\textbf{Outputgröße} &\textbf{Parameter} &-  &\textbf{Aktivierung}\\
@@ -832,14 +832,14 @@
 				\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 64)	& 0		& 2 $\times$ 2 	&- \\
 				\textbf{7.}	&Conv2DTranspose& (14, 14, \ 32)	& 18464		& 3 $\times$ 3 			&relu \\
 				\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
-				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 1)	& 513  	& 3 $\times$ 3; padding 			&sigmoid \\
+				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ \ 1)	& 513  	& 3 $\times$ 3; padding 			&sigmoid \\
 				\bottomrule
 				\bottomrule
 			\end{tabular}
 		\end{center}
 	\end{table}
 	\newpage
-	Die Modellstruktur des ODE$^2$VAE auf dem Datensatz AVI-videosequences.
+	Die Modellstruktur des ODE$^2$VAE für den Datensatz AVI-Motion.
 	\begin{table}[htb!]
 		\footnotesize
 		\begin{center}
@@ -878,6 +878,8 @@
 				\textbf{10.}	&Dense-Layer 			& 30 + 30				& 38460	& - 			&- \\
 				\textbf{11.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (30, 30)				& 0	& - 			&- \\
 				\textbf{12.}&$\mathbf{v}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 30				& 0	& - 			&-\\
+				\toprule
+				\textbf{\ } &Concatenate $\mathbf{z}=(\mathbf{s},\mathbf{v})$& (2, 30) & 0 & - & -\\
 				\bottomrule
 				\toprule
 				\textbf{\ }	&\textbf{ODE-Net}	&\textbf{Outputgröße} &\textbf{Parameter} &- &\textbf{Aktivierung}\\
@@ -901,13 +903,15 @@
 				\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
 				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 32)	& 16416  	& 3 $\times$ 3; padding 			&relu \\
 				\textbf{10.}&Up-Sampling2D	& (56, 56, \ 32)	& 0	& 2 $\times$ 2 			&- \\
-				\textbf{11.}&Conv2DTranspose& (60, 60,\ \ 1)	& 801  	& 5 $\times$ 5 &sigmoid \\
+				\textbf{11.}&Conv2DTranspose& (60, 60,\ \ \ 1)	& 801  	& 5 $\times$ 5 &sigmoid \\
 				\bottomrule
 				\bottomrule
 			\end{tabular}
 		\end{center}
 	\end{table}
-
+	\newpage
+	\textbf{To-Do: SDE-VAE Modellstruktur}
+	\newpage
 	\section[Quellenangabe]{Quellenangabe}
 	\begin{thebibliography}{9}
 		\bibitem{vae}
