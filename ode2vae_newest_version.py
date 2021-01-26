@@ -72,7 +72,7 @@ class ODE2VAE(tf.keras.Model):
             tf.keras.layers.Conv2D(128, (3, 3), activation=act),
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(256, activation=act),
-            tf.keras.layers.Dense(latent_dim + latent_dim, activation=act)])
+            tf.keras.layers.Dense(latent_dim + latent_dim)])
 
         self.velocity_encoder = tf.keras.Sequential([
             tf.keras.layers.InputLayer((28, 28, armortized_len)),
@@ -83,7 +83,7 @@ class ODE2VAE(tf.keras.Model):
             tf.keras.layers.Conv2D(128, (3, 3), activation=act),
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(256, activation=act),
-            tf.keras.layers.Dense(latent_dim + latent_dim, activation=act)])
+            tf.keras.layers.Dense(latent_dim + latent_dim)])
 
         self.differential_equation = tf.keras.Sequential([
             tf.keras.layers.InputLayer((2, latent_dim)),

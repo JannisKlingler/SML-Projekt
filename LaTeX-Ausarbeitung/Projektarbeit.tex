@@ -132,7 +132,7 @@
 			\hline
 			\thead{Beispiel} & \thead{Erklärung}  \\
 			\hline
-			$\z, \x$ &  \makecell{Zufallsvariablen oder zufällig verteilte Vektoren als Realisierung \\einer Zufallsvariablen werden wir als Kleinbuchstaben in fetter\\ Schriftstärke notieren.}  \\
+			$\z, \x$ &  \makecell{Zufallsvariablen oder zufällig verteilte Vektoren als Realisierung \\einer Zufallsvariablen werden wir mit Kleinbuchstaben in fetter\\ Schriftstärke notieren.}  \\
 			\hline
 			$p(\z), p(\x), p(\x|\z)$ & \makecell{Verteilungen/Wahrscheinlichkeitsdichten und bedingte Verteil-\\ungen bzw. Wahrscheinlichkeitsdichten dieser Zufallsvariablen.\\ In der Notation wird nicht zwischen Dichtefunktionen zu der\\ zugehörigen Wahrscheinlichkeitsverteilung unterschieden.}\\
 			\hline
@@ -154,7 +154,7 @@
 	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N} \subset \R^{P\times N}$, der aus $N$ unterschiedlichen i.i.d. verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
 	In einem latenten Variablen Modell sind wir darum bemüht die Dimension des Datenpunkts zu reduzieren, um den Prozess, der die Daten erzeugt besser modellieren zu können.
 	Dafür werden sogenannte \emph{latenten Variablen} $\z$ eingeführt. Diese sind stetige und nicht beobachtbare Zufallsvariablen, welche die Eigenschaften des Bildes festlegen, die es charakterisiert.
-	Der sogenannte \emph{latente Raum} $\mathcal{Z} = \R^Z$, über den die latenten Variablen $\z$ definiert sind, ist nach Wahl von viel geringerer Dimension als der Raum $\mathcal{X}$ der ursprünglichen Verteilung, d.h. $Z \ll N$.\\
+	Der sogenannte \emph{latente Raum} $\mathcal{Z} = \R^Z$, über den die latenten Variablen $\z$ definiert sind, ist nach Wahl von viel geringerer Dimension als der Raum $\mathcal{X}$ der ursprünglichen Verteilung, d.h. $Z \ll P$.\\
 	Das latente Variablen Modell besteht aus einem generativen Modell $p(\x|\z)$, einer Priorverteilung $p(\z)$ und dem Inference Modell $q(\z|\x)$, welches die Posteriorverteilung $p(\z|\x)$ approximiert.\\
 	Datenpunkte werden erzeugt indem zuerst eine latente Darstellung $\z \sim  p(\z)$  gezogen wird, mit welcher dann ein Datenpunkt  $\x \sim  p(\x|\z)$ durch das generative Modell ermittelt wird. Nun lässt sich $p(\x)$ über die Marginale Likelihood durch ein Integral über alle latenten Werte beschreiben.
 	\begin{align*}
