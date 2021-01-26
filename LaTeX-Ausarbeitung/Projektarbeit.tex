@@ -53,6 +53,10 @@
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\tx}{\widetilde{x}}
 \newcommand{\tz}{\widetilde{z}}
+\newcommand{\tZ}{\widetilde{Z}}
+\newcommand{\tX}{\widetilde{X}}
+\newcommand{\tmu}{\widetilde{\mu}}
+\newcommand{\tsig}{\widetilde{\sigma}}
 \newcommand{\bP}{\mathbb{P}}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\z}{\mathbf{z}}
@@ -529,6 +533,19 @@
 	\subsubsection[Notation]{Einführung der Notation}
 	Zunächst führen wir eine Notation ein, die eher an den Standards der Stochastik und weniger an denen von Machine-Learning orientiert ist. Dazu wiederholen wir auch grob die Idee eines 2-ODE-VAE.\\
 	\\
+	\textbf{Idee des Autoencoders:}\\
+	Sei $(\bP,\Omega,\mathcal{A})$ ein Wahrscheinlichkeitsraum mit der Zufallsvariable $x : \Omega \rightarrow \R^D$. Bei einem normalen Autoencoder wird angenommen, dass eine weitere Zufallsvariable $z: \Omega \rightarrow \R^d$ existiert, sodass $x = f(z)$ und $z = g(x)$ für messbare Funktionen $f,g$. Die funktionen $f$ und $g$ werden dabei von Neuronalen Netzwerken anhand eines Großen Datensatzes $x_1,...,x_N \, uiv \sim (x)_*\bP$ erlernt.\\
+	Man stellt fest, dass der latente Raum hier eher unstrukturiert in dem Sinne ist, dass das Bildmaß $(f)_*\bP$ auf $\R^d$ vielleicht nur an ein paar stellen den Großteil seiner Masse verteilt. An diesen Stellen im latenten Raum könnten wiederum kleine Schwankungen große Unterschiede in den Rekonstruktionen ausmachen. Anschaulich ist das Problem mit Autoencodern, dass sie den latenten Raum $\R^d$ nicht 'gleichmäßig' nutzen, also, dass an manchen Stellen mehr und an anderen weniger Information über die Daten $x$ steckt.\\
+	\\
+	\textbf{Idee des VAE:}\\
+	Ein Variational Autoencoder will eine Ähnliche Struktur finden, wobei nun $(z)_*\bP$ eine Normalverteilung in $\R^d$ sein soll. Das Ziel soll sein erst mit Daten $x_1,...,x_N \, uiv \sim (x)_*\bP$ die Encoder $g$ und Decoder $f$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z_1,...,z_N$ zieht und dann den Decoder $f$ darauf anwendet.\\
+	Dabei wird der Encoder $g$ als Neuronales Netzwerk aufgebaut, dass Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ aus $\mathcal{N}\left(\mu(x),\Sigma(x)\right)$ gezogen wird. Dies lässt sich als Maßnahme gegen Overfitting des Encoders interpretieren. TODO
+	
+	
+	
+	
+	
+	\newpage
 	Sei $(\bP,\Omega,\mathcal{A})$ ein Wahrscheinlichkeitsraum mit den Prozessen
 	\begin{align*}
 	& \tx : [0,\tau] \times \Omega \rightarrow \R^D\\
@@ -558,8 +575,65 @@
 
 	Die Voraussetzung (V3) lässt sich auch noch weiter abschwächen, wenn man den 2-ODE-VAE so umschreibt, dass er auch noch die Verteilungen von $\E[\tz(0,\cdot) \mid x_0]$ und $\E[\tz^{(1)}(0,\cdot) \mid x_0,x_1,x_2]$ durch Neuronale Netzwerke zu finden versucht. Damit kann auch das generieren gänzlich neuer Daten, wozu VAEs auch verwendet werden, stark verbessert werden. Wir werden uns aber weniger damit beschäftigen und halten an (V3) fest.
 
+	Die Voraussetzung (V3) lässt sich auch noch weiter abschwächen, wenn man den 2-ODE-VAE so umschreibt, dass er auch noch die Verteilungen von $\E[\tz(0,\cdot) \mid x_0]$ und $\E[\tz^{(1)}(0,\cdot) \mid x_0,x_1,x_2]$ durch Neuronale Netzwerke zu finden versucht. Damit kann auch das generieren gänzlich neuer Daten, wozu VAEs auch verwendet werden, stark verbessert werden. Wir werden uns aber weniger damit beschäftigen und gehen weiterhin von der Normalverteilung aus.\\
+	\\
+	Nun zur Notation für unsere Verallgemeinerung, wie sie am Anfang dieser Sektion beschrieben ist.
+	Wenn wir den Variational Autoencoder auf jedes einzelne Frame $x_0,...,x_m$ anwenden wollen, um die latenten Darstellungen $z_0,...,z_m$ zu finden, ist dies nicht mehr mit der Voraussetzung verträglich, dass $\tz(\cdot,\omega)$ eine Lösung einer deterministischen Differentialgleichung ist. Wir gehen stattdessen davon aus, dass $W_1,...,W_n$ viele (von $x_0,...,x_n$ unabhängige) Brownsche Bewegungen existieren, sodass 
+	
+	
+	\newpage
+	\subsubsection[Lernen von SDEs]{Lernen von SDEs}
+	Sei $\tmu: \R^d \rightarrow \R^d$ und $\tsig: \R^d \rightarrow \R^{d \times n}$. Für Prozesse $X: [0,\tau] \times \Omega \rightarrow \R^d$ und $W^1,...,W^n : [0,\tau] \times \Omega \rightarrow \R$ heißt $(Z,W)$ starke Lösung der Stochastischen Differentialgleichung (SDE)
+	\begin{align*}
+	& dZ^i = \tmu^i(t,Z_t) \, dt + \sum\limits_{j=1}^n \tsig^{i,j}(t,Z_t) \, dW^j \ ,
+	\end{align*}
+	falls $W^1,...,W^n$ unabhängige Brownsche Bewegungen sind und die Formel
+	\begin{align*}
+	& Z_t^i - Z_0^i = \int_0^t \tmu^i(s,Z_s) \, ds + \sum\limits_{j=1}^n \int_0^t \tsig^{i,j}(s,Z_s) \, dW^j \tag{1}
+	\end{align*}
+	für jedes $i \leq d$ erfüllt ist. Wir sind hier nur an dem Fall, dass $\tmu(t,x)$ und $\tsig(t,x)$ nicht von $t$, sondern nur von $x$ abhängen, interessiert. Die Lösungen solcher SDEs nennt man Ito-Diffusionen.\\
+	Nach \cite{PfaffiSkript} Thm. 21.4 existiert unter den Voraussetzungen
+	\begin{align*}
+	& ||\tmu(x)||_2 + ||\tsig(x)||_2 \leq C_1 \, (1+||x||_2)\\
+	& ||\tmu(x)-\tmu(y)||_2 + ||\tsig(x)-\tsig(y)||_2 \leq C_2 \, ||x-y||_2 \tag{2}
+	\end{align*}
+	für jede Startverteilung $Z_0$ mit endlichem zweiten Moment und beliebige BB. $W^1,...,W^n$ eine eindeutige Lösung $Z = Z(W)$ der oben beschriebenen SDE.\\
+	Mit Hilfe des Euler-Maruyama-Verfahrens lässt sich diese Lösung approximieren. Dazu Teilen wir das Intervall $[0,\tau]$ in $m$ viele Stücke $[t_k,t_{k+1}]$ mit $\Delta t = \frac{\tau}{m}$ und $t_k = k\, \Delta t = \frac{k\tau}{m}$. Wir definieren rekursiv
+	\begin{align*}
+	& Z^i_{m,t_k} := Z^i_{m,t_{k-1}} + \tmu(Z_{m,t_{k-1}}) \, \Delta t + \sum\limits_{j=1}^n \tsig^{i,j}(Z_{m,t_{k-1}}) \, \underbrace{(W^j_{t_k}-W^j_{t_{k-1}})}_{\sim \mathcal{N}(0,\Delta t)} 
+	\end{align*}
+	mit $Z_{m,0} = Z_0$. Da Brownsche Bewegungen unabhängige Segmente haben, können wir analog $(\varepsilon_{j,k})_{j \leq n, k \in \N} \, uiv. \sim N(0,1)$ definieren und schreiben:
+	\begin{align*}
+	& \tZ^i_{m,t_k} := \tZ^i_{m,t_{k-1}} + \tmu(\tZ_{m,t_{k-1}}) \, \Delta t + \sum\limits_{j=1}^n \tsig^{i,j}(\tZ_{m,t_{k-1}}) \, \sqrt{\Delta t} \, \varepsilon_{j,k} \ .
+	\end{align*}
+	Solche $\tX_m$ lassen sich nun leicht mit dem Computer generieren und wir wissen nach Euler-Maruyama, dass ein $c > 0$ existiert, sodass für jedes $t \in [0,\tau]$ gilt:
+	\begin{align*}
+	& \E[||Z_{m,t} - Z_t||_2] \leq \frac{c}{\sqrt{m}} \ .
+	\end{align*}
+	
+	\newpage
+	\noindent
+	
+	Damit wir die SDE aus vielen Realisierungen (Pfaden) lernen können, führen wir die zusätzliche Voraussetzung ein, dass $\tsig : \R^d \rightarrow \R^{d \times n}$ durch ein $C_3 > 0$ gleichmäßig beschränkt ist, also $||\tsig(x)||_2 \leq C_3 \ , \ \forall x \in \R^d$.\\
+	Seien $z_0,...,z_m$ gegeben durch $z_k = Z_{t_k}$, wobei $Z = Z(W)$ die Lösung der SDE (1) ist. Wie wir in (2) vorausgesetzt hatten, sind $\tmu$ und $\tsig$ Lipschitz-stetig mit Konstante $C_2$. Für jedes $\varepsilon > 0$ sei $m_\varepsilon$ groß genug, sodass $C_2 \, \Delta t = \frac{C_2 \, \tau}{m_\varepsilon} \leq \varepsilon$.\\
+	$W^1,...,W^n$ sind Brownsche Bewegungen, also Martingale. Nach Aufbau des stochastischen Integrals, ist $\left(\int_0^t H_s \, dW^j_s \right)_{t \in [0,\tau]}$ für beliebige previsible Prozesse $H$ auch ein Martingal. Damit gilt
+	\begin{align*}
+	& \E[z^i_{k+1}-z^i_k] = \E[Z^i_{t_{k+1}}-Z^i_{t_k}] = \E\left[ \int_{t_k}^{t_{k+1}} \tmu^i(Z_s) \, ds + \sum\limits_{j=1}^n \int_{t_k}^{t_{k+1}} \tsig^{i,j}(Z_s) \, dW^j_s \right]\\
+	& = \E\left[ \int_{t_k}^{t_{k+1}} \tmu^i(Z_s) \, ds \right] = \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)] \, ds\\
+	& = \Delta t \, \E[\tmu^i(Z_{t_k})] + \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)-\tmu^i(Z_{t_k})] \, ds \ .
+	\end{align*}
+	Wir nutzen diese Rechnung und die Wahl von $m_\varepsilon$ um
+	\begin{align*}
+	& \left| \E[z^i_{k+1}-z^i_k - \Delta t \, \tmu^i(Z_{t_k})] \right| \leq \left| \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)-\tmu^i(Z_{t_k})] \, ds \right|\\
+	& \leq \int_{t_k}^{t_{k+1}} \E[|\tmu^i(Z_s)-\tmu^i(Z_{t_k})|] \, ds \leq C_2 \int_{t_k}^{t_{k+1}} \E[|Z_s-Z_{t_k}|] \, ds\\
+	& \leq 
+	\end{align*}
+	zu erhalten.
 
 
+
+
+	\newpage
 	\section[Empirische Untersuchung]{Empirische Untersuchung}
 	\subsection[VAE]{Ergebnisse: VAE}
 
