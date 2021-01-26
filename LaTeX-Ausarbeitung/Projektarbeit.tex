@@ -144,7 +144,7 @@
 			\hline
 			$\boldsymbol\theta, \boldsymbol\phi, \boldsymbol\psi $ & \makecell{Parameter der betrachteten Modelle} \\
 			\hline
-			$\mathbf{X}, \mathbf{M}, \mathbf{I} $ & \makecell{Zufällig verteilte Matrizen wie Datensätze. $\mathbf{I}$ ist die \\Einheitsmatrix} \\
+			$\mathbf{X}, \mathbf{M}, \mathbf{I} $ & \makecell{Zufällig verteilte Matrizen wie Datensätze notieren wir mit Groß-\\buchstaben in fetter Schriftstärke. $\mathbf{I}$ ist die Einheitsmatrix} \\
 			\hline
 			$\simeq $ & \makecell{Erwartungstreue Schätzung} \\
 			\hline
@@ -158,7 +158,7 @@
 	Das latente Variablen Modell besteht aus einem generativen Modell $p(\x|\z)$, einer Priorverteilung $p(\z)$ und dem Inference Modell $q(\z|\x)$, welches die Posteriorverteilung $p(\z|\x)$ approximiert.\\
 	Datenpunkte werden erzeugt indem zuerst eine latente Darstellung $\z \sim  p(\z)$  gezogen wird, mit welcher dann ein Datenpunkt  $\x \sim  p(\x|\z)$ durch das generative Modell ermittelt wird. Nun lässt sich $p(\x)$ über die Marginale Likelihood durch ein Integral über alle latenten Werte beschreiben.
 	\begin{align*}
-	p(\x)= \int_{\z} p(\x,\z) d\textbf{z} = \int_{\z} p(\x|\z)p(\z) d\z
+	p(\x)= \int_{\z} p(\x,\z) \mathrm{d}\textbf{z} = \int_{\z} p(\x|\z)p(\z) \mathrm{d}\z
 	\end{align*}
 	In einfachen Modellen kann dieser Wert oft analytisch berechnet und maximiert werden.
 	Wir nehmen aber an, dass dieses Integral aufgrund der hohen Dimension des Raumes $\mathcal{X}$ und der Komplexität des Modells unberechenbar ist und auch nicht sinnvoll approximiert werden kann.\\
@@ -198,16 +198,16 @@
 	Die KL-Divergenz ist in vielen Fällen mit analytischen Methoden berechen- und differenzierbar, genauer betrachtet werden muss aber der Gradient des Erwartungswertes bezüglich $\boldsymbol\phi$. \\
 	Gegeben $\textbf{x}_{i}$ ist die latente Darstellung $\z$ kein deterministisch festgelegter Wert, sondern wird durch die von diesen Parametern abhängige Verteilung $\z \sim \qenc$ bestimmt. Da der Gradient später durch Backpropagation berechnet wird, müssen auch die Layer durchschritten werden, die diesen Zufallsprozess enthalten. Monte-Carlo Schätzungen sind außerdem nicht immer mit zufriedenstellender Genauigkeit möglich, denn der Gradient des Erwartungswertes lässt sich in der Regel nicht zu einem neuen Erwartungswert umschreiben, da die Dichtefunktion von $\boldsymbol\phi$ abhängig ist.
 	\begin{align*}
-	\nabla_{\boldsymbol\phi}\Bigl[\mathbb{E}_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big]\Bigl] &= \nabla_{\boldsymbol\phi} \int_{\textbf{z}}\qenc\log\big(\pdec)\big)d\textbf{z} \notag \\
-	&= \int_{\textbf{z}}\nabla_{\boldsymbol\phi}\qenc\log\big(\pdec)\big)d\textbf{z}
+	\nabla_{\boldsymbol\phi}\Bigl[\mathbb{E}_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big]\Bigl] &= \nabla_{\boldsymbol\phi} \int_{\textbf{z}}\qenc\log\big(\pdec)\big)\mathrm{d}\textbf{z} \notag \\
+	&= \int_{\textbf{z}}\nabla_{\boldsymbol\phi}\qenc\log\big(\pdec)\big)\mathrm{d}\textbf{z}
 	\end{align*}
 
 	Der \emph{Reparametrisierungs Trick} bietet eine Lösung für diese Problematik. \cite{repara}
 	Wir reparametrisieren die latente Variable $\textbf{z} = g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i})$ mit einer differenzierbaren, durch $\boldsymbol\phi$ parametrisierten Funktion $g$ und einer Zufallsvariablen $\boldsymbol\epsilon \sim p(\boldsymbol\epsilon)$, deren Dichtefunktion jedoch nicht von $\boldsymbol\phi$ abhängig ist. Somit erhalten wir nach Anwendung
 	\begin{align*}
 	\nabla_{\boldsymbol\phi}\Bigl[\mathbb{E}_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big]\Bigl] &= \nabla_{\boldsymbol\phi}\Bigl[\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]\Bigl] \notag\\
-	&= \nabla_{\boldsymbol\phi} \int_{\boldsymbol\epsilon}p(\boldsymbol\epsilon)\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)d\boldsymbol{\epsilon} \notag \\
-	&=  \int_{\boldsymbol\epsilon}p(\boldsymbol\epsilon)\nabla_{\boldsymbol\phi}\log\big(p_{\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)d\boldsymbol{\epsilon} \notag \\
+	&= \nabla_{\boldsymbol\phi} \int_{\boldsymbol\epsilon}p(\boldsymbol\epsilon)\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\mathrm{d}\boldsymbol{\epsilon} \notag \\
+	&=  \int_{\boldsymbol\epsilon}p(\boldsymbol\epsilon)\nabla_{\boldsymbol\phi}\log\big(p_{\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\mathrm{d}\boldsymbol{\epsilon} \notag \\
 	&=\mathbb{E}_{\epsilon\sim p(\boldsymbol\epsilon)}\big[\nabla_{\boldsymbol\phi}\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big] \notag \\
 	\overset{\text{M.C.}}&{\simeq} \frac{1}{L}\sum_{l=1}^{L}\nabla_{\boldsymbol\phi}\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon_{l},\textbf{x}_{i}))\big).
 	\end{align*}
