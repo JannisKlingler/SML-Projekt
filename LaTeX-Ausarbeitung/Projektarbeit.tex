@@ -30,8 +30,12 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{bigints}
+\usepackage{makecell}
 \newcommand{\abs}[1]{{\left| #1 \right|}}
-
+\renewcommand\theadalign{bc}
+\renewcommand\theadfont{\bfseries}
+\renewcommand\theadgape{\Gape[4pt]}
+\renewcommand\cellgape{\Gape[4pt]}
 
 \usepackage{xcolor}
 \usepackage[framemethod,tikz]{mdframed}
@@ -41,6 +45,7 @@
 \mdfdefinestyle{inner}{leftmargin=0.1cm,rightmargin=0.1cm,outerlinewidth=0.5pt,innerlinewidth=0.5pt,innerlinecolor=black,outerlinecolor=black,backgroundcolor=lightgray!10,roundcorner=5pt,linecolor=black}
 
 \newcommand{\qenc}{q_{\boldsymbol\phi}(\mathbf{z}|\mathbf{x}_i)}
+\newcommand{\qencd}{q_{\phi}(z|x_i}
 \newcommand{\penc}{p_{\boldsymbol\theta}(\mathbf{z}|\mathbf{x}_i)}
 \newcommand{\pdec}{p_{\boldsymbol\theta}(\mathbf{x}_i|\mathbf{z})}
 \newcommand{\E}{\mathbb{E}}
@@ -71,12 +76,12 @@
 			\vspace{0.3cm}
 			vorgelegt am 10. Februar 2021 \\
 			\vspace{0.7cm}
-			
+
 			\begin{figure}[h!]
 				\centering
 				\includegraphics[scale=0.4]{Unifreiburg}
 			\end{figure}
-			
+
 			\vspace{0.7cm}
 			\large \textbf{Albert-Ludwigs-Universität Freiburg}\\
 			\vspace{0.2cm}
@@ -87,11 +92,11 @@
 			\large {Sebastian Hahn}\\
 			\large {Jannis Klingler}\\
 			\large {Clemens Schächter}\\
-			
+
 			\vspace{1.8cm}
 		\end{center}
 	\end{titlepage}
-	
+
 	\tableofcontents
 	\newpage
 	\section[Einleitung]{Einleitung}
@@ -119,31 +124,57 @@
 	theoretischen Resultate, als auch auf die experimentellen Ergebnisse eingegangen.\\
 	Die in dieser Arbeit verwendeten Quellen sind die Paper \emph{Auto-Encoding Variational Bayes} \cite{vae}, sowie \emph{An Introduction to Variational Autoencoders}, \cite{intvae} beide von Diederik P. Kingma und Max Welling und \emph{ODE$^{\ 2}$-VAE: Deep generative second order ODEs with Bayesian neural networks} \cite{ode2vae} von Ç. Yıldız, M. Heinonen und H. Lähdesmäki.
 	\newpage
-	
+
 	\section[Theoretische Ausarbeitung]{Theoretische Ausarbeitung}
-	\emph{Bemerkung:} Entsprechend der Notation, die uns beim recherchieren zum Thema in der Fachliteratur begegnet ist, werden auch wir in der Notation nicht zwischen Verteilung und Dichtefunktion unterscheiden.\\
-	
-	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N}$, der aus $N$ unterschiedlichen i.i.d. verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
-	Um den Prozess, der die Daten erzeugt besser modellieren und später erlernen zu können, werden sogenannte \emph{latenten Variablen} $\z$ eingeführt. Diese sind stetige und nicht beobachtbare Zufallsvariablen, welche die Eigenschaften des Bildes festlegen, die es charakterisiert.  \\
-	Der sogenannte \emph{latente Raum} $\mathcal{Z}$, über den die latenten Variablen $\z$ definiert sind, ist nach Wahl von viel geringerer Dimension als der Raum $\mathcal{X}$ der ursprünglichen Verteilung.\\
-	Schauen wir uns einmal an, wie die Datenpunkte des Datensatzes in einem solchen latenten Variablen Modell entstehen.\\
-	Zuerst wird eine latente Darstellung $\z \sim  p(\z)$  gezogen. Mit dieser wird  $\x \sim  p(\x|\z)$ nun durch eine bedingte Verteilung ermittelt. So lässt sich $p(\x)$ über Marginalisierung durch ein Integral über alle latenten Werte beschreiben.
+	\emph{Einführung der Notation:} Wir orientieren uns in den ersten beiden Kapiteln an den gängigen Notationen in der Machine-Learning Fachliteratur, da hier vor allem die Paper der Autoren zusammengefasst werden. Im Kapitel zu SDE-VAE werden wir uns von dieser Notation aber entfernen, um ein mathematisch genaues Grundgerüst definieren zu können.
+	\begin{center}
+		\begin{tabular}{|l|l|}
+			\hline
+			\thead{Beispiel} & \thead{Erklärung}  \\
+			\hline
+			$\z, \x$ &  \makecell{Zufallsvariablen oder zufällig verteilte Vektoren als Realisierung \\einer Zufallsvariablen werden wir als Kleinbuchstaben in fetter\\ Schriftstärke notieren.}  \\
+			\hline
+			$p(\z), p(\x), p(\x|\z)$ & \makecell{Verteilungen/Wahrscheinlichkeitsdichten und bedingte Verteil-\\ungen bzw. Wahrscheinlichkeitsdichten dieser Zufallsvariablen.\\ In der Notation wird nicht zwischen Dichtefunktionen zu der\\ zugehörigen Wahrscheinlichkeitsverteilung unterschieden.}\\
+			\hline
+			$p(.), q(.)$ & \makecell{Unterschiedliche Buchstaben stehen für unterschiedliche Wahr-\\scheinlichkeitsmodelle}\\
+			\hline
+			$\E_{\z\sim q(.)}[.]$ & \makecell{Erwartungswert bezüglich der angegebenen Verteilung/Dichte}\\
+			\hline
+			$D_{KL}\big(q(.)||p(.)\big)$ & \makecell{(Reverse) KL-Divergenz der Verteilung $q(.)$ nach $p(.)$:\\ $D_{KL}\big(q(.)||p(.)\big):= \E_{\z\sim q(.)}\left[\log\left(\tfrac{q(.)}{p(.)}\right)\right]$} \\
+			\hline
+			$\boldsymbol\theta, \boldsymbol\phi, \boldsymbol\psi $ & \makecell{Parameter der betrachteten Modelle} \\
+			\hline
+			$\mathbf{X}, \mathbf{M}, \mathbf{I} $ & \makecell{Zufällig verteilte Matrizen wie Datensätze. $\mathbf{I}$ ist die \\Einheitsmatrix} \\
+			\hline
+			$\simeq $ & \makecell{Erwartungstreue Schätzung} \\
+			\hline
+		\end{tabular}
+	\end{center}
+    \	\\
+	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N} \subset \R^{P\times N}$, der aus $N$ unterschiedlichen i.i.d. verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
+	In einem latenten Variablen Modell sind wir darum bemüht die Dimension des Datenpunkts zu reduzieren, um den Prozess, der die Daten erzeugt besser modellieren zu können.
+	Dafür werden sogenannte \emph{latenten Variablen} $\z$ eingeführt. Diese sind stetige und nicht beobachtbare Zufallsvariablen, welche die Eigenschaften des Bildes festlegen, die es charakterisiert.  \\
+	Der sogenannte \emph{latente Raum} $\mathcal{Z} = \R^Z$, über den die latenten Variablen $\z$ definiert sind, ist nach Wahl von viel geringerer Dimension als der Raum $\mathcal{X}$ der ursprünglichen Verteilung, d.h. $Z \ll N$.\\
+	Das latente Variablen Modell besteht aus einem generativen Modell $p(\x|\z)$ einer Priorverteilung $p(\z)$ und dem Inference Modell $q(\z|\x)$, welches die Posteriorverteilung $p(\z|\x)$ approximiert.\\
+	Datenpunkte werden erzeugt indem zuerst eine latente Darstellung $\z \sim  p(\z)$  gezogen wird, mit welcher dann ein Datenpunkt  $\x \sim  p(\x|\z)$ durch das generative Modell ermittelt wird. Nun lässt sich $p(\x)$ über die Marginale Likelihood durch ein Integral über alle latenten Werte beschreiben.
 	\begin{align*}
 	p(\x)= \int_{\z} p(\x,\z) d\textbf{z} = \int_{\z} p(\x|\z)p(\z) d\z
 	\end{align*}
-	Dieses Integral ist jedoch unberechenbar und kann aufgrund der hohen Dimension des Raumes $\mathcal{X}$ in der Regel auch nicht sinnvoll approximiert werden.
+	In einfachen Modellen kann dieser Wert oft analytisch berechnet und maximiert werden.
+	Wir nehmen aber an, dass dieses Integral aufgrund der hohen Dimension des Raumes $\mathcal{X}$ und Komplexität des Modells unberechenbar ist und auch nicht sinnvoll approximiert werden kann.\\
 	Die bedingte Verteilung $p(\z|\x)$, mit welcher sich für Datenpunkte $\x$ eine zugehörige latente Darstellung $\z$ finden lässt, ist ebenfalls nicht berechenbar. Dies und die Unberechenbarkeit der marginalen Wahrscheinlichkeit impliziert sich durch den Satz von Bayes gegenseitig:
 	\begin{align*}
 	p(\z|\x)= \frac{p(\x|\z)p(\z)}{p(\x)}
 	\end{align*}
-	Die gemeinsame Verteilung $p(\x,\z) = p(\x|\z)p(\z)$ lässt sich anhand der Daten approximieren, dabei sind die Datenpunkte Realisierungen dieser Verteilung. Wäre $p(\x)$ beobachtbar, könnten wir auch $p(\z|\x)$ errechnen. Eine Umkehrung dieser Überlegung gilt ebenfalls. \\
-	
+	Die gemeinsame Verteilung $p(\x,\z) = p(\x|\z)p(\z)$ lässt sich anhand der Daten approximieren, dabei sind die Datenpunkte Realisierungen dieser Verteilung. Wäre nun $p(\x)$ beobachtbar, was nach Annahme nicht gilt, könnten wir auch $p(\z|\x)$ errechnen. Eine Umkehrung dieser Überlegung gilt ebenfalls. \\
+
+
 	Die Verteilungen $p(\x|\z),\ p(\z|\x),\ p(\z)$ und $p(\x)$ fassen wir als durch ${\boldsymbol\theta}$ parametrisierte Familien auf. Für die optimalen Parameter $\boldsymbol\theta^{*}$ soll dabei gelten $p_{\boldsymbol\theta^{*}}(\x) \approx p(\x)$.\\
 	Weiter führen wir wegen der Unberechenbarkeit von $p_{\boldsymbol\theta}(\z|\x)$ das Inferenzmodell $q_{\boldsymbol\phi}(\z|\x)$ ein und suchen die Parameter $\boldsymbol\phi^{*}$ für die $q_{\boldsymbol\phi^{*}}(\z|\x) \approx p_{\boldsymbol\theta}(\z|\x)$ gilt.\\
-	Mit einem Variational Autoencoder werden die Verteilungen $q_{\boldsymbol\phi}(\z|\x)$ und $p_{\boldsymbol\theta}(\x|\z)$ durch neuronale Netze dargestellt und approximiert.\\
+	In einem Variational Autoencoder werden die Verteilungen $q_{\boldsymbol\phi}(\z|x)$ und $p_{\boldsymbol\theta}(\x|\z)$ durch neuronale Netze dargestellt und approximiert.\\
 	Im AEVB-Algorithmus (kurz für \emph{Auto-Encoding Variational Bayes}) können die geeigneten Parameter $\boldsymbol\phi^{*}$ und $\boldsymbol\theta^{*}$ gemeinsam erlernt werden.
 	\subsection[VAE]{AEVB-Algorithmus und Variational Autoencoder}
-	Wir betrachten dafür für einen beliebigen Datenpunkt $\x \in \mathbf{X}$ die Reverse KL-Divergenz der Approximation $\qenc$ nach $\penc$:
+	Wir betrachten dafür für einen beliebigen Datenpunkt $\x \in \mathbf{X}$ die Reverse KL-Divergenz des Infernce Modells $\qenc$ nach $\penc$:
 	\begin{align*}
 	D_{KL}\big[\qenc || \penc\big] \overset{\text{Def.}}&{=} \E_{\z\sim q_{\boldsymbol\phi}}\left[\log\left(\frac{\qenc}{\penc}\right)\right] \\
 	\overset{\text{Bayes}}&{=} \E_{\z\sim q_{\boldsymbol\phi}}\left[\log\left(\frac{p_{\boldsymbol\theta}(\x)\qenc}{
@@ -170,7 +201,7 @@
 	\nabla_{\boldsymbol\phi}\Bigl[\mathbb{E}_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big]\Bigl] &= \nabla_{\boldsymbol\phi} \int_{\textbf{z}}\qenc\log\big(\pdec)\big)d\textbf{z} \notag \\
 	&= \int_{\textbf{z}}\nabla_{\boldsymbol\phi}\qenc\log\big(\pdec)\big)d\textbf{z}
 	\end{align*}
-	
+
 	Der \emph{Reparametrisierungs Trick} bietet eine Lösung für diese Problematik. \cite{repara}
 	Wir reparametrisieren die latente Variable $\textbf{z} = g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i})$ mit einer differenzierbaren, durch $\boldsymbol\phi$ parametrisierten Funktion $g$ und einer Zufallsvariablen $\boldsymbol\epsilon \sim p(\boldsymbol\epsilon)$, deren Dichtefunktion jedoch nicht von $\boldsymbol\phi$ abhängig ist. Somit erhalten wir nach Anwendung
 	\begin{align*}
@@ -186,17 +217,17 @@
 	\log\big(p_{\boldsymbol\theta}(\textbf{X})\big)&=\log\big(p_{\boldsymbol\theta}(\textbf{x}_{1},\ldots,\textbf{x}_{N})\big)\overset{\text{i.i.d.}}{=}\log\left(\prod_{i=1}^{N}p_{\boldsymbol\theta}(\x)\right) =\sum_{i=1}^{N}\log\big(p_{\boldsymbol\theta}(\x)\big) \notag \\&= \sum_{i=1}^{N} D_{KL}\big[\qenc||\penc\big] -
 	\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\x).
 	\end{align*}
-	
+
 	Der kürzeren Berechnungsdauer geschuldet, werden dafür Minibatches $\textbf{M} = \{\textbf{x}_{i}\}_{i=1}^{M} \subset \textbf{X}$ gezogen und die ELBO nur auf diesen optimiert.
 	\begin{align*}
 	&\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{X}) \simeq  \frac{N}{M}\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{M}) = N\mathbb{E}\lbrack\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{x}_{i})\rbrack \simeq \frac{N}{M}\sum_{i=1}^{M}\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\textbf{x}_{i})\\
 	&\simeq \frac{N}{M}\sum_{i=1}^{M}  \left(D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big] - \frac{1}{L}\sum_{l=1}^{L}\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon_{l},\textbf{x}_{i}))\big)\right)
 	\end{align*}
-	
+
 	Praktischerweise sorgt eine groß gewählte Batchsize $|\textbf{M}| = M$, z.B. $M=100$ dafür, dass der Erwartungswert implizit durch die Batches des Stochatich Gradient Verfahrens geschätzt wird. Wir können dann die Anzahl der Stichproben von $\boldsymbol\epsilon$ für die Monte-Carlo Schätzung des Erwartungswertes $\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]$ als $L=1$ festlegen.
 	\\
 	Wir erhalten den AEVB-Algorithmus \emph{(Auto Encoding Variational Bayes)}: \\
-	
+
 	\hrule
 	\vspace{0,15cm}
 	\textbf{AEVB-Algorithmus}
@@ -228,7 +259,7 @@
 		\captionsetup{labelformat=empty}
 		\caption{Gegeben die Realisierungen einer Zufallsvariablen $\z\sim \mathcal{N}(\mathbf{0},\mathbf{I})$  (Links) lässt sich mit Abbildung durch eine Funktion, hier $g(\textbf{z})= \frac{\textbf{z}}{15}+\frac{\textbf{z}}{||\textbf{z}||}$ eine ganz andere Verteilung erzeugen (Rechts). Dies nutzt der VAE aus, um aus Realisierungen einer normalverteilten Zufallsvariablen komplexe Verteilungen in großer Dimension zu modellieren. Die Funktion g, beim VAE der Decoder wird aus den Daten erlernt. \textbf{}\cite{tutvae}}
 	\end{figure}
-	
+
 	Welche Verteilung für den Decoder $\pdec$ dafür am besten geeignet ist, hängt vom Typ der zu erzeugenden Daten ab.\\ Für binäre Daten  $\textbf{x}_{i} \in \{0,1\}^{P}$ werden wir eine multivariate Bernoulliverteilung verwenden, also $p_{\theta}(\textbf{x}_{i}|\textbf{z}) =  \mathcal{B}(\boldsymbol{p}_{i})$. Gemeint ist hiermit eine elementweise Auswertung univariater Bernoulliverteilungen.\\
 	Für stetige Daten $\textbf{x}_{i} \in \mathbb{R}^{P}$ wählen wir eine multivariate Normalverteilung $p_{\theta}(\textbf{x}_{i}|\textbf{z}) = \mathcal{N}(\boldsymbol{\hat{\mu}}_{i},\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I})$.\\
 	Hierbei sind $\boldsymbol{\hat{\mu}}_{i} = \boldsymbol{\hat{\mu}}_{\boldsymbol\theta}(\textbf{z})$ und $\boldsymbol{\hat{\sigma}}_{i}^{2} = \boldsymbol{\hat{\sigma}}_{\boldsymbol\theta}^{2}(\textbf{z}) $ bzw. $\textbf{p}_{i} = \textbf{p}_{\boldsymbol\theta}(\textbf{z})$ die Ausgaben des Decodernetzwerkes.\newpage
@@ -250,7 +281,7 @@
 		\caption{Erlernte latente Darstellung des MNIST-Trainingsdatensatzes im zweidimensionalen\\ latenten Raum (links) und durch das Decodernetzwerk erzeugte Daten. (rechts) Die \\latenten Darstellungen $\mathbf{z}$ wurden mit linearem Abstand im Quadrat $[-2,2]^2$ gewählt. Auf die verwendete Modellstruktur und den dazu geschriebenen Code gehen wir im praktischen Teil dieser Arbeit genauer ein. }
 	\end{figure}
 	Für eine konkrete Berechnung der ELBO betrachten wir zuerst die KL-Divergenz der nun parameterfreien Verteilung $p(\textbf{z})$ nach $q_{\boldsymbol\phi}(\textbf{z}|\textbf{x}_{i})$. $Z$ notiert hierbei die Dimension der latenten Darstellung und $p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})$ bzw. $p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z})$ die Auswertung der jeweiligen Dichtefunktion an der Stelle $\textbf{z}$.
-	
+
 	\begin{align*}
 	D_{KL}\big(q_{\boldsymbol\phi}(\textbf{z}|\textbf{x}_{i}) || p(\textbf{z})\big) &= \mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\left[\log\left(\frac{p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})}{p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z})}\right)\right].\\
 	&= \mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[\log\big(p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})\big)
@@ -272,15 +303,15 @@
 	\begin{align*}
 	\mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[\textbf{z}^{\mathrm{T}}\mathbf{I}\textbf{z}\big] &= \boldsymbol\mu_{i}^{\mathrm{T}}\mathbf{I}\boldsymbol\mu_{i}+\mathrm{Tr}(\boldsymbol\sigma_{i}^{2}\mathbf{I})\\ \mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\big[(\textbf{z}-\boldsymbol\mu_{i})^{\mathrm{T}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\big] &= \mathrm{Tr}((\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}\boldsymbol\sigma_{i}^{2}\mathbf{I}).
 	\end{align*}
-	
-	
+
+
 	Nun lässt sich mit ${\boldsymbol\sigma_{i}^{2}\mathbf{I}} =  \begin{psmallmatrix}\sigma_{i,1}^{2} & \ &\ \\ \ & \ddots &\ \\ \ & \ &\sigma_{i,Z}^{2}\end{psmallmatrix}$ die KL-Divergenz ausrechnen.
 	\begin{align*}
 	&-\frac{1}{2}\Big(\log\big(\det(\boldsymbol\sigma_{i}^{2}\mathbf{I})\big)+\mathrm{Tr}((\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}\boldsymbol\sigma_{i}^{2}\mathbf{I})-\boldsymbol\mu_{i}^{\mathrm{T}}\textbf{I}\boldsymbol\mu_{i}-\mathrm{Tr}(\boldsymbol\sigma_{i}^{2}\mathbf{I})\Big) \notag \\
 	= &-\frac{1}{2}\left(\log\Big(\prod_{j=1}^{Z}\sigma_{i,j}^{2}\Big)+Z-\sum_{j=1}^{Z}\mu_{i,j}^{2}-\sum_{j=1}^{Z}\sigma_{i,j}^{2}\right) \notag \\
 	= &-\frac{1}{2}\sum_{j=1}^{Z}\Big(\log\big(\sigma_{i,j}^{2}\big)+1-\mu_{i,j}^{2}-\sigma_{i,j}^{2}\Big).
 	\end{align*}
-	
+
 	Auch $\pdec$ kann mit unserer Wahl der Verteilungen explizit ausgerechnet werden.
 	Mit $P$ wird dazu die Dimension des Inputs und Outputs notiert.
 	Für die Verwendung einer multivariaten Normalverteilung im Decoder ergibt sich:
@@ -293,7 +324,7 @@
 	\sum_{p=1}^{P}\frac{\big(x_{i,p}-\hat{\mu}_{i,p}\big)^{2}}{\hat{\sigma}_{i,p}^{2}}\right) \notag \\
 	&= -\frac{1}{2}\sum_{p=1}^{P} \left(\log\left(2\pi \hat{\sigma}_{i,p}^{2}\right) + \frac{\big(x_{i,p}-\hat{\mu}_{i,p}\big)^{2}}{\hat{\sigma}_{i,p}^{2}}\right)
 	\end{align*}
-	
+
 	Für eine bernoulliverteilte Zufallsvariable ist die Dichtefunktion  durch $p_{\mathcal{B}(\mathrm{p}_{i})}(x_{i}) = \mathrm{p}_{i}^{x_{i}}(1-\mathrm{p}_{i})^{(1-x_{i})}$ definiert. Somit ergibt sich für die Verwendung der multivariaten Bernoulliverteilung im Decoder: \\
 	\begin{align*}
 	\log\big(p_{\theta}(\textbf{x}_{i}|\textbf{z})\big) &=  \log\big(p_{\mathcal{B}(\boldsymbol{p}_{i})}(\textbf{x}_{i})\big)\notag \\
@@ -308,13 +339,13 @@
 	\dfrac{\partial \mathbf{z}(t)}{\partial t}&=f_{\boldsymbol{\psi}}(\mathbf{z}(t),t), \\
 	\mathbf z(t_{0})&=\mathbf z_{0}
 	\end{align*}
-	 Durch einen gegebenen Anfangswert $\mathbf z_{0}$ erhalten wir für lipschitzstetige Funktionen immer eine Lösung des Anfangswertproblems
+	Durch einen gegebenen Anfangswert $\mathbf z_{0}$ erhalten wir für lipschitzstetige Funktionen immer eine Lösung des Anfangswertproblems
 	\begin{align*}
 	\mathbf z_{T}=\mathbf z_{0} +\int_{0}^{T} f_{\boldsymbol{\psi}}(\mathbf{z}(t),t) \mathrm{d}t.
 	\end{align*}
 	Das Integral lässt sich numerisch mit ODE-Solvern berechnen. \\
 	Wir benutzen einen VAE zur Dimensionsreduzierung. Der Encoder bestimmt den Anfangswert $\mathbf z_{0}$ der Differentialgleichung, welcher mit dem ODE-Netzwerk eine eindeutig bestimmte Kurve im latenten Raum liefert. Der Decoder rekonstruiert anschließend zu den Zeitpunkten $t_{0}, t_{1},\ldots,t_{T}$ die Inputsequenz $\mathbf x_{0:T}$. \\ \\
-	ODEs erster Ordnung sind jedoch nicht in der Lage Datensätze zufriedenstellend zu modellieren, bei denen sich auch höhere Momente ändern. 
+	ODEs erster Ordnung sind jedoch nicht in der Lage Datensätze zufriedenstellend zu modellieren, bei denen sich auch höhere Momente ändern.
 	Wir werden daher ODEs zweiter Ordnung verwenden, welche sich äquivalent als ein System bestehend aus zwei Differentialgleichungen erster Ordung notieren lassen.\\ Der Zustand $\mathbf z_{t}=(\mathbf s_{t}, \mathbf v_{t})^{\mathrm{T}}$ zum Zeitpunkt $t$, wird dazu in eine Positionskomponente $\mathbf s_{t}$ und eine Geschwindigkeitskomponente $\mathbf v_{t}$ zerlegt, deren Anfangswerte $\mathbf s_{0}$ und $\mathbf v_{0}$ von zwei unterschiedlichen Encoder-Netzwerken, dem \emph{Position-Encoder} und dem \emph{Velocity-Encoder}, erlernt werden.\\
 	Der Position-Encoder erhält zur Bestimmung der latenten Positionskomponente die erste Komponente $\mathbf x_{0}$ der Inputsequenz, während der Velocity-Encoder die ersten $m\geq 3$ Komponenten $\mathbf x_{0:m}$ der Inputsequenz erhällt. Dies ermöglicht uns das Encodieren der höheren Momente.
 	\begin{align*}
@@ -340,14 +371,14 @@
 	\end{array}\right)
 	\mathrm{d}t.
 	\end{align*}
-	Die Autoren des Papers verwenden ein Bayensisches Neuronales Netzwerk zur Modellierung der Differentialgleichung um Unsicherheit besser darstellen zu können. Wir werden aber auf ein gewöhnliches Neuronales Netzwerk zurückgreifen und im nächsten Kapitel auf Modellierung von Stochastischen Differentialgleichung eingehen. 
+	Die Autoren des Papers verwenden ein Bayensisches Neuronales Netzwerk zur Modellierung der Differentialgleichung um Unsicherheit besser darstellen zu können. Wir werden aber auf ein gewöhnliches Neuronales Netzwerk zurückgreifen und im nächsten Kapitel auf Modellierung von Stochastischen Differentialgleichung eingehen.
 	\begin{figure}[h!]
 		\centering
 		\includegraphics[scale=0.57]{ODE2VAE_ODE_Net}
 		\captionsetup{labelformat=empty}
 		\caption{Schematische Darstellung des ODE$^2$-VAE. Eine Inputsequenz wird von den Encodermodellen auf die Startwerte einer Beschleunigungs- und Positionskurve abgebildet. Die Änderung der Beschleuningungskurve (blau) wird durch ein ODE-Net Modelliert und mit einem ODEsolver berechnet. Die Änderung der Positionskurve ergibt sich durch Integration über die Beschleuningungskurve. Zu festgelegten Zeitpunkten rekonstruiert der Decoder aus den Positionswerten $\mathbf{s}_t$ die Inputsequenz.}
 	\end{figure}
-	
+
 	Als Trainingskriterium des ODE$^2$-VAE verwenden wir erneut die negative ELBO.
 	Wir erhalten:
 	\begin{align*}
@@ -399,7 +430,7 @@
 	\end{proof}
 	Die Berechnung der Spur der Jacobimatrix unserer Differentialgleichung $f_{\boldsymbol\psi}(\mathbf{s}_{t},\mathbf{v}_{t})$ erfordert entsprechend der gewählten latenten Dimension $Z$ auch eine $Z$-fache Auswertung des zugrundeliegenden Netzwerkes. Um den Rechenaufwand deutlich zu verringern, verwenden wir zwei Tricks.\cite{ffjord}\\
 	Das Vektor-Matrix Produkt $\boldsymbol\epsilon^\mathrm{T} \cdot \tfrac{\partial f}{\partial\mathbf{z}}(t)$ lässt sich durch \emph{Reverse-Mode Automatic Differentiation} mit einmaliger Auswertung der Funktion $f$ berechnen und die Spur einer Matrix kann durch ein doppeltes Matrix-Vektorprodukt mit einem Zufallsvektor $\boldsymbol\epsilon$ erwartungstreu geschätzt werden.
-	
+
 	\begin{theorem}%{$\mathrm{(Hutchinsons\ Spur\ Schätzer)}$}
 		Sei $\mathbf{M}\in \mathbb{R}^d \times \mathbb{R}^d$ eine beliebige Matrix und $\boldsymbol\epsilon \sim p(\boldsymbol\epsilon)$ eine Zufallsvariable mit $\E[\boldsymbol\epsilon] = \mathbf{0}$ und $\mathrm{Cov}(\boldsymbol\epsilon) =\mathbf{I}$. Die Spur der Matrix $\mathbf{M}$ lässt sich erwartungstreu durch ein doppeltes Matrix-Vektorprodukt der Matrix  $\mathbf{M}$ mit dem Zufallvektor $\boldsymbol\epsilon$ schätzen:
 		\begin{align*}
@@ -452,9 +483,9 @@
 	Bei uns hat sich diese Annahme als zu einschränkend herausgestellt. Das Verfahren konvergiert nur langsam und die Bilder neigen schnell dazu zu verschwimmen. \\
 	Wir schlagen ähnlich dem Ansatz zur alternativen Lossfunktion des Papers daher vor direkt die KL-Divergenz zur Encoderverteilung $q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{t}|\mathbf{x}_{t:(t+m)})$ zu minimieren. Eine wie wir finden vertretbare Annahme, da so auch sichergestellt wird, dass Encodernetzwerk und ODE-Netzwerk der selben Sequenz latente Werte mit ähnlicher Dichte zuweisen.\\
 	Nun lässt sich die ELBO analytisch berechnen und die Parameter $\boldsymbol\phi,\boldsymbol\psi,\boldsymbol\theta$ lassen sich anhand dieses Trainingskriterium aktualisieren.\\
-	
+
 	Ebenfalls gute Ergebnisse liefert bei uns die Approximation der Integrale durch eine Summe mit Schrittweite $\mathrm{d}t=1$ und das Verwenden des Reconstruction Loss als alleiniges Trainingskriterium.\\
-		\begin{figure}[h!]
+	\begin{figure}[h!]
 		\centering
 		\includegraphics[scale=0.41]{ODE2VAE_Modell}
 		\captionsetup{labelformat=empty}
@@ -464,8 +495,8 @@
 	Visuell sind die Rekonstruktionen bei deutlich geringerer Trainingszeit (Bei uns ca. Faktor 30) auf unseren Datensätzen sogar etwas besser, als mit einem Neural-ODE. Dies haben wir mit unserer Lossfunktion beobachtet, aber vor allem auch mit der Lossfunktion des Papers. Wir vermuten, dass das auch an einem Implementierungsfehler unsererseits liegen könnte.
 	Durch verwenden einer Summe und Simplifizierung des Trainingskriterium gehen einige praktische Eigenschaften des Modells verloren, wie das Erzeugen neuer Daten durch ziehen aus einer Normalverteilung, das Anfertigen von Rekonstruktionen in stetiger Zeit, die mathematische Interpretation des Modells als Verteilung und somit auch das Schätzen der Wahrscheinlichkeitsdichte und schließlich noch die größere Resistenz des Modells gegenüber Overfitting.
 	Um einige dieser Modelleigenschaften zu erhalten könnte man auch als Trainingskriterium auch den Reconstruction Loss mit der Vanilla-VAE ELBO verwenden.
-	
-	
+
+
 	\newpage
 	\subsection[SDE-VAE]{M-th Order SDE-Variational Autoencoder}
 	Bisher wurden die Pfade der latenten Darstellungen $z : [0,\tau] \times \Omega \rightarrow \R^d$ als Lösungen von Differentialgleichungen der Form
@@ -482,17 +513,17 @@
 		\nabla v(\cdot,\omega) &= w(\cdot,\omega)\\
 		\nabla w(\cdot,\omega) &= f\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)
 		\end{align*}
-		
+
 		\item Die Form der Differentialgleichung weniger einschränken, indem wir beliebige $M$-ODE zulassen.
 		\begin{align*}
 		\nabla z(\cdot,\omega) &= f_1\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)\\
 		\nabla v(\cdot,\omega) &= f_2\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)\\
 		\nabla w(\cdot,\omega) &= f_3\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)
 		\end{align*}
-		
+
 		\item Einen Variational Encoder auf jedes Frame (Datenpunkt $x_i$) separat anwenden. Bisher wurde der Encoder nur auf die ersten Frames angewendet um $z(0,\cdot), v(0,\cdot)$ zu finden. Dies geht, wie wir später sehen werden, mit der Betrachtung von Stochastic Differntial Equations (SDEs) einher.
 	\end{itemize}
-	
+
 	\newpage
 	\subsubsection[Notation]{Einführung der Notation}
 	Zunächst führen wir eine Notation ein, die eher an den Standards der Stochastik und weniger an denen von Machine-Learning orientiert ist. Dazu wiederholen wir auch grob die Idee eines 2-ODE-VAE.\\
@@ -514,28 +545,28 @@
 	Voraussetzung: Es existieren ein Prozesse $\tx,\tz$ wie oben beschrieben mit
 	\begin{itemize}
 		\item[V1)] $x_i = \tx(t_i,\cdot)$
-		
+
 		\item[V2)] Für jedes $t \in [0,\tau]$ ist $\tz(t,\cdot)$ suffizient für $\tx(t,\cdot)$.
-		
+
 		\item[V3)] $\E[\tz(0,\cdot) \mid x_0]$ ist unabhängig von $x_1,...,x_m$ und verteilt wie $\mathcal{N}(\mu^{(0)}(x_0),\Sigma^{(0)}(x_0))$. Genauso ist $\E[\tz^{(1)}(0,\cdot) \mid x_0,x_1,x_2]$ unabhängig von $x_3,...,x_m$ und verteilt wie $\mathcal{N}(\mu^{(1)}(x_0,x_1,x_2),\Sigma^{(1)}(x_0,x_1,x_2))$. Dabei sind $\mu^{(0)},\mu^{(1)}$ Funktionen nach $\R^d$ und $\Sigma^{(0)},\Sigma^{(1)}$ Funktionen in den Raum der $d \times d$-Diagonalmatrizen.
 	\end{itemize}
 	Falls man nicht gerade die Existenz eines perfekten 2-ODE-VAE erreichen will, sondern es reicht, wenn die Rekonstruktionen sehr nahe an $x_0,...,x_m$ kommen sollen, dann lassen sich diese Voraussetzungen natürlich erheblich abschwächen, aber sie liefern eine gute Idee der Annahmen, die man implizit macht, wenn man einen 2-ODE-VAE verwendet.
-	
+
 	\newpage
 	\noindent
-	
+
 	Die Voraussetzung (V3) lässt sich auch noch weiter abschwächen, wenn man den 2-ODE-VAE so umschreibt, dass er auch noch die Verteilungen von $\E[\tz(0,\cdot) \mid x_0]$ und $\E[\tz^{(1)}(0,\cdot) \mid x_0,x_1,x_2]$ durch Neuronale Netzwerke zu finden versucht. Damit kann auch das generieren gänzlich neuer Daten, wozu VAEs auch verwendet werden, stark verbessert werden. Wir werden uns aber weniger damit beschäftigen und halten an (V3) fest.
-	
-	
-	
+
+
+
 	\section[Empirische Untersuchung]{Empirische Untersuchung}
 	\subsection[VAE]{Ergebnisse: VAE}
-	
 
-	
-	
 
-		
+
+
+
+
 	\textbf{TODO: Bild einfügen VAE Rekonstruktion mit Interpolation}
 	\begin{figure}[!htbp]
 		\centering
@@ -554,25 +585,25 @@
 		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
 	\end{figure}
 	\newpage
-	\subsection[ODE$^2$-VAE]{Ergebnisse: ODE$^2$-VAE}	
-	
+	\subsection[ODE$^2$-VAE]{Ergebnisse: ODE$^2$-VAE}
+
+%	\begin{figure}
+%		\begin{minipage}[position=l]{0.33\textwidth}
+%			\begin{mdframed}[style=inner]
+%				\center{Modellinput\vspace{0.2cm}}
+%				\includegraphics[scale=0.5]{Modellinput}
+%			\end{mdframed}
+%		\end{minipage}
+%		\begin{minipage}[position=r]{0.67\textwidth}
+%			\begin{mdframed}[style=inner]
+%				\center{Extrapolation\vspace{0.2cm}}
+%				\includegraphics[scale=0.499]{Reconstructions}
+%			\end{mdframed}
+%		\end{minipage}
+		%\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$-VAE %(untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie %erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um %Vorhersagen für die restlichen Zeitpunkte zu treffen.}
+%	\end{figure}
+
 	\begin{figure}
-		\begin{minipage}[position=l]{0.33\textwidth}
-			\begin{mdframed}[style=inner]
-				\center{Modellinput\vspace{0.2cm}}
-				\includegraphics[scale=0.5]{Modellinput}
-			\end{mdframed}
-		\end{minipage}
-		\begin{minipage}[position=r]{0.67\textwidth}
-			\begin{mdframed}[style=inner]
-				\center{Extrapolation\vspace{0.2cm}}
-				\includegraphics[scale=0.499]{Reconstructions}
-			\end{mdframed}
-		\end{minipage}
-		\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$-VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
-		\end{figure}
-	
-		\begin{figure}
 		\begin{minipage}[position=l]{0.5\textwidth}
 			\begin{mdframed}[style=inner]
 				\center{Modellinput\vspace{0.2cm}}
@@ -588,16 +619,16 @@
 		\caption{Blablabla}
 	\end{figure}
 	\newpage
-	
-		
+
+
 	\begin{table}[htb]
 		\begin{center}
 			\begin{tabular}{lccccc}\toprule
-				\textbf{\ }	&\textbf{VanillaVAE-}	&\textbf{Latente Interpolation} 
+				\textbf{\ }	&\textbf{VanillaVAE-}	&\textbf{Latente Interpolation}
 				&\textbf{alternativerODE$^2$-VAE}
-				&\textbf{ODE$^2$-VAE} 
+				&\textbf{ODE$^2$-VAE}
 				&\textbf{SDE-VAE} \\
-				
+
 				\textbf{Rekonstruktionen} \\ \textbf{in stetiger Zeit}& $\times$	& $\checkmark$ &$\times$ & $\checkmark$	& \\
 				\textbf{Beobachtungszeitpunkte}\\ \textbf{können unregelmäßig sein}	& $\times$	&  $\checkmark$ & $\times$ &$\checkmark$	& \\
 				\textbf{Extrapolation}	& $\times$	& $\times$ & $\checkmark$ & $\checkmark$	& \\
@@ -605,13 +636,13 @@
 			\end{tabular}
 		\end{center}
 	\end{table}
-	
+
 	\subsection[SDE-VAE]{Ergebnisse: SDE-VAE}
 	\newpage
 	\section[Modellstrukturen]{Modellstrukturen}
 	VAE für gesamte Sequenz
-	
-		\begin{table}[htb]
+
+	\begin{table}[htb]
 		\begin{center}
 			\begin{tabular}{llcccc}\toprule
 				\textbf{\ }	&\textbf{Encoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
@@ -633,24 +664,24 @@
 	\end{table}
 
 	\begin{table}[htb]
-	\begin{center}
-		\begin{tabular}{llcccc}\toprule
-			\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
-			\midrule
-			\textbf{1.}	&Input-Layer	& 20		& 0		& - 			&- \\
-			\textbf{2.}	&Dense-Layer 			& 256		& 5376	& -				&relu \\
-			\textbf{3.}	&Dense-Layer			& 2048		& 526336& -				&relu \\
-			\textbf{4.}	&Reshape-Layer		& (4, \ \ 4,  128)	& 0		& -		&- \\
-			\textbf{5.}	&Conv2DTranspose& (6, \ \ 6, \ 64)	& 73792	& 3 $\times$ 3 	&relu \\
-			\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 64)	& 0		& 2 $\times$ 2 	&- \\
-			\textbf{7.}	&Conv2DTranspose& (14, 14, \ 32)	& 18464		& 3 $\times$ 3 			&relu \\
-			\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
-			\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 10)	& 5130  	& 3 $\times$ 3; padding 			&sigmoid \\
-			\bottomrule
-		\end{tabular}
-	\end{center}
-\end{table}
-			ODE2VAE rotatingMNIST, bouncingBalls
+		\begin{center}
+			\begin{tabular}{llcccc}\toprule
+				\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& 20		& 0		& - 			&- \\
+				\textbf{2.}	&Dense-Layer 			& 256		& 5376	& -				&relu \\
+				\textbf{3.}	&Dense-Layer			& 2048		& 526336& -				&relu \\
+				\textbf{4.}	&Reshape-Layer		& (4, \ \ 4,  128)	& 0		& -		&- \\
+				\textbf{5.}	&Conv2DTranspose& (6, \ \ 6, \ 64)	& 73792	& 3 $\times$ 3 	&relu \\
+				\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 64)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{7.}	&Conv2DTranspose& (14, 14, \ 32)	& 18464		& 3 $\times$ 3 			&relu \\
+				\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
+				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 10)	& 5130  	& 3 $\times$ 3; padding 			&sigmoid \\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+	ODE2VAE rotatingMNIST, bouncingBalls
 	\begin{table}[htb]
 		\begin{center}
 			\begin{tabular}{llcccc}\toprule
@@ -671,7 +702,7 @@
 			\end{tabular}
 		\end{center}
 	\end{table}
-	
+
 	\begin{table}[htb]
 		\begin{center}
 			\begin{tabular}{llcccc}\toprule
@@ -692,7 +723,7 @@
 			\end{tabular}
 		\end{center}
 	\end{table}
-	
+
 	\begin{table}[htb]
 		\begin{center}
 			\begin{tabular}{llccc}\toprule
@@ -707,7 +738,7 @@
 			\end{tabular}
 		\end{center}
 	\end{table}
-	
+
 	\begin{table}[htb]
 		\begin{center}
 			\begin{tabular}{llcccc}\toprule
@@ -726,7 +757,7 @@
 			\end{tabular}
 		\end{center}
 	\end{table}
-	\noindent	
+	\noindent
 	\newpage
 	ODE2VAE Videosequenzen
 	\begin{table}[htb]
@@ -741,40 +772,40 @@
 				\textbf{4.}	&Max-Pooling2D	& (14, 14, 32)		& 0		& 2 $\times$ 2	&- \\
 				\textbf{5.}	&Conv2D			& (12, 12, 64)		& 18496	& 3 $\times$ 3	&relu \\
 				\textbf{6.}	&Max-Pooling2D	& (6, \ \ 6, \ 64)	& 0		& 2 $\times$ 2 	&- \\
-				\textbf{7.}	&Conv2D		& (5, \ \ 5,  128)	& 32896	& 2 $\times$ 2 	&relu \\
+				\textbf{7.}	&Conv2D			& (5, \ \ 5,  128)	& 32896	& 2 $\times$ 2 	&relu \\
 				\textbf{8.}	&Flatten		& 3200				& 0		& - 			&- \\
-				\textbf{9.}	&Dense-Layer			& 384				& 1229184	& - 			&relu \\
-				\textbf{10.}	&Dense-Layer 			& 30 + 30				& 23100	& - 			&- \\
-				\textbf{11.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (30, 30)				& 0	& - 			&- \\
-				\textbf{12.}&$\mathbf{s}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 30				& 0	& - 			&-\\
+				\textbf{9.}	&Dense-Layer	& 384				&1229184& - 			&relu \\
+				\textbf{10.}&Dense-Layer 	& 30 + 30			& 23100	& - 			&- \\
+				\textbf{11.}&Split-Layer($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)   & (30, 30)				& 0	& - 			&- \\
+				\textbf{12.}&$\mathbf{s}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$	& 30				& 0	& - 			&-\\
 				\bottomrule
 			\end{tabular}
 		\end{center}
 	\end{table}
-	
+
 	\begin{table}[htb]
-	\begin{center}
-		\begin{tabular}{llcccc}\toprule
-			\textbf{\ }	&\textbf{Velocityencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
-			\midrule
-			\textbf{1.}	&Input-Layer	& (60, 60, \ 4)		& 0		& - 			&- \\
-			\textbf{2.}	&Conv2D 		& (56, 56, 64)		& 6464	& 5 $\times$ 5	&relu \\
-			\textbf{3.}	&Max-Pooling2D	& (14, 14, 64)		& 0		& 2 $\times$ 2	&- \\
-			\textbf{3.}	&Conv2D 		& (28, 28, 64)		& 36928	& 3 $\times$ 3; padding	&relu \\
-			\textbf{4.}	&Max-Pooling2D	& (14, 14, 64)		& 0		& 2 $\times$ 2	&- \\
-			\textbf{5.}	&Conv2D			& (12, 12, 128)		& 73856 & 3 $\times$ 3	&relu \\
-			\textbf{6.}	&Max-Pooling2D	& (6, \ \ 6, \ 128)	& 0		& 2 $\times$ 2 	&- \\
-			\textbf{7.}	&Conv2D		& (5, \ \ 5,  256)		& 131328& 2 $\times$ 2 	&relu \\
-			\textbf{8.}	&Flatten		& 6400				& 0		& - 			&- \\
-			\textbf{9.}	&Dense-Layer			& 640				& 4096640	& - 			&relu \\
-			\textbf{10.}	&Dense-Layer 			& 30 + 30				& 38460	& - 			&- \\
-			\textbf{11.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (30, 30)				& 0	& - 			&- \\
-			\textbf{12.}&$\mathbf{v}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 30				& 0	& - 			&-\\
-			\bottomrule
-		\end{tabular}
-	\end{center}
+		\begin{center}
+			\begin{tabular}{llcccc}\toprule
+				\textbf{\ }	&\textbf{Velocityencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& (60, 60, \ 4)		& 0		& - 			&- \\
+				\textbf{2.}	&Conv2D 		& (56, 56, 64)		& 6464	& 5 $\times$ 5	&relu \\
+				\textbf{3.}	&Max-Pooling2D	& (14, 14, 64)		& 0		& 2 $\times$ 2	&- \\
+				\textbf{3.}	&Conv2D 		& (28, 28, 64)		& 36928	& 3 $\times$ 3; padding	&relu \\
+				\textbf{4.}	&Max-Pooling2D	& (14, 14, 64)		& 0		& 2 $\times$ 2	&- \\
+				\textbf{5.}	&Conv2D			& (12, 12, 128)		& 73856 & 3 $\times$ 3	&relu \\
+				\textbf{6.}	&Max-Pooling2D	& (6, \ \ 6, \ 128)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{7.}	&Conv2D		& (5, \ \ 5,  256)		& 131328& 2 $\times$ 2 	&relu \\
+				\textbf{8.}	&Flatten		& 6400				& 0		& - 			&- \\
+				\textbf{9.}	&Dense-Layer			& 640				& 4096640	& - 			&relu \\
+				\textbf{10.}	&Dense-Layer 			& 30 + 30				& 38460	& - 			&- \\
+				\textbf{11.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (30, 30)				& 0	& - 			&- \\
+				\textbf{12.}&$\mathbf{v}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 30				& 0	& - 			&-\\
+				\bottomrule
+			\end{tabular}
+		\end{center}
 	\end{table}
-	
+
 	\begin{table}[htb]
 		\begin{center}
 			\begin{tabular}{llccc}\toprule
@@ -789,27 +820,27 @@
 			\end{tabular}
 		\end{center}
 	\end{table}
-	
+
 	\begin{table}[htb]
-	\begin{center}
-		\begin{tabular}{llcccc}\toprule
-			\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
-			\midrule
-			\textbf{1.}	&Input-Layer	& 20		& 0		& - 			&- \\
-			\textbf{2.}	&Dense-Layer 			& 384		& 11904 & -				&relu \\
-			\textbf{3.}	&Dense-Layer			& 3200		& 1232000& -				&relu \\
-			\textbf{4.}	&Reshape-Layer		& (4, \ \ 4,  128)	& 0		& -		&- \\
-			\textbf{5.}	&Conv2DTranspose& (6, \ \ 6, \ 64)	& 32832	& 2 $\times$ 2 	&relu \\
-			\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 64)	& 0		& 2 $\times$ 2 	&- \\
-			\textbf{7.}	&Conv2DTranspose& (14, 14, \ 32)	& 18464		& 3 $\times$ 3 			&relu \\
-			\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
-			\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 32)	& 16416  	& 3 $\times$ 3; padding 			&relu \\
-			\textbf{10.}	&Up-Sampling2D	& (56, 56, \ 32)	& 0	& 2 $\times$ 2 			&- \\
-			\textbf{11.}	&Conv2DTranspose& (60, 60,\ \ 1)	& 801  	& 5 $\times$ 5 &sigmoid \\
-			\bottomrule
-		\end{tabular}
-	\end{center}
-\end{table}	
+		\begin{center}
+			\begin{tabular}{llcccc}\toprule
+				\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& 20				& 0		& - 			&- \\
+				\textbf{2.}	&Dense-Layer 	& 384				& 11904 & -				&relu \\
+				\textbf{3.}	&Dense-Layer	& 3200				& 1232000& -				&relu \\
+				\textbf{4.}	&Reshape-Layer	& (4, \ \ 4,  128)	& 0		& -		&- \\
+				\textbf{5.}	&Conv2DTranspose& (6, \ \ 6, \ 64)	& 32832	& 2 $\times$ 2 	&relu \\
+				\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 64)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{7.}	&Conv2DTranspose& (14, 14, \ 32)	& 18464		& 3 $\times$ 3 			&relu \\
+				\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
+				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 32)	& 16416  	& 3 $\times$ 3; padding 			&relu \\
+				\textbf{10.}&Up-Sampling2D	& (56, 56, \ 32)	& 0	& 2 $\times$ 2 			&- \\
+				\textbf{11.}&Conv2DTranspose& (60, 60,\ \ 1)	& 801  	& 5 $\times$ 5 &sigmoid \\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
 	\newpage
 	.
 	\newpage
@@ -820,47 +851,47 @@
 		\textit{Auto-Encoding Variational Bayes},
 		2013,\\
 		arXiv:1312.6114v10
-		
+
 		\bibitem{intvae}
 		Diederik P. Kingma, Max Welling,
 		\textit{An Introduction to Variational Autoencoders},
 		2019,
 		arXiv:1906.02691v3
-		
+
 		\bibitem{ode2vae}
 		Çağatay Yıldız, Markus Heinonen, Harri Lähdesmäki,
 		\textit{ODE$^{\ 2}$-VAE: Deep generative second order ODEs with Bayesian neural networks},
 		2019,
 		arXiv:1905.10994v2
-		
+
 		\bibitem{repara}
 		https://gabrielhuang.gitbooks.io/machine-learning/content/reparametrization-trick.html
-		
+
 		\bibitem{tutvae}
 		Carl Doersch,
 		\textit{Tutorial on Variational Autoencoders},
 		2016,\\
 		arXiv:1606.05908,
 		Ähnliche Grafik zu finden auf S.5
-		
+
 		\bibitem{matrix}
 		Kaare B. Petersen, Michael S. Pedersen,
 		\textit{The Matrix Cookbook},
 		2012,
 		http://matrixcookbook.com%, Verwendete Rechentricks auf S.43
-		
+
 		\bibitem{neuralode}
 		Ricky T. Q. Chen, Yulia Rubanova, Jesse Bettencourt, David Duvenaud,\\
 		\textit{Neural Ordinary Differential Equations},
 		2019, arXiv:1806.07366v5
-		
+
 		\bibitem{ffjord}
 		Will Grathwohl, Ricky T. Q. Chen, Jesse Bettencourt, Ilya Sutskever, David Duvenaud,
 		\textit{FFJORD:  Free-Form Continous Dynamics for Scalable Reversible Generative Models}
 		2018, arXiv:1810.01367v3
-		
+
 		\bibitem{Hutchin}
 		http://blog.shakirm.com/2015/09/machine-learning-trick-of-the-day-3-hutchinsons-trick/
-		
+
 	\end{thebibliography}
 \end{document}
