@@ -18,6 +18,7 @@
 \pagenumbering{arabic}
 \usepackage[square,sort,comma,numbers]{natbib}
 \usepackage{pifont}
+\usepackage{array}
 
 \newcommand{\cmark}{\ding{51}}%
 \newcommand{\xmark}{\ding{55}}%
@@ -30,12 +31,12 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{bigints}
-\usepackage{makecell}
-\newcommand{\abs}[1]{{\left| #1 \right|}}
-\renewcommand\theadalign{bc}
-\renewcommand\theadfont{\bfseries}
-\renewcommand\theadgape{\Gape[4pt]}
-\renewcommand\cellgape{\Gape[4pt]}
+%\usepackage{makecell}
+%\newcommand{\abs}[1]{{\left| #1 \right|}}
+%\renewcommand\theadalign{bc}
+%\renewcommand\theadfont{\bfseries}
+%\renewcommand\theadgape{\Gape[4pt]}
+%\renewcommand\cellgape{\Gape[4pt]}
 
 \usepackage{xcolor}
 \usepackage[framemethod,tikz]{mdframed}
@@ -126,32 +127,32 @@
 	\newpage
 
 	\section[Theoretische Ausarbeitung]{Theoretische Ausarbeitung}
-	\emph{Einführung der Notation:} Wir orientieren uns in den ersten beiden Kapiteln an den gängigen Notationen in der Machine-Learning Fachliteratur, da hier vor allem die Paper der Autoren zusammengefasst werden. Im Kapitel zu SDE-VAE werden wir uns von dieser Notation aber entfernen, um ein mathematisch genaues Grundgerüst definieren zu können.
-	\begin{center}
-		\begin{tabular}{|l|l|}
+	\emph{Einführung der Notation:} Wir orientieren uns in den ersten beiden Kapiteln an den gängigen Notationen in der Machine-Learning Fachliteratur, da hier vor allem die Paper der Autoren zusammengefasst werden. Im Kapitel zu SDE-VAE werden wir uns von dieser Notation aber entfernen, um ein mathematisch genaues Grundgerüst definieren zu können.\\ \ 
+	\\
+	\begin{tabular}{|c|p{11.9cm}|}
 			\hline
-			\thead{Beispiel} & \thead{Erklärung}  \\
+			\textbf{Beispiel} & \textbf{Erklärung}  \\
 			\hline
-			$\z, \x$ &  \makecell{Zufallsvariablen oder zufällig verteilte Vektoren als Realisierung \\einer Zufallsvariablen werden wir mit Kleinbuchstaben in fetter\\ Schriftstärke notieren.}  \\
+			$\z, \x$ &  Zufallsvariablen oder zufällig verteilte Vektoren als Realisierung \newline einer Zufallsvariablen werden wir mit Kleinbuchstaben in fetter\newline Schriftstärke notieren.  \\
 			\hline
-			$p(\z), p(\x), p(\x|\z)$ & \makecell{Verteilungen/Wahrscheinlichkeitsdichten und bedingte Verteil-\\ungen bzw. Wahrscheinlichkeitsdichten dieser Zufallsvariablen.\\ In der Notation wird nicht zwischen Dichtefunktionen zu der\\ zugehörigen Wahrscheinlichkeitsverteilung unterschieden.}\\
+			$p(\z), p(\x), p(\x|\z)$ & Verteilungen/Wahrscheinlichkeitsdichten und bedingte Verteil-\newline ungen bzw. Wahrscheinlichkeitsdichten dieser Zufallsvariablen.\newline In der Notation wird nicht zwischen Dichtefunktionen zu der\newline zugehörigen Wahrscheinlichkeitsverteilung unterschieden.\\
 			\hline
-			$p(.), q(.)$ & \makecell{Unterschiedliche Buchstaben stehen für unterschiedliche Wahr-\\scheinlichkeitsmodelle}\\
+			$p(.), q(.)$ & Unterschiedliche Buchstaben stehen für unterschiedliche Wahr-\newline scheinlichkeitsmodelle\\
 			\hline
-			$\E_{\z\sim q(.)}[.]$ & \makecell{Erwartungswert bezüglich der angegebenen Verteilung/Dichte}\\
+			$\E_{\z\sim q(.)}[.]$ & Erwartungswert bezüglich der angegebenen Verteilung/Dichte\\
 			\hline
-			$D_{KL}\big(q(.)||p(.)\big)$ & \makecell{(Reverse) KL-Divergenz der Verteilung $q(.)$ nach $p(.)$:\\ $D_{KL}\big(q(.)||p(.)\big):= \E_{\z\sim q(.)}\left[\log\left(\tfrac{q(.)}{p(.)}\right)\right]$} \\
+			$D_{KL}\big(q(.)||p(.)\big)$ & (Reverse) KL-Divergenz der Verteilung $q(.)$ nach $p(.)$:\newline $D_{KL}\big(q(.)||p(.)\big):= \E_{\z\sim q(.)}\left[\log\left(\tfrac{q(.)}{p(.)}\right)\right]$ \\
 			\hline
-			$\boldsymbol\theta, \boldsymbol\phi, \boldsymbol\psi $ & \makecell{Parameter der betrachteten Modelle} \\
+			$\boldsymbol\theta, \boldsymbol\phi, \boldsymbol\psi $ & Parameter der betrachteten Modelle \\
 			\hline
-			$\mathbf{X}, \mathbf{M}, \mathbf{I} $ & \makecell{Zufällig verteilte Matrizen wie Datensätze notieren wir mit Groß-\\buchstaben in fetter Schriftstärke. $\mathbf{I}$ ist die Einheitsmatrix} \\
+			$\mathbf{X}, \mathbf{M}, \mathbf{I} $ & Zufällig verteilte Matrizen wie Datensätze notieren wir mit Groß-\newline buchstaben in fetter Schriftstärke. $\mathbf{I}$ ist die Einheitsmatrix \\
 			\hline
-			$\simeq $ & \makecell{Erwartungstreue Schätzung} \\
+			$\simeq $ & Erwartungstreue Schätzung \\
 			\hline
 		\end{tabular}
-	\end{center}
-    \	\\
-	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N} \subset \R^{P\times N}$, der aus $N$ unterschiedlichen i.i.d. verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
+	\vspace{1cm}
+	\\
+	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N} \subset \R^{P\times N}$, der aus $N$ unterschiedlichen unabhängig, identisch verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
 	In einem latenten Variablen Modell sind wir darum bemüht die Dimension des Datenpunkts zu reduzieren, um den Prozess, der die Daten erzeugt besser modellieren zu können.
 	Dafür werden sogenannte \emph{latenten Variablen} $\z$ eingeführt. Diese sind stetige und nicht beobachtbare Zufallsvariablen, welche die Eigenschaften des Bildes festlegen, die es charakterisiert.
 	Der sogenannte \emph{latente Raum} $\mathcal{Z} = \R^Z$, über den die latenten Variablen $\z$ definiert sind, ist nach Wahl von viel geringerer Dimension als der Raum $\mathcal{X}$ der ursprünglichen Verteilung, d.h. $Z \ll P$.\\
@@ -623,14 +624,14 @@
 
 	\begin{table}[htb]
 		\begin{center}
-			\begin{tabular}{lccccc}\toprule
-				\textbf{\ }	&\textbf{VanillaVAE-}	&\textbf{Latente Interpolation}
-				&\textbf{alternativerODE$^2$-VAE}
+			\begin{tabular}{p{4cm}>{\centering\arraybackslash}p{1.6cm}>{\centering\arraybackslash}p{2.5cm}>{\centering\arraybackslash}p{2.5cm}>{\centering\arraybackslash}p{1.5cm}>{\centering\arraybackslash}p{1.5cm}}\toprule
+				\textbf{\ }	&\textbf{Vanilla-}\newline\textbf{VAE}	&\textbf{\ \ Latente}\newline\textbf{Interpolation}
+				&\textbf{alternativer}\newline\textbf{ODE$^2$-VAE}
 				&\textbf{ODE$^2$-VAE}
-				&\textbf{SDE-VAE} \\
+				&\textbf{SDE-}\newline\textbf{VAE} \\
 
-				\textbf{Rekonstruktionen} \\ \textbf{in stetiger Zeit}& $\times$	& $\checkmark$ &$\times$ & $\checkmark$	& \\
-				\textbf{Beobachtungszeitpunkte}\\ \textbf{können unregelmäßig sein}	& $\times$	&  $\checkmark$ & $\times$ &$\checkmark$	& \\
+				\textbf{Rekonstruktionen} \newline \textbf{in stetiger Zeit}& $\times$	& $\checkmark$ &$\times$ & $\checkmark$	& \\
+				\textbf{Beobachtungs-}\newline\textbf{zeitpunkte können}\newline \textbf{unregelmäßig sein}	& $\times$	&  $\checkmark$ & $\times$ &$\checkmark$	& \\
 				\textbf{Extrapolation}	& $\times$	& $\times$ & $\checkmark$ & $\checkmark$	& \\
 				\bottomrule
 			\end{tabular}
