@@ -155,7 +155,7 @@
 			\hline
 		\end{tabular}
 	\vspace{1cm}
-	\\
+	\subsection[Auto Encoding Variational Bayes]{Auto Encoding Variational Bayes}
 	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N} \subset \R^{P\times N}$, der aus $N$ unterschiedlichen unabhängig, identisch verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
 	In einem latenten Variablen Modell sind wir darum bemüht die Dimension des Datenpunkts zu reduzieren, um den Prozess, der die Daten erzeugt besser modellieren zu können.
 	Dafür werden sogenannte \emph{latenten Variablen} $\z$ eingeführt. Diese sind stetige und nicht beobachtbare Zufallsvariablen, welche die Eigenschaften des Bildes festlegen, die es charakterisiert.
@@ -178,7 +178,8 @@
 	Weiter führen wir wegen der Unberechenbarkeit von $p_{\boldsymbol\theta}(\z|\x)$ das Inferenzmodell $q_{\boldsymbol\phi}(\z|\x)$ ein und suchen die Parameter $\boldsymbol\phi^{*}$ für die $q_{\boldsymbol\phi^{*}}(\z|\x) \approx p_{\boldsymbol\theta}(\z|\x)$ gilt.\\
 	In einem Variational Autoencoder werden die Verteilungen $q_{\boldsymbol\phi}(\z|x)$ und $p_{\boldsymbol\theta}(\x|\z)$ durch neuronale Netze dargestellt und approximiert.\\
 	Im AEVB-Algorithmus (kurz für \emph{Auto-Encoding Variational Bayes}) können die geeigneten Parameter $\boldsymbol\phi^{*}$ und $\boldsymbol\theta^{*}$ gemeinsam erlernt werden.
-	\subsection[VAE]{AEVB-Algorithmus und Variational Autoencoder}
+
+	\subsubsection[AEVB-Algorithmus]{Der AEVB-Algorithmus}
 	Wir betrachten dafür für einen beliebigen Datenpunkt $\x \in \mathbf{X}$ die Reverse KL-Divergenz des Infernce Modells $\qenc$ nach $\penc$:
 	\begin{align*}
 	D_{KL}\big[\qenc || \penc\big] \overset{\text{Def.}}&{=} \E_{\z\sim q_{\boldsymbol\phi}}\left[\log\left(\frac{\qenc}{\penc}\right)\right] \\
@@ -248,7 +249,7 @@
 	\vspace{0,05cm}
 	\hrule
 	\vspace{0,3cm}
-	\ \\
+	\subsubsection[Variational Autoencoder]{Der Variational Autoencoder}
 	Beim Variational Autoencoder werden die Verteilungen $\qenc$ und $\pdec$ durch Neuronale Netze mit den Parametern $\boldsymbol\theta$ und $\boldsymbol\phi$ approximiert und durch den AEVB-Algorithmus trainiert. In diesem Kontext wird $\pdec$ auch \emph{probabilistischer Decoder} genannt und $\qenc$ \emph{probabilistischer Encoder}. \\
 	Nach der Trainingsphase können Decoder und Encoder jedoch voneinander getrennt werden. Mit dem Decoder lassen sich nun neue Daten erzeugen, indem hypotetische latente Darstellungen als Input genutzt werden.\\
 	Für das Inferenzmodell $\qenc$ wird in einem Variational Autoencoder häufig (aber nicht zwingenderweise) eine Multivariate Normalverteilung $\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})$ mit diagonaler Kovarianzmatrix gewählt. \\
@@ -644,22 +645,42 @@
 	\section[Empirische Untersuchung]{Empirische Untersuchung}
 	\subsection[Datensätze]{Die verwendeten Datensätze}
 	\subsubsection{Rotating MNIST}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.4]{rotatingMNIST}
+	\end{figure}
 	Bei dem Datensatz \emph{rotatingMNIST} handelt es sich um eine Modifikation des bekannten MNIST-Datensatzes. Die Grauwerte der Bilder 
 	des MNIST-Datensatzes wurden von uns zunächst binärisiert, um durch eine Bernoulli-Verteilung im Decoder dargestellt werden zu können. 
 	Hierbei wurden die Farbwerte 0 bis 127 auf den Wert 0 abgebildet und die Werte 128 bis 255 auf den Wert 1. \\
 	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 10}$ aus dem Datensatz enthält eine Sequenz von 10 Frames, von einem Frame auf das nachfolgende Frame rotiert die entsprechende Ziffer um 36$^\circ$ gegen den Uhrzeigersinn. Insgesamt wird so eine Rotation um 360$^\circ$ dargestellt. \\
-	Der Trainingsdatensatz besteht aus 60000 Sequenzen und der Testdatensatz aus 10000 Sequenzen.\\
-	\textbf{TODO eventuell ein Bild einer Sequenz}
+	Der Trainingsdatensatz besteht aus 60000 Sequenzen und der Testdatensatz aus 10000 Sequenzen. Der Code zum erzeugen des Datensatz wurde von uns selbst geschrieben und erlaubt es, falls gewünscht auch eine andere Frameanzahl festzulegen.
+
 	\subsubsection{Bouncing Balls}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.4]{bouncingBalls}
+	\end{figure}
 	Der Datensatz \emph{bouncingBalls} besteht aus Bildsequenzen, die Bewegungen dreier gleichgroßer zweidimensionaler Bälle enthalten. Die Bälle befinden sich zum Anfangszeitpunkt in zufälliger Position im Bild und bewegen sich mit normiertem Beschleunigungsvektor in zufällige Richtungen. Dabei können sie miteinander und den Bildrändern kollidieren. 
 	Die zugrundeliegenden physikalischen Gesetze einer elastischen Kollisionen zwischen den Bällen und mit den Bildrändern können in \cite{ElastKol} nachgelesen werden und sollen von unserem Modell erlernt werden. \\
 	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 10}$ aus dem Datensatz enthält 10 Frames. Der Wert 1 bedeutet, dass sich an der jeweiligen 
 	Stelle auf dem Frame ein Ball befindet.\\
-	Der Trainingsdatensatz besteht aus 60000 Sequenzen und der Testdatensatz aus 10000 Sequenzen.\\
-	\textbf{TODO eventuell ein Bild einer Sequenz}
-	\subsubsection{AVI videosequences}
+	Obwohl dieser Datensatz dem des Papers zum ODE$^2$VAE sehr ähnelt ist er für das Modell komplexer zu erlernen, da bei uns zum einen weniger Frames enthalten sind, zwischen diesen aber mehr Zeit vergeht.\\
+	Der Trainingsdatensatz besteht aus 60000 Sequenzen und der Testdatensatz aus 10000 Sequenzen. 
+	Der Code zum erzeugen des Datensatz wurde von uns selbst geschrieben und ermöglicht es, falls erwünscht auch eine andere Anzahl der Bälle, Frames, Auflösung und unterschiedlichen Radius zu wählen.
+
+	\subsubsection{AVI-Motion}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.5]{AVIMotion}
+	\end{figure}
+	Der Datensatz \emph{AVI-Motion} besteht aus Bildsequenzen, die drei menschliche Bewegungen (klatschen, boxen und winken) darstellen. Der ursprünglische Datensatz enthält zu diesen Bewegungen je 4 Videosequenzen von jeweils 25 unterschiedlichen Personen, die jeweils mehrere Sekunden lang sind und eine Auflösung von $160\times120$ Pixel haben. Der Datensatz kann von der Website \cite{Dataset} runtergeladen werden.
+	Wir haben die Videosequenzen auf eine Auflösung von $60\times60$ reduziert, indem wir die Personen mittig in einem $120\times120$ großen Ausschnitt zentiert haben und die Auflösung schließlich durch Mean-Pooling verringert haben. \\
+	Ein Datenpunkt $\x\in [0,1]^{60\times 60\times 8}$ enthält 8 Frames. Wir wollen auf diesem Datensatz testen, ob sich das Modell des ODE$^2$VAE dazu eignet reale Videosequenzen zu modellieren.\\
+	Der Trainingsdatensatz besteht dazu aus 17472 Sequenzen und der Testdatensatz aus 112 Sequenzen. Im Gegensatz zu den anderen Datensätzen legen wir die Batchsize hier auf $M=112$ fest. (Da $112 | 17472$)
+
+	\subsubsection{TODO: SDE Datensatz}
 	\textbf{TODO}
-	\subsubsection{TODO SDE Datensatz}
+	\newpage
 	\subsection[VAE]{Ergebnisse: VAE}
 
 
@@ -667,40 +688,40 @@
 
 
 
-	\begin{figure}[!htbp]
-		\centering
-		\includegraphics[scale=0.8]{interpolation}
-		\caption{Rekonstruktion der \emph{time series} mittels VAE mit Interpolation.}
-	\end{figure}
+%	\begin{figure}[!htbp]
+%		\centering
+%		\includegraphics[scale=0.8]{interpolation}
+%		\caption{Rekonstruktion der \emph{time series} mittels VAE mit Interpolation.}
+%	\end{figure}
 	
-	\begin{figure}[!htbp]
-		\centering
-		\includegraphics[scale=0.8]{whole_sequence_mnist}
-		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
-	\end{figure}
-	\begin{figure}[!htbp]
-		\centering
-		\includegraphics[scale=0.8]{whole_sequence_bouncingBalls}
-		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
-	\end{figure}
-	\newpage
-	\subsection[ODE$^2$VAE]{Ergebnisse: ODE$^2$VAE}
+%	\begin{figure}[!htbp]
+%		\centering
+%		\includegraphics[scale=0.8]{whole_sequence_mnist}
+%		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+%	\end{figure}
+%	\begin{figure}[!htbp]
+%		\centering
+%		\includegraphics[scale=0.8]{whole_sequence_bouncingBalls}
+%		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+%	\end{figure}
+%	\newpage
+%	\subsection[ODE$^2$VAE]{Ergebnisse: ODE$^2$VAE}
 
-	\begin{figure}
-		\begin{minipage}[position=l]{0.33\textwidth}
-			\begin{mdframed}[style=inner]
-				\center{Modellinput\vspace{0.2cm}}
-				\includegraphics[scale=0.5]{Modellinput}
-			\end{mdframed}
-		\end{minipage}
-		\begin{minipage}[position=r]{0.67\textwidth}
-			\begin{mdframed}[style=inner]
-				\center{Extrapolation\vspace{0.2cm}}
-				\includegraphics[scale=0.499]{Reconstructions}
-			\end{mdframed}
-		\end{minipage}
-		\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
-	\end{figure}
+%	\begin{figure}
+%		\begin{minipage}[position=l]{0.33\textwidth}
+%			\begin{mdframed}[style=inner]
+%				\center{Modellinput\vspace{0.2cm}}
+%				\includegraphics[scale=0.5]{Modellinput}
+%			\end{mdframed}
+%		\end{minipage}
+%		\begin{minipage}[position=r]{0.67\textwidth}
+%			\begin{mdframed}[style=inner]
+%				\center{Extrapolation\vspace{0.2cm}}
+%				\includegraphics[scale=0.499]{Reconstructions}
+%			\end{mdframed}
+%		\end{minipage}
+%		\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
+%	\end{figure}
 
 	\begin{figure}
 		\begin{minipage}[position=l]{0.5\textwidth}
@@ -917,7 +938,8 @@
 		\end{center}
 	\end{table}
 	\newpage
-	\textbf{To-Do: SDE-VAE Modellstruktur}
+	\textbf{To-Do: SDE-VAE Modellstruktur}\\
+	Die Modellstruktur des SDEVAE für den Datensatz XXYYZZ
 	\newpage
 	\section[Quellenangabe]{Quellenangabe}
 	\begin{thebibliography}{9}
@@ -970,5 +992,8 @@
 		
 		\bibitem{ElastKol}
 		https://en.wikipedia.org/wiki/Elastic\_collision
+		
+		\bibitem{Dataset}
+		https://www.csc.kth.se/cvap/actions/
 	\end{thebibliography}
 \end{document}
