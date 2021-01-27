@@ -590,28 +590,28 @@
 
 	\newpage
 	\subsubsection[Lernen von SDEs]{Lernen von SDEs}
-	Sei $\tmu: \R^d \rightarrow \R^d$ und $\tsig: \R^d \rightarrow \R^{d \times n}$. Für Prozesse $X: [0,\tau] \times \Omega \rightarrow \R^d$ und $W^1,...,W^n : [0,\tau] \times \Omega \rightarrow \R$ heißt $(Z,W)$ starke Lösung der Stochastischen Differentialgleichung (SDE)
+	Sei $\bmu: \R^d \rightarrow \R^d$ und $\bsig: \R^d \rightarrow \R^{d \times n}$. Für Prozesse $X: [0,\tau] \times \Omega \rightarrow \R^d$ und $W^1,...,W^n : [0,\tau] \times \Omega \rightarrow \R$ heißt $(Z,W)$ starke Lösung der Stochastischen Differentialgleichung (SDE)
 	\begin{align*}
-		& dZ^i = \tmu^i(t,Z_t) \, dt + \sum\limits_{j=1}^n \tsig^{i,j}(t,Z_t) \, dW^j \ ,
+		& dZ^i = \bmu^i(t,Z_t) \, dt + \sum\limits_{j=1}^n \bsig^{i,j}(t,Z_t) \, dW^j \ ,
 	\end{align*}
 	falls $W^1,...,W^n$ unabhängige Brownsche Bewegungen sind und die Formel
 	\begin{align*}
-		& Z_t^i - Z_0^i = \int_0^t \tmu^i(s,Z_s) \, ds + \sum\limits_{j=1}^n \int_0^t \tsig^{i,j}(s,Z_s) \, dW^j \tag{1}
+		& Z_t^i - Z_0^i = \int_0^t \bmu^i(s,Z_s) \, ds + \sum\limits_{j=1}^n \int_0^t \bsig^{i,j}(s,Z_s) \, dW_s^j \tag{1}
 	\end{align*}
-	für jedes $i \leq d$ erfüllt ist. Wir sind hier nur an dem Fall, dass $\tmu(t,x)$ und $\tsig(t,x)$ nicht von $t$, sondern nur von $x$ abhängen, interessiert. Die Lösungen solcher SDEs nennt man Ito-Diffusionen.\\
+	für jedes $i \leq d$ erfüllt ist. Wir sind hier nur an dem Fall, dass $\bmu(t,x)$ und $\bsig(t,x)$ nicht von $t$, sondern nur von $x$ abhängen, interessiert. Die Lösungen solcher SDEs nennt man Ito-Diffusionen.\\
 	Nach \cite{PfaffiSkript} Thm. 21.4 existiert unter den Voraussetzungen
 	\begin{align*}
-		& ||\tmu(x)||_2 + ||\tsig(x)||_2 \leq C_1 \, (1+||x||_2)\\
-		& ||\tmu(x)-\tmu(y)||_2 + ||\tsig(x)-\tsig(y)||_2 \leq C_2 \, ||x-y||_2 \tag{2}
+		& ||\bmu(x)||_2 + ||\bsig(x)||_2 \leq C_1 \, (1+||x||_2)\\
+		& ||\bmu(x)-\bmu(y)||_2 + ||\bsig(x)-\bsig(y)||_2 \leq C_2 \, ||x-y||_2 \tag{2}
 	\end{align*}
 	für jede Startverteilung $Z_0$ mit endlichem zweiten Moment und beliebige BB. $W^1,...,W^n$ eine eindeutige Lösung $Z = Z(W)$ der oben beschriebenen SDE.\\
-	Mit Hilfe des Euler-Maruyama-Verfahrens lässt sich diese Lösung approximieren. Dazu Teilen wir das Intervall $[0,\tau]$ in $m$ viele Stücke $[t_k,t_{k+1}]$ mit $\Delta t = \frac{\tau}{m}$ und $t_k = k\, \Delta t = \frac{k\tau}{m}$. Wir definieren rekursiv
+	Mit Hilfe des Euler-Maruyama-Verfahrens lässt sich diese Lösung approximieren. Dazu Teilen wir das Intervall $[0,\tau]$ in $m$ viele Stücke $[t^m_k,t^m_{k+1}]$ mit $\Delta t = \frac{\tau}{m}$ und $t^m_k = k\, \Delta t^m = \frac{k\tau}{m}$. Wir definieren rekursiv
 	\begin{align*}
-		& Z^i_{m,t_k} := Z^i_{m,t_{k-1}} + \tmu(Z_{m,t_{k-1}}) \, \Delta t + \sum\limits_{j=1}^n \tsig^{i,j}(Z_{m,t_{k-1}}) \, \underbrace{(W^j_{t_k}-W^j_{t_{k-1}})}_{\sim \mathcal{N}(0,\Delta t)}
+		& Z^i_{m,t^m_k} := Z^i_{m,t^m_{k-1}} + \bmu^i(Z_{m,t^m_{k-1}}) \, \Delta t + \sum\limits_{j=1}^n \bsig^{i,j}(Z_{m,t^m_{k-1}}) \, \underbrace{(W^j_{t_k}-W^j_{t_{k-1}})}_{\sim \mathcal{N}(0,\Delta t)}
 	\end{align*}
 	mit $Z_{m,0} = Z_0$. Da Brownsche Bewegungen unabhängige Segmente haben, können wir analog $(\varepsilon_{j,k})_{j \leq n, k \in \N} \, uiv. \sim N(0,1)$ definieren und schreiben:
 	\begin{align*}
-		& \tZ^i_{m,t_k} := \tZ^i_{m,t_{k-1}} + \tmu(\tZ_{m,t_{k-1}}) \, \Delta t + \sum\limits_{j=1}^n \tsig^{i,j}(\tZ_{m,t_{k-1}}) \, \sqrt{\Delta t} \, \varepsilon_{j,k} \ .
+		& \tZ^i_{m,t^m_k} := \tZ^i_{m,t^m_{k-1}} + \bmu^i(\tZ_{m,t^m_{k-1}}) \, \Delta t^m + \sum\limits_{j=1}^n \bsig^{i,j}(\tZ_{m,t^m_{k-1}}) \, \sqrt{\Delta t^m} \, \varepsilon_{j,k} \ .
 	\end{align*}
 	Solche $\tX_m$ lassen sich nun leicht mit dem Computer generieren und wir wissen nach Euler-Maruyama, dass ein $c > 0$ existiert, sodass für jedes $t \in [0,\tau]$ gilt:
 	\begin{align*}
@@ -620,33 +620,50 @@
 
 	\newpage
 	\noindent
-
-	Damit wir die SDE aus vielen Realisierungen (Pfaden) lernen können, führen wir die zusätzliche Voraussetzung ein, dass $\tsig : \R^d \rightarrow \R^{d \times n}$ durch ein $C_3 > 0$ gleichmäßig beschränkt ist, also $||\tsig(x)||_2 \leq C_3 \ , \ \forall x \in \R^d$.\\
+	Ein einfacher Weg nun die Funktionen $\bmu$ aus Realisierungen von $(Z_{t^m_0},...,Z_{t^m_m})$ approximativ zu lernen ist nun aus der Sicht des Computers den Prozess $Z$ mit seiner Euler-Maruyama Arpproximation $Z_m$ gleich zu setzten. Man würde also annehmen, dass $Z_{t^m_k} = Z_{m,t^m_k}$ mit
+	\begin{align*}
+	& Z^i_{m,t^m_k} = Z^i_{m,t^m_{k-1}} + \bmu^i(Z_{m,t^m_{k-1}}) \, \Delta t^m + \sum\limits_{j=1}^n \bsig^{i,j}(Z_{m,t^m_{k-1}}) \, \sqrt{\Delta t^m} \, \varepsilon_{j,k} \ .
+	\end{align*}
+	Wenn man nun $\bmu$ und $\bsig$ lernen wollte, indem man versucht mit der rechten Seite der Gleichung die linke Seite vorherzusagen, würde nur $\bmu$ richtig trainiert werden. Um $\bsig$ richtig zu trainieren nutzen wir etwas mehr Theorie.\\
+	\\
+	Die Quadratische Variation und Covariation von Semimartingalen werden in \cite{PfaffiSkript} Prop. 19.28 und Thm. 19.31 definiert. Nach Lemma 19.50 wissen wir, dass
+	\begin{align*}
+	& \sum\limits_{k=1}^m (Z^i_{t^m_{k}}-Z^i_{t^m_{k-1}})(Z^l_{t^m_{k}}-Z^l_{t^m_{k-1}}) \xrightarrow{m \rightarrow \infty}_p [Z^i,Z^l]_\tau
+	\end{align*}
+	Weiter wissen wir nach den Eigenschaften der Covariation und $Z$, dass
+	\begin{align*}
+	& [Z^i,Z^l]_\tau = \left[ \int_0^\tau \bmu^i(Z_s) \, ds + \sum\limits_{j=1}^n \int_0^\tau \bsig^{i,j}(Z_s) \, dW_s^j, \int_0^\tau \bmu^l(Z_s) \, ds + \sum\limits_{j=1}^n \int_0^\tau \bsig^{l,j}(Z_s) \, dW_s^j \right]\\
+	& \overset{19.44\&19.45}{=} \left[ \sum\limits_{j=1}^n \int_0^\tau \bsig^{i,j}(Z_s) \, dW_s^j, \sum\limits_{j=1}^n \int_0^\tau \bsig^{l,j}(Z_s) \, dW_s^j \right]\\
+	& = \sum\limits_{j,j'=1}^n \left[ \int_0^\tau \bsig^{i,j}(Z_s) \, dW_s^j, \int_0^\tau \bsig^{l,j'}(Z_s) \, dW_s^{j'} \right]\\
+	& \overset{19.37}{=} \sum\limits_{j,j'=1}^n \int_0^\tau \bsig^{i,j}(Z_s)\bsig^{l,j'}(Z_s) \, d\underbrace{\left[W^j, W^{j'} \right]_s}_{=1_{j=j'} \, s} = \sum\limits_{j=1}^n \int_0^\tau \bsig^{i,j}(Z_s)\bsig^{l,j}(Z_s) \, ds
+	\end{align*}
+	Indem wir nun den unteren Term durch $A_{i,l} := \sum\limits_{j=1}^n \Delta t^m \sum\limits_{k=1}^m \bsig^{i,j}(Z_{t_k})\bsig^{l,j}(Z_{t_k})$ und den oberen Term $[Z^i,Z^l]_\tau$ wie in der oberen Überlegung durch $B_{i,l} := (Z^i_{t^m_{k}}-Z^i_{t^m_{k-1}}) (Z^l_{t^m_{k}}-Z^l_{t^m_{k-1}})$ approximieren, können wir die ganze Matrix $\bsig \in \R^{d \times n}$ trainieren, indem wir $\sum\limits_{i,l=1}^d|A_{i,l}-B_{i,l}|$ bestrafen.\\
+	Wir trainieren hier effektiv nur $\bsig \bsig^* \in \R^{d \times d}$, aber viel besser kann man $\bsig$ auch nicht bestimmen, da man z.B. bei zwei unabhängigen Brownschen Bewegungen $W^1,W^2$ man nicht zwischen $\sqrt{2}W_1, W_1+W_2, W_1-W_2, \sqrt{2}W_2$ anhand ihrer Verteilung unterscheiden kann.
+	
+	
+	\newpage
+	\subsubsection[Modell]{Aufbau des $M$-SDE-VAE-Modells}
+	
+	
+	
+	
+	\newpage
+	\subsubsection[Theoretische Verbesserung]{Theoretische Verbesserung des Modells}
 	Unter den bisherigen Voraussetzungen können wir \cite{PfaffiSkript} Thm. 21.15 anwenden und erhalten, dass $(Z_t)_{t \in [0,\tau]}$ ein starker Markov-Prozess ist, dessen Generator gegeben ist durch
 	\begin{align*}
-	& (G^Zf)(\underbrace{z^1,...,z^d}_{=z \in \R^d}) = \sum\limits_{i=1}^d \tmu(z) \frac{\partial f}{\partial z^i}(z) + \sum\limits_{i=1}^d \sum\limits_{j=1}^n (\tsig^{i,j})^2(z) \frac{\partial^2 f}{\partial z^i \partial z^j}(z)
+	& (G^Z h)(\underbrace{z^1,...,z^d}_{=z \in \R^d}) = \sum\limits_{i=1}^d \bmu^i(z) \frac{\partial h}{\partial z^i}(z) + \sum\limits_{i,i'=1}^d \left(\sum\limits_{j=1}^n \bsig^{i,j}(z)\bsig^{i',j}(z)\right) \frac{\partial^2 h}{\partial z^i \partial z^{i'}}(z) \ .
 	\end{align*}
-	Wir berechnen
+	Da wir $Z$ als $\R^{M \times d}$-wertig betrachten, wird für uns daraus
 	\begin{align*}
-	& \E_{z_0}[Z_{\frac{\tau}{m}} - z_0] = \E_{z_0}[Z_{\frac{\tau}{m}} - Z_{m,\frac{\tau}{m}} + Z_{m,\frac{\tau}{m}} - z_0]\\
-	& = \E_{z_0}[Z_{\frac{\tau}{m}} - Z_{m,\frac{\tau}{m}}] + \frac{\tau}{m} \tmu(z_0)
+	& (G^Z h)(\underbrace{z}_{\in \R^{M \times d}}) = \sum\limits_{k=0}^{M-1} \sum\limits_{i=1}^d \bmu^{k,i}(z) \frac{\partial h}{\partial z^{k,i}}(z) + \sum\limits_{k,k'=0}^{M-1}\sum\limits_{i,i'=1}^d \left( \sum\limits_{j=1}^n \bsig^{k,i,j}(z)\bsig^{k',i',j}(z) \right) \frac{\partial^2 h}{\partial z^{k,i} \partial z^{k',i'}}(z) \ .
 	\end{align*}
+	Nach \cite{PfaffiSkript} Thm. 16.28 gilt für jedes $h \in C_b^2(\R^{M \times d})$, dass
+	\begin{align*}
+	& \E_{z_0}[h(Z_t)] - h(z_0) = \int_0^t \E[(G^Z h)(Z_s)] \, ds \ .
+	\end{align*}
+	Sei nun $f: \R^{d} \rightarrow \R^D$ das Decoder-Netzwerk, das nur die erste Zeile $(z^{0,1},...,z^{0,d})$ betrachtet und die anderen ignoriert. Sei $\widetilde{h} \in C_b^{2}$ beliebig. Wenn wir die Aktivierungsfunktionen von $f$ glatt genug wählen, können wir von $h := \widetilde{h} \circ f \in C^2_b(\R^{M \times d})$ ausgehen.
+	
 
-	\newpage
-	Seien $z_0,...,z_m$ gegeben durch $z_k = Z_{t_k}$, wobei $Z = Z(W)$ die Lösung der SDE (1) ist. Wie wir in (2) vorausgesetzt hatten, sind $\tmu$ und $\tsig$ Lipschitz-stetig mit Konstante $C_2$. Für jedes $\varepsilon > 0$ sei $m_\varepsilon$ groß genug, sodass $C_2 \, \Delta t = \frac{C_2 \, \tau}{m_\varepsilon} \leq \varepsilon$.\\
-	$W^1,...,W^n$ sind Brownsche Bewegungen, also Martingale. Nach Aufbau des stochastischen Integrals, ist $\left(\int_0^t H_s \, dW^j_s \right)_{t \in [0,\tau]}$ für beliebige previsible Prozesse $H$ auch ein Martingal. Damit gilt
-	\begin{align*}
-		& \E[z^i_{k+1}-z^i_k] = \E[Z^i_{t_{k+1}}-Z^i_{t_k}] = \E\left[ \int_{t_k}^{t_{k+1}} \tmu^i(Z_s) \, ds + \sum\limits_{j=1}^n \int_{t_k}^{t_{k+1}} \tsig^{i,j}(Z_s) \, dW^j_s \right]\\
-		& = \E\left[ \int_{t_k}^{t_{k+1}} \tmu^i(Z_s) \, ds \right] = \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)] \, ds\\
-		& = \Delta t \, \E[\tmu^i(Z_{t_k})] + \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)-\tmu^i(Z_{t_k})] \, ds \ .
-	\end{align*}
-	Wir nutzen diese Rechnung und die Wahl von $m_\varepsilon$ um
-	\begin{align*}
-		& \left| \E[z^i_{k+1}-z^i_k - \Delta t \, \tmu^i(Z_{t_k})] \right| \leq \left| \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)-\tmu^i(Z_{t_k})] \, ds \right|\\
-		& \leq \int_{t_k}^{t_{k+1}} \E[|\tmu^i(Z_s)-\tmu^i(Z_{t_k})|] \, ds \leq C_2 \int_{t_k}^{t_{k+1}} \E[|Z_s-Z_{t_k}|] \, ds\\
-		& \leq
-	\end{align*}
-	zu erhalten.
 
 
 
