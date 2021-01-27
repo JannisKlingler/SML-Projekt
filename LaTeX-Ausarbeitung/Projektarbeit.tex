@@ -31,6 +31,7 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{bigints}
+\usepackage{bm}
 %\usepackage{makecell}
 %\newcommand{\abs}[1]{{\left| #1 \right|}}
 %\renewcommand\theadalign{bc}
@@ -59,6 +60,8 @@
 \newcommand{\tsig}{\widetilde{\sigma}}
 \newcommand{\bP}{\mathbb{P}}
 \newcommand{\bbf}{\bold{f}}
+\newcommand{\bmu}{\bm{\mu}}
+\newcommand{\bsig}{\bm{\sigma}}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\z}{\mathbf{z}}
 \newcommand{\x}{\mathbf{x}_i}
@@ -547,8 +550,8 @@
 	Man stellt fest, dass der latente Raum hier eher unstrukturiert in dem Sinne ist, dass das Bildmaß $(f)_*\bP$ auf $\R^d$ vielleicht nur an ein paar stellen den Großteil seiner Masse verteilt. An diesen Stellen im latenten Raum könnten wiederum kleine Schwankungen große Unterschiede in den Rekonstruktionen ausmachen. Anschaulich ist das Problem mit Autoencodern, dass sie den latenten Raum $\R^d$ nicht 'gleichmäßig' nutzen.\\
 	\\
 	\textbf{Idee des VAE:}\\
-	Ein Variational Autoencoder will eine Ähnliche Struktur finden, wobei nun $(z)_*\bP$ eine Normalverteilung in $\R^d$ sein soll. Das Ziel soll sein erst mit Daten $x^1,...,x^N \, uiv \sim (x)_*\bP$ die Encoder $g$ und Decoder $f$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z_1,...,z_N$ zieht und dann den Decoder $f$ darauf anwendet.\\
-	Dabei wird der Encoder $g$ als Neuronales Netzwerk aufgebaut, dass Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ aus $\mathcal{N}\left(\mu(x),\Sigma(x)\right)$ gezogen wird. Damit können einzelne Datenpunkte anschaulich mehr Platz im latenten Raum $\R^d$ ausfüllen. Dies lässt sich auch als Maßnahme gegen Overfitting des Encoders interpretieren.\\ Es werden zusätzliche Terme in zur Verlustfunktion addiert, die dafür zu sorgen, dass $(z)_*\bP$ eine Normalverteilung ist und dass die Verteilung $(f \circ z)_*\bP$ ähnlich der Verteilung $(x)_*\bP$ ist.
+	Ein Variational Autoencoder will eine Ähnliche Struktur finden, wobei nun $(z)_*\bP$ eine Normalverteilung in $\R^d$ sein soll. Das Ziel soll sein erst mit Daten $x^1,...,x^N \, uiv \sim (x)_*\bP$ die Encoder $g$ und Decoder $f$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z^1,...,z^N$ zieht und dann den Decoder $f$ darauf anwendet.\\
+	Dabei wird der Encoder $g$ als Neuronales Netzwerk aufgebaut, das Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ aus $\mathcal{N}\left(\mu(x),\Sigma(x)\right)$ gezogen wird. Damit können einzelne Datenpunkte anschaulich mehr Platz im latenten Raum $\R^d$ ausfüllen. Dies lässt sich auch als Maßnahme gegen Overfitting des Encoders interpretieren.\\ Es werden zusätzliche Terme in zur Verlustfunktion addiert, die dafür zu sorgen, dass $(z)_*\bP$ eine Normalverteilung ist und dass die Verteilung $(f \circ z)_*\bP$ ähnlich der Verteilung $(x)_*\bP$ ist.
 
 	\newpage\noindent
 	\textbf{Idee des 2-ODE-VAE:}\\
@@ -559,11 +562,26 @@
 	\end{align*}
 	nur von $s(0,\omega)$, $v(0,\omega)$ und $\bbf$ abhängen. In der Literatur wird hier das $\tz$ als gemeinsamer Vektor $(s,v)$ betrachtet. Es wird allerdings nur $s$ an den Decoder weitergeben, also soll $f(s(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Die Anfangswerte $s(0,\cdot)$ und $v(0,\cdot)$ werden durch jeweils einen VAE bestimmt, die als Input $x_0$, beziehungsweise $(x_0,x_1,x_2)$, erhalten.\\
 	Die Verlustfunktion besteht aus Reconstruction-Loss, Terme um Overfitting von $\bbf$ zu verhindern, sowie Terme um $(\tz(t_k,\cdot))_*\bP$ für jedes $k \leq m$ einer Normalverteilung auf $\R^d$ näher zu bringen.\\
+	Der 2-ODE-VAE liefert gute Ergebnisse beim Beschreiben von einfachen Bewegungsabläufen, deren Informationsgehalt nicht mit der Zeit zunimmt. Aber gerade bei chaotischen Systemen ist die Vorschrift, dass sämtliche Information schon zu Beginn (in den ersten drei Frames) vorhanden sein muss eher dem Lernen abträglich.\\
 	\\
 	\textbf{Idee des $M$-th Order SDE-VAE:}\\
-
-
-
+	Wir beschäftigen uns wieder mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Wie schon beim 2-ODE-VAE suchen wir einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, für den $f(\tz(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ ist. Hier gehen wir jedoch von einer anderen Zeitlichen Struktur aus.\\
+	Wir schreiben $\tz = \tz^{(0)}$ und setzen voraus, dass Zufallsvariablen (Startverteilungen)
+	$$\tz^{(1)}(0,\cdot) ,..., \tz^{(M-1)}(0,\cdot): \Omega \rightarrow \R^d$$
+	existieren, sodass $\tz^{(k)}$ für alle $k < M$ die $d$-Dimensionale SDE
+	\begin{align*}
+	\forall i \leq d: \ d \big(\tz^{(k),i}(t,\cdot)\big) = & \bmu^{k,i}(\tz^{(0)}(t,\cdot),...,\tz^{(M-1)}(t,\cdot)) \, dt\\
+	& \ \ + \sum\limits_{j=1}^n \bsig^{k,i,j}(\tz^{(0)}(t,\cdot),...,\tz^{(M-1)}(t,\cdot)) \, dW^j_t
+	\end{align*}
+	erfüllt. Dies lässt sich als eine gemeinsame SDE im Raum der $(M \times d)$-Matrizen, anstatt wie gewohnt im $\R^d$, betrachten. Wir betrachten also den Matrix-wertigen Prozess
+	$$ Z_t(\omega) = \begin{pmatrix}
+	\tz^{(0),1}(t,\omega) & .. & \tz^{(0),d}(t,\omega)\\
+	: & & : \\
+	\tz^{(M-1),1}(t,\omega) & .. & \tz^{(M-1),d}(t,\omega)
+	\end{pmatrix} \in \R^{M \times d} \ .$$
+	Der 2-ODE-VAE ist nur ein einfacher Spezialfall dieser Darstellung. Wenn wir nämlich $M=2$, $\bsig = 0$ und $\bmu^{(0)}(\tz^{(0)},\tz^{(1)}) = \tz^{(1)}$ setzen, dann erfüllt $\bmu^{(0)}(\tz^{(0)},\tz^{(1)})$ dieselbe Rolle, wie $\bbf$ im 2-ODE-VAE.\\
+	Es wird nur die Erste Zeile von $Z$ (analog zu $s$ im 2-ODE-VAE) an den Decoder weitergegeben. Die Funktionen $\bmu : \R^{M \times d} \rightarrow \R^{M \times d}$ und $\bsig : \R^{M \times d} \rightarrow \R^{M \times d \times n}$ werden mit Neuronalen Netzwerken gelernt.\\
+	TODO: Verteilung von $Z_0$
 
 
 
