@@ -58,6 +58,7 @@
 \newcommand{\tmu}{\widetilde{\mu}}
 \newcommand{\tsig}{\widetilde{\sigma}}
 \newcommand{\bP}{\mathbb{P}}
+\newcommand{\bbf}{\bold{f}}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\z}{\mathbf{z}}
 \newcommand{\x}{\mathbf{x}_i}
@@ -504,29 +505,29 @@
 
 	\newpage
 	\subsection[SDE-VAE]{M-th Order SDE-Variational Autoencoder}
-	Bisher wurden die Pfade der latenten Darstellungen $z : [0,\tau] \times \Omega \rightarrow \R^d$ als Lösungen von Differentialgleichungen der Form
+	Bisher wurden die Pfade der latenten Darstellungen $z = (s,v) : [0,\tau] \times \Omega \rightarrow \R^d$ als Lösungen von Differentialgleichungen der Form
 	\begin{align*}
-	\nabla z(\cdot,\omega) &= v(\cdot,\omega)\\
-	\nabla v(\cdot,\omega) &= f\big(z(\cdot,\omega),v(\cdot,\omega)\big)
+	\nabla s(\cdot,\omega) &= v(\cdot,\omega)\\
+	\nabla v(\cdot,\omega) &= \bbf\big(s(\cdot,\omega),v(\cdot,\omega)\big)
 	\end{align*}
-	vorausgesetzt, wobei die Funktion $f$ dann durch ein Neuronales Netzwerk approximiert wurde.\\
+	vorausgesetzt, wobei die 'Differential Function' $\bbf = f_\psi$ dann durch ein Neuronales Netzwerk approximiert wurde.\\
 	Wir haben die folgenden Möglichkeiten in Betracht gezogen um den 2-ODE-VAE zu verallgemeinern:
 	\begin{itemize}
 		\item Die Pfade der latenten Darstellungen als Lösungen von Differentialgleichungen von Grad $M \geq 2$ voraussetzen. Z.B. hieße das für $M=3$:
 		\begin{align*}
-		\nabla z(\cdot,\omega) &= v(\cdot,\omega)\\
+		\nabla s(\cdot,\omega) &= v(\cdot,\omega)\\
 		\nabla v(\cdot,\omega) &= w(\cdot,\omega)\\
-		\nabla w(\cdot,\omega) &= f\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)
+		\nabla w(\cdot,\omega) &= \bbf\big(s(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)
 		\end{align*}
 
 		\item Die Form der Differentialgleichung weniger einschränken, indem wir beliebige $M$-ODE zulassen.
 		\begin{align*}
-		\nabla z(\cdot,\omega) &= f_1\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)\\
-		\nabla v(\cdot,\omega) &= f_2\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)\\
-		\nabla w(\cdot,\omega) &= f_3\big(z(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)
+		\nabla s(\cdot,\omega) &= \bbf_1\big(s(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)\\
+		\nabla v(\cdot,\omega) &= \bbf_2\big(s(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)\\
+		\nabla w(\cdot,\omega) &= \bbf_3\big(s(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)
 		\end{align*}
 
-		\item Einen Variational Encoder auf jedes Frame (Datenpunkt $x_i$) separat anwenden. Bisher wurde der Encoder nur auf die ersten Frames angewendet um $z(0,\cdot), v(0,\cdot)$ zu finden. Dies geht, wie wir später sehen werden, mit der Betrachtung von Stochastic Differntial Equations (SDEs) einher.
+		\item Einen Variational Encoder auf jedes Frame (Datenpunkt $x_i$) separat anwenden. Bisher wurde der Encoder nur auf die ersten Frames angewendet um $s(0,\cdot), v(0,\cdot)$ zu finden. Dies geht, wie wir später sehen werden, mit der Betrachtung von Stochastic Differntial Equations (SDEs) einher.
 	\end{itemize}
 
 	\newpage
@@ -534,51 +535,31 @@
 	Zunächst führen wir eine Notation ein, die eher an den Standards der Stochastik und weniger an denen von Machine-Learning orientiert ist. Dazu wiederholen wir auch grob die Idee eines 2-ODE-VAE.\\
 	\\
 	\textbf{Idee des Autoencoders:}\\
-	Sei $(\bP,\Omega,\mathcal{A})$ ein Wahrscheinlichkeitsraum mit der Zufallsvariable $x : \Omega \rightarrow \R^D$. Bei einem normalen Autoencoder wird angenommen, dass eine weitere Zufallsvariable $z: \Omega \rightarrow \R^d$ existiert, sodass $x = f(z)$ und $z = g(x)$ für messbare Funktionen $f,g$. Die funktionen $f$ und $g$ werden dabei von Neuronalen Netzwerken anhand eines Großen Datensatzes $x_1,...,x_N \, uiv \sim (x)_*\bP$ erlernt.\\
-	Man stellt fest, dass der latente Raum hier eher unstrukturiert in dem Sinne ist, dass das Bildmaß $(f)_*\bP$ auf $\R^d$ vielleicht nur an ein paar stellen den Großteil seiner Masse verteilt. An diesen Stellen im latenten Raum könnten wiederum kleine Schwankungen große Unterschiede in den Rekonstruktionen ausmachen. Anschaulich ist das Problem mit Autoencodern, dass sie den latenten Raum $\R^d$ nicht 'gleichmäßig' nutzen, also, dass an manchen Stellen mehr und an anderen weniger Information über die Daten $x$ steckt.\\
+	Sei $(\bP,\Omega,\mathcal{A})$ ein Wahrscheinlichkeitsraum mit der Zufallsvariable $x : \Omega \rightarrow \R^D$. Bei einem normalen Autoencoder wird angenommen, dass eine weitere Zufallsvariable $z: \Omega \rightarrow \R^d$ existiert, sodass $x = f(z)$ und $z = g(x)$ für messbare Funktionen $f,g$. Die funktionen $f$ (Decoder) und $g$ (Encoder) werden dabei von Neuronalen Netzwerken anhand eines Großen Datensatzes $x^1,...,x^N \, uiv \sim (x)_*\bP$ erlernt. Als Verlustfunktion verwendet man den Reconstruction-Loss plus eventuelle Regularisierungsterme um Overfitting zu verhindern.\\
+	Man stellt fest, dass der latente Raum hier eher unstrukturiert in dem Sinne ist, dass das Bildmaß $(f)_*\bP$ auf $\R^d$ vielleicht nur an ein paar stellen den Großteil seiner Masse verteilt. An diesen Stellen im latenten Raum könnten wiederum kleine Schwankungen große Unterschiede in den Rekonstruktionen ausmachen. Anschaulich ist das Problem mit Autoencodern, dass sie den latenten Raum $\R^d$ nicht 'gleichmäßig' nutzen.\\
 	\\
 	\textbf{Idee des VAE:}\\
-	Ein Variational Autoencoder will eine Ähnliche Struktur finden, wobei nun $(z)_*\bP$ eine Normalverteilung in $\R^d$ sein soll. Das Ziel soll sein erst mit Daten $x_1,...,x_N \, uiv \sim (x)_*\bP$ die Encoder $g$ und Decoder $f$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z_1,...,z_N$ zieht und dann den Decoder $f$ darauf anwendet.\\
-	Dabei wird der Encoder $g$ als Neuronales Netzwerk aufgebaut, dass Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ aus $\mathcal{N}\left(\mu(x),\Sigma(x)\right)$ gezogen wird. Dies lässt sich als Maßnahme gegen Overfitting des Encoders interpretieren. TODO
+	Ein Variational Autoencoder will eine Ähnliche Struktur finden, wobei nun $(z)_*\bP$ eine Normalverteilung in $\R^d$ sein soll. Das Ziel soll sein erst mit Daten $x^1,...,x^N \, uiv \sim (x)_*\bP$ die Encoder $g$ und Decoder $f$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z_1,...,z_N$ zieht und dann den Decoder $f$ darauf anwendet.\\
+	Dabei wird der Encoder $g$ als Neuronales Netzwerk aufgebaut, dass Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ aus $\mathcal{N}\left(\mu(x),\Sigma(x)\right)$ gezogen wird. Damit können einzelne Datenpunkte anschaulich mehr Platz im latenten Raum $\R^d$ ausfüllen. Dies lässt sich auch als Maßnahme gegen Overfitting des Encoders interpretieren.\\ Es werden zusätzliche Terme in zur Verlustfunktion addiert, die dafür zu sorgen, dass $(z)_*\bP$ eine Normalverteilung ist und dass die Verteilung $(f \circ z)_*\bP$ ähnlich der Verteilung $(x)_*\bP$ ist.
 	
-	
-	
-	
-	
-	\newpage
-	Sei $(\bP,\Omega,\mathcal{A})$ ein Wahrscheinlichkeitsraum mit den Prozessen
+	\newpage\noindent
+	\textbf{Idee des 2-ODE-VAE:}\\
+	Ein 2-ODE-VAE beschäftigt sich mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Der 2-ODE-VAE sucht nun einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, der punktweise die Informationen von $\tx$ encodiert, also soll $f(\tz(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Wieder wird die Struktur von $\tz$ im latenten Raum vorgeschrieben, wobei nun auch eine Vorschrift zur zeitlichen Entwicklung gemacht wird. Für spätere Zeitpunkte $t>0$ soll $\tz(t,\omega)$ als Lösung der Differenzialgleichung
 	\begin{align*}
-	& \tx : [0,\tau] \times \Omega \rightarrow \R^D\\
-	& \tz : [0,\tau] \times \Omega \rightarrow \R^d
+	\nabla s(\cdot,\omega) &= v(\cdot,\omega)\\
+	\nabla v(\cdot,\omega) &= \bbf\big(s(\cdot,\omega),v(\cdot,\omega)\big)
 	\end{align*}
-	für $d << D$. Seien $t_0,...,t_m \in [0,\tau]$ mit $0=t_0<t_1<...<t_m$, dann schreiben wir $x_i(\omega) = \tx(t_i,\omega) \in \R^D$ und $z_i(\omega) := \tz(t_i, \omega) \in \R^d$.\\
-	Das Ziel eines 2-ODE-VAE ist es anhand von den Zufallsvariablen $x_0,...,x_m$ einen passenden Prozess $\tz$, der Pfadweise in $C^2([0,\tau])$ liegt und die Lösung einer 2-ODE der Form
-	\begin{align*}
-	& \nabla \tz(\cdot,\omega) = \tz^{(1)}(\cdot,\omega)\\
-	& \nabla \tz^{(1)}(\cdot,\omega) = f\big( \tz(\cdot,\omega), \tz^{(1)}(\cdot,\omega) \big)
-	\end{align*}
-	ist, zu Modellieren, sodass $x_i$ hinreichend gut durch einen Schätzer der Form $g(z_i)$ approximiert werden kann. Dabei werden $f,g$ durch neuronale Netzwerke dargestellt.\\
+	nur von $s(0,\omega)$, $v(0,\omega)$ und $\bbf$ abhängen. In der Literatur wird hier das $\tz$ als gemeinsamer Vektor $(s,v)$ betrachtet. Es wird allerdings nur $s$ an den Decoder weitergeben, also soll $f(s(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Die Anfangswerte $s(0,\cdot)$ und $v(0,\cdot)$ werden durch jeweils einen VAE bestimmt, die als Input $x_0$, beziehungsweise $(x_0,x_1,x_2)$, erhalten.\\
+	Die Verlustfunktion besteht aus Reconstruction-Loss, Terme um Overfitting von $\bbf$ zu verhindern, sowie Terme um $(\tz(t_k,\cdot))_*\bP$ für jedes $k \leq m$ einer Normalverteilung auf $\R^d$ näher zu bringen.\\
 	\\
-	Selbst wenn man beliebige messbare Funktionen $f,g$ durch neuronale Netzwerke exakt darstellen könnte, müsste man noch die folgenden Annahmen treffen um die Existenz eines 'perfekten' 2-ODE-VAE (in dem Sinne, dass die Rekonstruktion fast sicher gleich den ursprünglichen Daten ist) zu folgern.\\
-	Voraussetzung: Es existieren ein Prozesse $\tx,\tz$ wie oben beschrieben mit
-	\begin{itemize}
-		\item[V1)] $x_i = \tx(t_i,\cdot)$
-
-		\item[V2)] Für jedes $t \in [0,\tau]$ ist $\tz(t,\cdot)$ suffizient für $\tx(t,\cdot)$.
-
-		\item[V3)] $\E[\tz(0,\cdot) \mid x_0]$ ist unabhängig von $x_1,...,x_m$ und verteilt wie $\mathcal{N}(\mu^{(0)}(x_0),\Sigma^{(0)}(x_0))$. Genauso ist $\E[\tz^{(1)}(0,\cdot) \mid x_0,x_1,x_2]$ unabhängig von $x_3,...,x_m$ und verteilt wie $\mathcal{N}(\mu^{(1)}(x_0,x_1,x_2),\Sigma^{(1)}(x_0,x_1,x_2))$. Dabei sind $\mu^{(0)},\mu^{(1)}$ Funktionen nach $\R^d$ und $\Sigma^{(0)},\Sigma^{(1)}$ Funktionen in den Raum der $d \times d$-Diagonalmatrizen.
-	\end{itemize}
-	Falls man nicht gerade die Existenz eines perfekten 2-ODE-VAE erreichen will, sondern es reicht, wenn die Rekonstruktionen sehr nahe an $x_0,...,x_m$ kommen sollen, dann lassen sich diese Voraussetzungen natürlich erheblich abschwächen, aber sie liefern eine gute Idee der Annahmen, die man implizit macht, wenn man einen 2-ODE-VAE verwendet.
-
-	\newpage
-	\noindent
-
-	Die Voraussetzung (V3) lässt sich auch noch weiter abschwächen, wenn man den 2-ODE-VAE so umschreibt, dass er auch noch die Verteilungen von $\E[\tz(0,\cdot) \mid x_0]$ und $\E[\tz^{(1)}(0,\cdot) \mid x_0,x_1,x_2]$ durch Neuronale Netzwerke zu finden versucht. Damit kann auch das generieren gänzlich neuer Daten, wozu VAEs auch verwendet werden, stark verbessert werden. Wir werden uns aber weniger damit beschäftigen und halten an (V3) fest.
-
-	Die Voraussetzung (V3) lässt sich auch noch weiter abschwächen, wenn man den 2-ODE-VAE so umschreibt, dass er auch noch die Verteilungen von $\E[\tz(0,\cdot) \mid x_0]$ und $\E[\tz^{(1)}(0,\cdot) \mid x_0,x_1,x_2]$ durch Neuronale Netzwerke zu finden versucht. Damit kann auch das generieren gänzlich neuer Daten, wozu VAEs auch verwendet werden, stark verbessert werden. Wir werden uns aber weniger damit beschäftigen und gehen weiterhin von der Normalverteilung aus.\\
-	\\
-	Nun zur Notation für unsere Verallgemeinerung, wie sie am Anfang dieser Sektion beschrieben ist.
-	Wenn wir den Variational Autoencoder auf jedes einzelne Frame $x_0,...,x_m$ anwenden wollen, um die latenten Darstellungen $z_0,...,z_m$ zu finden, ist dies nicht mehr mit der Voraussetzung verträglich, dass $\tz(\cdot,\omega)$ eine Lösung einer deterministischen Differentialgleichung ist. Wir gehen stattdessen davon aus, dass $W_1,...,W_n$ viele (von $x_0,...,x_n$ unabhängige) Brownsche Bewegungen existieren, sodass 
+	\textbf{Idee des $M$-th Order SDE-VAE:}\\
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	\newpage
@@ -615,6 +596,17 @@
 	\noindent
 	
 	Damit wir die SDE aus vielen Realisierungen (Pfaden) lernen können, führen wir die zusätzliche Voraussetzung ein, dass $\tsig : \R^d \rightarrow \R^{d \times n}$ durch ein $C_3 > 0$ gleichmäßig beschränkt ist, also $||\tsig(x)||_2 \leq C_3 \ , \ \forall x \in \R^d$.\\
+	Unter den bisherigen Voraussetzungen können wir \cite{PfaffiSkript} Thm. 21.15 anwenden und erhalten, dass $(Z_t)_{t \in [0,\tau]}$ ein starker Markov-Prozess ist, dessen Generator gegeben ist durch
+	\begin{align*}
+	& (G^Zf)(\underbrace{z^1,...,z^d}_{=z \in \R^d}) = \sum\limits_{i=1}^d \tmu(z) \frac{\partial f}{\partial z^i}(z) + \sum\limits_{i=1}^d \sum\limits_{j=1}^n (\tsig^{i,j})^2(z) \frac{\partial^2 f}{\partial z^i \partial z^j}(z)
+	\end{align*}
+	Wir berechnen
+	\begin{align*}
+	& \E_{z_0}[Z_{\frac{\tau}{m}} - z_0] = \E_{z_0}[Z_{\frac{\tau}{m}} - Z_{m,\frac{\tau}{m}} + Z_{m,\frac{\tau}{m}} - z_0]\\
+	& = \E_{z_0}[Z_{\frac{\tau}{m}} - Z_{m,\frac{\tau}{m}}] + \frac{\tau}{m} \tmu(z_0)
+	\end{align*}
+	
+	\newpage
 	Seien $z_0,...,z_m$ gegeben durch $z_k = Z_{t_k}$, wobei $Z = Z(W)$ die Lösung der SDE (1) ist. Wie wir in (2) vorausgesetzt hatten, sind $\tmu$ und $\tsig$ Lipschitz-stetig mit Konstante $C_2$. Für jedes $\varepsilon > 0$ sei $m_\varepsilon$ groß genug, sodass $C_2 \, \Delta t = \frac{C_2 \, \tau}{m_\varepsilon} \leq \varepsilon$.\\
 	$W^1,...,W^n$ sind Brownsche Bewegungen, also Martingale. Nach Aufbau des stochastischen Integrals, ist $\left(\int_0^t H_s \, dW^j_s \right)_{t \in [0,\tau]}$ für beliebige previsible Prozesse $H$ auch ein Martingal. Damit gilt
 	\begin{align*}
@@ -967,6 +959,9 @@
 
 		\bibitem{Hutchin}
 		http://blog.shakirm.com/2015/09/machine-learning-trick-of-the-day-3-hutchinsons-trick/
+		
+		\bibitem{PfaffiSkript}
+		https://www.stochastik.uni-freiburg.de/professoren/pfaffelhuber/inhalte/2020zyklus
 
 	\end{thebibliography}
 \end{document}
