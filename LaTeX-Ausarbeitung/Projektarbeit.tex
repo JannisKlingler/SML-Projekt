@@ -229,9 +229,9 @@
 	&\simeq \frac{N}{M}\sum_{i=1}^{M}  \left(D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big] - \frac{1}{L}\sum_{l=1}^{L}\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon_{l},\textbf{x}_{i}))\big)\right)
 	\end{align*}
 
-	Praktischerweise sorgt eine groß gewählte Batchsize $|\textbf{M}| = M$, z.B. $M=100$ dafür, dass der Erwartungswert implizit durch die Batches des Stochatich Gradient Verfahrens geschätzt wird. Wir können dann die Anzahl der Stichproben von $\boldsymbol\epsilon$ für die Monte-Carlo Schätzung des Erwartungswertes $\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]$ als $L=1$ festlegen.
-	\\
-	Wir erhalten den AEVB-Algorithmus \emph{(Auto Encoding Variational Bayes)}: \\
+	Praktischerweise sorgt eine groß gewählte Batchsize $|\textbf{M}| = M$, z.B. $M=100$ dafür, dass der Erwartungswert implizit durch die Batches des Stochatich Gradient Verfahrens geschätzt wird.\\
+	Wir können dann die Anzahl der Stichproben von $\boldsymbol\epsilon$ für die Monte-Carlo Schätzung des Erwartungswertes $\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]$ als $L=1$ festlegen und
+	erhalten den AEVB-Algorithmus \emph{(Auto Encoding Variational Bayes)}: \\
 
 	\hrule
 	\vspace{0,15cm}
@@ -381,7 +381,7 @@
 		\centering
 		\includegraphics[scale=0.57]{ODE2VAE_ODE_Net}
 		\captionsetup{labelformat=empty}
-		\caption{Schematische Darstellung des ODE$^2$VAE. Eine Inputsequenz wird von den Encodermodellen auf die Startwerte einer Beschleunigungs- und Positionskurve abgebildet. Die Änderung der Beschleuningungskurve (blau) wird durch ein ODE-Net Modelliert und mit einem ODEsolver berechnet. Die Änderung der Positionskurve ergibt sich durch Integration über die Beschleuningungskurve. Zu festgelegten Zeitpunkten rekonstruiert der Decoder aus den Positionswerten $\mathbf{s}_t$ die Inputsequenz.}
+		\caption{Schematische Darstellung des ODE$^2$VAE. Eine Inputsequenz wird von den Encodermodellen auf die Startwerte einer Beschleunigungs- und Positionskurve abgebildet. Die Änderung der Geschwindigkeitskurve (blau) wird durch ein ODE-Net Modelliert und mit einem ODEsolver berechnet. Die Änderung der Positionskurve ergibt sich durch Integration über die Geschwindigkeitskurve. Zu festgelegten Zeitpunkten rekonstruiert der Decoder aus den Positionswerten $\mathbf{s}_t$ die Inputsequenz.}
 	\end{figure}
 
 	Als Trainingskriterium des ODE$^2$VAE verwenden wir erneut die negative ELBO.
@@ -484,10 +484,17 @@
 	\end{align*}
 	Der Wert
 	$\log\big(p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) \big)$, der ebenfalls für die Berechnung der KL-Divergenz benötigt wird ist nicht bestimmbar. Müsste man doch die log-Dichten mit der unbekannten, "wahren" Funktion $f_{\boldsymbol\psi^{*}}(\mathbf{s}_{t},\mathbf{v}_{t})$ mit oben hergeleiteter Formel ausrechnen.
-	Die Autoren des Papers treffen eine vereinfachende Annahme und legen wie bereits für den ersten Zustand geltend $p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) = \mathcal{N}(\mathbf{0},\mathbf{I})$ als parameterfreie multivariate Normalverteilung fest.
-	Bei uns hat sich diese Annahme als zu einschränkend herausgestellt. Das Verfahren konvergiert nur langsam und die Bilder neigen schnell dazu zu verschwimmen. \\
-	Wir schlagen ähnlich dem Ansatz zur alternativen Lossfunktion des Papers daher vor direkt die KL-Divergenz zur Encoderverteilung $q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{t}|\mathbf{x}_{t:(t+m)})$ zu minimieren. Eine wie wir finden vertretbare Annahme, da so auch sichergestellt wird, dass Encodernetzwerk und ODE-Netzwerk der selben Sequenz latente Werte mit ähnlicher Dichte zuweisen.\\
-	Nun lässt sich die ELBO analytisch berechnen und die Parameter $\boldsymbol\phi,\boldsymbol\psi,\boldsymbol\theta$ lassen sich anhand dieses Trainingskriterium aktualisieren.\\
+	Die Autoren des Papers treffen eine vereinfachende Annahme und legen wie bereits für den ersten Zustand geltend $p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) = \mathcal{N}(\mathbf{0},\mathbf{I})$ als parameterfreie multivariate Normalverteilung fest.\\
+	Bei uns hat das aber zu dem Problem geführt, dass der KL-Term den Reconstruction Loss stark übertrifft und das Verfahren im latenten Raum nur die Struktur einer Normalverteilung annehmen will ohne gleichzeitig den Reconstruction Loss zufriedenstellend zu verringern. Wir greifen daher auf eine Abwandlung der im Paper vorgestellten alternativen Lossfunktion zurück. Das Verfahren konvergiert dann nur langsam und die Bilder neigen schnell dazu zu verschwimmen. \\
+	\begin{align*}
+	-\mathcal{L}(\boldsymbol\phi,\boldsymbol\psi,\boldsymbol\theta,\mathbf{x}_{0:T}) &=\underbrace{\E_{\mathbf{z}_{0}\sim q_{\text{enc }\boldsymbol\phi}}
+		\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{0}|\mathbf{z}_{0}\right)\big)\right] - \gamma D_{KL}\big[q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})||p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\z_0)\big]}_{\gamma\text{-VAE ELBO}}\\ &+ \underbrace{\sum_{t=1}^T \E_{\mathbf{z}_{t}\sim q_{\text{ode }\boldsymbol\psi}}
+		\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\big)\right] - \gamma D_{KL}\big[q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})||p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\z_t)\big]}_{\text{Dynamischer Loss}} \\ &- \gamma \underbrace{\sum_{t=0}^{T-m} D_{KL}\big[q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})||q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{t}|\mathbf{x}_{t:(t+m)})\big]}_{\text{KL-Divergenz zur Encoderverteilung}}
+	\end{align*}
+	Wir multiplizieren die KL-Divergenz mit einem Faktor $\gamma$, der im Verlauf des Trainings schrittweise von 0 auf 1 angehoben wird. So wird zu Beginn des Trainingsprozess das Anfertigen guter Rekonstruktionen priorisiert und die sinnvolle
+	Anordnung der latenten Variablen im latenten Raum erst später im Trainingsprozess vorgenommen.\\
+	Außerdem minimieren wir weiter die KL-Divergenz zur Encoderverteilung $q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{t}|\mathbf{x}_{t:(t+m)})$. So wird zusätzlich auch sichergestellt, dass Encodernetzwerk und ODE-Netzwerk der selben Sequenz latente Werte mit ähnlicher Dichte zuweisen.\\
+	Diese Lossfunktion lässt sich analytisch berechnen und die Parameter $\boldsymbol\phi,\boldsymbol\psi,\boldsymbol\theta$ werden anhand dieses Trainingskriterium aktualisieren.\\
 
 	Ebenfalls gute Ergebnisse liefert bei uns die Approximation der Integrale durch eine Summe mit Schrittweite $\mathrm{d}t=1$ und das Verwenden des Reconstruction Loss als alleiniges Trainingskriterium.\\
 	\begin{figure}[h!]
@@ -497,8 +504,8 @@
 		\caption{Das alternative Modell. Die Veränderung in der Zeit wird erneut durch das ODE-Net modelliert. Wir erhalten den Positionszustand $\mathbf{s}_{t+1} = \mathbf{s}_{t} + \mathbf{v}_{t} + f_{\boldsymbol\psi}(\mathbf{s}_{t}, \mathbf{v}_{t})$ aber durch Addition des Geschwindigkeitszustand und Auswertung des ODE-Nets, was den Rechenaufwand stark reduziert. Eine stetige Modellierung der Time Series ist nun zwar nicht mehr möglich, Einbußen in der Qualität der Rekonstruktionen konnten wir aber nicht beobachten.}
 	\end{figure}
 
-	Visuell sind die Rekonstruktionen bei deutlich geringerer Trainingszeit (Bei uns ca. Faktor 30) auf unseren Datensätzen sogar etwas besser, als mit einem Neural-ODE. Dies haben wir mit unserer Lossfunktion beobachtet, aber vor allem auch mit der Lossfunktion des Papers. Wir vermuten, dass das auch an einem Implementierungsfehler unsererseits liegen könnte.
-	Durch verwenden einer Summe und Simplifizierung des Trainingskriterium gehen einige praktische Eigenschaften des Modells verloren, wie das Erzeugen neuer Daten durch ziehen aus einer Normalverteilung, das Anfertigen von Rekonstruktionen in stetiger Zeit, die mathematische Interpretation des Modells als Verteilung und somit auch das Schätzen der Wahrscheinlichkeitsdichte und schließlich noch die größere Resistenz des Modells gegenüber Overfitting.
+	Visuell sind die Rekonstruktionen bei deutlich geringerer Trainingszeit (Bei uns ca. Faktor 30) auf unseren Datensätzen mit denen des Neural-ODE auf unseren Datensätzen vergleichbar. 
+	Durch Verwenden einer Summe und Simplifizierung des Trainingskriterium gehen einige praktische Eigenschaften des Modells verloren, wie das Erzeugen neuer Daten durch ziehen aus einer Normalverteilung, das Anfertigen von Rekonstruktionen in stetiger Zeit, die mathematische Interpretation des Modells als Verteilung und somit auch das Schätzen der Wahrscheinlichkeitsdichte und schließlich noch die größere Resistenz des Modells gegenüber Overfitting.
 	Um einige dieser Modelleigenschaften zu erhalten könnte man auch als Trainingskriterium auch den Reconstruction Loss mit der Vanilla-VAE ELBO verwenden.
 
 

@@ -7,8 +7,15 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 tfd = tfp.distributions
 
+# Needed for gpu support on some machines
+config = tf.compat.v1.ConfigProto(
+    gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.8))
+config.gpu_options.allow_growth = True
+session = tf.compat.v1.Session(config=config)
+tf.compat.v1.keras.backend.set_session(session)
+
 # %% hyperparameter
-epochs = 15
+epochs = 20
 latent_dim = 25  # Dimensionality for latent variables. 20 works fine.
 batch_size = 100  # ≥100 as suggested by Kingma in Autoencoding Variational Bayes.
 train_size = 60000  # Data points in train set. Choose accordingly to dataset size.
@@ -18,7 +25,7 @@ frames = 10  # Number of images in every datapoint. Choose accordingly to datase
 armortized_len = 4  # Sequence size seen by velocity encoder network. Needs to be ≥3
 act = 'relu'  # Activation function 'tanh' is used in odenet.
 
-ode_integration = 'trivialsum'  # options: 'DormandPrince' , 'trivialsum'
+ode_integration = 'DormandPrince'  # options: 'DormandPrince' , 'trivialsum'
 # we suggest 'trivialsum' as it is very fast and yields good results.
 eval_interval = 20  # Time between evaluation on test batch during training.
 data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
@@ -103,7 +110,6 @@ class ODE2VAE(tf.keras.Model):
             tf.keras.layers.UpSampling2D(size=(2, 2)),
             tf.keras.layers.Conv2DTranspose(1, (3, 3), padding="same", activation='sigmoid')])
 
-    @tf.function
     def encode(self, x, i):
         pos_mean, pos_logsig = tf.split(self.position_encoder(
             x[:, :, :, i]), num_or_size_splits=2, axis=1)
@@ -164,7 +170,7 @@ model = ODE2VAE(latent_dim, act, armortized_len)
 optimizer = tf.keras.optimizers.Adam()
 
 
-def compute_loss(model, x, ode_integration):
+def compute_loss(model, x, ode_integration, gamma):
 
     if ode_integration == 'trivialsum':
         x_encoded = model.encode(x, 0)
@@ -187,34 +193,35 @@ def compute_loss(model, x, ode_integration):
         x_rec = tf.stack([model.decode(latent_states_ode[i, :, 0]) for i in range(frames)], axis=3)
 
         log_pz_normal = tf.reduce_sum(tfd.MultivariateNormalDiag(
-            loc=tf.zeros(shape=(frames-1, batch_size, 2, latent_dim)),
-            scale_diag=tf.ones(shape=(frames-1, batch_size, 2, latent_dim))).log_prob(latent_states_ode[1:]))
+            loc=tf.zeros(shape=(frames, batch_size, 2, latent_dim)),
+            scale_diag=tf.ones(shape=(frames, batch_size, 2, latent_dim))).log_prob(latent_states_ode))
 
         log_p_x_z = - tf.reduce_sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec))
 
-        log_qz_ode = tf.reduce_sum(log_qz_ode[1:frames - armortized_len])
+        KL_qz_ode_pz_normal = tf.reduce_sum(log_qz_ode[1:frames - armortized_len]) - log_pz_normal
 
-        KL_qz_ode_qz_enc = log_qz_ode - tf.reduce_sum(log_qz_enc[1:])
-
-        KL_qz_ode_pz_normal = log_qz_ode - log_pz_normal
+        KL_qz_ode_qz_enc = tf.reduce_sum(
+            log_qz_ode[:frames - armortized_len]) - tf.reduce_sum(log_qz_enc)
 
         KL_qz_0_enc_pz_0 = - 0.5 * tf.reduce_sum(2. * x_encoded[:, :, 1:] - tf.math.square(x_encoded[:, :, :1])
                                                  - 2. * tf.math.exp(x_encoded[:, :, 1:]))
 
-        ELBO = log_p_x_z - KL_qz_0_enc_pz_0 - KL_qz_ode_qz_enc - KL_qz_ode_pz_normal
+        ELBO = log_p_x_z + tf.constant(gamma) * (- KL_qz_0_enc_pz_0 -
+                                                 KL_qz_ode_qz_enc - KL_qz_ode_pz_normal)
 
         return - ELBO
 
 
-def evaluate_during_training(model, test_sample, ode_integration, time_history, progress_ep, progress_bat, steps):
+def evaluate_during_training(model, test_sample, ode_integration, time_history, progress_ep, progress_bat):
     x_encoded = model.encode(test_sample, 0)
     z_0 = model.reparameterize(x_encoded)
     latent_states_ode, _ = model.latent_trajectory(z_0, tf.zeros(batch_size), ode_integration)
     x_rec = np.array(tf.stack([model.decode(latent_states_ode[i, :, 0])
                                for i in range(frames)], axis=3))
 
+    gamma = progress_ep / epochs + progress_bat / (batches * epochs)
     mean = tf.keras.metrics.Mean()
-    mean(compute_loss(model, test_sample, ode_integration))
+    mean(compute_loss(model, test_sample, ode_integration, gamma))
     elbo = - mean.result() / batch_size
     mean(tf.reduce_sum(frames * tf.keras.losses.binary_crossentropy(test_sample, x_rec)))
     rec = - mean.result() / batch_size
@@ -228,12 +235,12 @@ def evaluate_during_training(model, test_sample, ode_integration, time_history, 
     elif progress_bat < 10:
         a = time_history[progress_ep, progress_bat]
         b = time_history[progress_ep, 0]
-        min, sec = divmod((a-b)/(progress_bat)*(steps-progress_bat-1), 60)
+        min, sec = divmod((a-b)/(progress_bat)*(batches-progress_bat-1), 60)
         return int(elbo), int(rec), mse, int(min), int(sec)
-    elif progress_bat != steps - 1:
+    elif progress_bat != batches - 1:
         a = time_history[progress_ep, progress_bat]
         b = time_history[progress_ep, progress_bat-10]
-        min, sec = divmod((a-b)/10*(steps-progress_bat-1), 60)
+        min, sec = divmod((a-b)/10*(batches-progress_bat-1), 60)
         return int(elbo), int(rec), mse, int(min), int(sec)
     else:
         fig = plt.figure(figsize=(8, 8))
@@ -262,19 +269,19 @@ for test_batch in test_dataset.take(1):
 
 time_history = np.zeros((epochs, batches))
 evaluate_during_training(
-    model, test_sample, ode_integration, time_history, 0, batches-1, batches)
+    model, test_sample, ode_integration, time_history, 0, batches-1)
 
 
 @ tf.function
 def train_step(model, x, optimizer, ode_integration):
+    gamma = (epoch - 1) / epochs + batch / (batches * epochs)
     with tf.GradientTape() as tape:
-        loss = compute_loss(model, x, ode_integration)
+        loss = compute_loss(model, x, ode_integration, gamma)
     gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
 
-print('Compiling Model. This may take up to a few minutes.')
-print('Model will be evaluated on a random test batch every {}s.'.format(eval_interval))
+print('Compiling Model. Model will be evaluated on a random test batch every {}s.'.format(eval_interval))
 
 
 for epoch in range(1, epochs + 1):
@@ -285,17 +292,17 @@ for epoch in range(1, epochs + 1):
         if time_history[epoch - 1, batch] - print_time > eval_interval and batch + 1 != batches:
             print_time = time.time()
             elbo, rec, mse, min, sec = evaluate_during_training(
-                model, test_sample, ode_integration, time_history, epoch - 1, int(batch), batches)
+                model, test_sample, ode_integration, time_history, epoch - 1, int(batch))
             print('Batch: {}/{} | Epoch: {}/{}'.format(str(batch+1).zfill(3),
                                                        batches, epoch, epochs), end='')
             if ode_integration == 'trivialsum':
                 print(' | ETA: {}:{} | Metrics on random test batch: Reconstruction Loss {}, MSE per pixel {:.5f}'.format(
                     min, str(sec).zfill(2), rec, mse))
             if ode_integration == 'DormandPrince':
-                print(' | ETA: {}:{} | Metrics on random test batch: ELBO {}, Reconstruction Loss {}, MSE per pixel {:.5f}'.format(
-                    min, str(sec).zfill(2), elbo, rec, mse))
+                print(' | ETA: {}:{} | Gamma: {:.5f} | Metrics on random test batch: ELBO {}, Reconstruction Loss {}, MSE per pixel {:.5f}'.format(
+                    min, str(sec).zfill(2), (epoch - 1) / epochs + batch / (batches * epochs), elbo, rec, mse))
     min, sec, min_el, sec_el = evaluate_during_training(
-        model, test_sample, ode_integration, time_history, epoch - 1, int(batch), batches)
+        model, test_sample, ode_integration, time_history, epoch - 1, int(batch))
     print('Epoch {}/{} completed. Time elapsed this epoch: {}:{}'.format(epoch,
                                                                          epochs, min_el, str(sec_el).zfill(2)), end='')
     print(' Estimated time until completion of training: {}:{}.'.format(min, str(sec).zfill(2)))
