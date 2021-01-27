@@ -563,6 +563,7 @@
 	nur von $s(0,\omega)$, $v(0,\omega)$ und $\bbf$ abhängen. In der Literatur wird hier das $\tz$ als gemeinsamer Vektor $(s,v)$ betrachtet. Es wird allerdings nur $s$ an den Decoder weitergeben, also soll $f(s(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Die Anfangswerte $s(0,\cdot)$ und $v(0,\cdot)$ werden durch jeweils einen VAE bestimmt, die als Input $x_0$, beziehungsweise $(x_0,x_1,x_2)$, erhalten.\\
 	Die Verlustfunktion besteht aus Reconstruction-Loss, Terme um Overfitting von $\bbf$ zu verhindern, sowie Terme um $(\tz(t_k,\cdot))_*\bP$ für jedes $k \leq m$ einer Normalverteilung auf $\R^d$ näher zu bringen.\\
 	Der 2-ODE-VAE liefert gute Ergebnisse beim Beschreiben von einfachen Bewegungsabläufen, deren Informationsgehalt nicht mit der Zeit zunimmt. Aber gerade bei chaotischen Systemen ist die Vorschrift, dass sämtliche Information schon zu Beginn (in den ersten drei Frames) vorhanden sein muss eher dem Lernen abträglich.\\
+	Besonders ist in einem etwas chaotischerem Setting das generieren von glaubhaften Time-Series $x_0,...,x_m$ nicht möglich, da spätere $x_k, x_{k+1}$ immer deterministisch von einer gemeinsamen Zufallsvariable abhängen.\\
 	\\
 	\textbf{Idee des $M$-th Order SDE-VAE:}\\
 	Wir beschäftigen uns wieder mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Wie schon beim 2-ODE-VAE suchen wir einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, für den $f(\tz(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ ist. Hier gehen wir jedoch von einer anderen Zeitlichen Struktur aus.\\
@@ -579,8 +580,12 @@
 	: & & : \\
 	\tz^{(M-1),1}(t,\omega) & .. & \tz^{(M-1),d}(t,\omega)
 	\end{pmatrix} \in \R^{M \times d} \ .$$
-	Der 2-ODE-VAE ist nur ein einfacher Spezialfall dieser Darstellung. Wenn wir nämlich $M=2$, $\bsig = 0$ und $\bmu^{(0)}(\tz^{(0)},\tz^{(1)}) = \tz^{(1)}$ setzen, dann erfüllt $\bmu^{(0)}(\tz^{(0)},\tz^{(1)})$ dieselbe Rolle, wie $\bbf$ im 2-ODE-VAE.\\
 	Es wird nur die Erste Zeile von $Z$ (analog zu $s$ im 2-ODE-VAE) an den Decoder weitergegeben. Die Funktionen $\bmu : \R^{M \times d} \rightarrow \R^{M \times d}$ und $\bsig : \R^{M \times d} \rightarrow \R^{M \times d \times n}$ werden mit Neuronalen Netzwerken gelernt.\\
+	Das Ziel hierbei ist nicht diese Lösung direkt in einen Encoder einzugeben um die eingegebenen Daten zu rekonstruieren, sondern anhand des gelernten $\bmu$ eine ODE ohne 'Unsicherheit' $\bsig$ zu simulieren. Diese glatte Lösung der ODE wird dann in die Decoder eingegeben. Die Rekonstruktionen sollen anschaulich weniger chaotisch sein, als die eingegebenen Daten.\\
+	Das erlernte $\bsig$ kann verwendet werden um neue Pfade von $Z$ zu ziehen (simulieren), mit denen man glaubhaft neue Daten generieren kann.\\
+	\\
+	Der 2-ODE-VAE ist nur ein einfacher Spezialfall dieser Darstellung. Wenn wir nämlich $M=2$, $\bsig = 0$ und $\bmu^{(0)}(\tz^{(0)},\tz^{(1)}) = \tz^{(1)}$ setzen, dann erfüllt $\bmu^{(0)}(\tz^{(0)},\tz^{(1)})$ dieselbe Rolle, wie $\bbf$ im 2-ODE-VAE.\\
+	\\
 	TODO: Verteilung von $Z_0$
 
 
@@ -643,6 +648,12 @@
 	
 	\newpage
 	\subsubsection[Modell]{Aufbau des $M$-SDE-VAE-Modells}
+	Sei $(\bP, \Omega, \mathcal{A})$ ein Wahrscheinlichkeitsraum und $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ ein stetiger Prozess. Für $0=t_0<...<t_m=\tau$ definieren wir die Zufallsvariablen $x_k := \tx(t_k,\cdot)$. Wir gehen der Einfachheit halber davon aus, dass die Abstände $t_k-t_{k-1}$ alle gleich sind, also $t_k = k\frac{\tau}{m} = k \, \Delta t$.\\
+	Gegeben seien Daten $(x_1^p,...,x_m^p)_{p \in \N}\, uiv. \sim (x_1,...,x_m)_*\bP$. Wir definieren einen Encoder $g: \R^D \rightarrow \R^d$ und einen Decoder $f: \R^d \rightarrow \R^D$ für $d<<D$. Dabei ist $g(x)$ gegeben $x$ nicht deterministisch, sondern wird (bedingt) unabhängig aus einer $d$-dimensionalen Normalverteilung $\mathcal{N}(\mu(x),\Sigma(x))$ gezogen. Wir schreiben formell $\bP(g(x_k) \mid x_k) = \mathcal{N}(\mu(x_k),\Sigma(x_k))$ für alle $k \leq m$.\\
+	Die Funktionen $\mu: \R^d \rightarrow \R^d$, $\Sigma: \R^d \rightarrow \operatorname{Diag}(d \times d)$ sowie $f: \R^d \rightarrow \R^D$ werden durch CNNs dargestellt. Für unseren genauen Aufbau für Anwendung auf den rotating-MNIST Datensatz siehe Sektion 4.\\
+	Wir definieren die Zufallsvariablen $z_0,...,z_m : \Omega \rightarrow \R^{d}$ durch $z_k = z^{(0)}_k := g(x_k)$. Analog benennen wir die encodierten Daten $z_k^p(\omega) = z_k^{(0),p}(\omega) := g_\omega(x_k^p(\omega))$.\\
+	TODO
+	%Mit diesen Werten definieren wir nun die empirischen ersten Ableitungen $z_k^{(1),p} := \frac{1}{\Delta t} \, (z_{k+1}^{(0),p} - z_k^{(0),p}) \in \R^d$. Die Vorstellung als Annäherung einer Ableitung ist hier eigentlich falsch, da Lösungen von SDEs mit positivem $\bsig$ nirgends differenzierbar sind, aber wie wir schon bei der Theorie zum Lernen von SDEs gesehen hatten, ist $\E[\frac{1}{\Delta t} \, (z_{k+1}^{(0),p} - z_k^{(0),p}) \mid z_k^{(0),p}] \approx \bmu(z_k^{(0),p})$, also eignen die $z_k^{(1),p}$ sich zumindest bei großen Datensätzen zum erlernen von 
 	
 	
 	
@@ -661,7 +672,11 @@
 	\begin{align*}
 	& \E_{z_0}[h(Z_t)] - h(z_0) = \int_0^t \E[(G^Z h)(Z_s)] \, ds \ .
 	\end{align*}
-	Sei nun $f: \R^{d} \rightarrow \R^D$ das Decoder-Netzwerk, das nur die erste Zeile $(z^{0,1},...,z^{0,d})$ betrachtet und die anderen ignoriert. Sei $\widetilde{h} \in C_b^{2}$ beliebig. Wenn wir die Aktivierungsfunktionen von $f$ glatt genug wählen, können wir von $h := \widetilde{h} \circ f \in C^2_b(\R^{M \times d})$ ausgehen.
+	Sei nun $f: \R^{d} \rightarrow \R^D$ das Decoder-Netzwerk, das nur die erste Zeile $(z^{0,1},...,z^{0,d})$ betrachtet und die anderen ignoriert. Sei $\widetilde{h} \in C_b^{2}(\R^{D})$ beliebig. Wenn wir die Aktivierungsfunktionen von $f$ glatt genug wählen, können wir von $h := \widetilde{h} \circ f \in C^2_b(\R^{M \times d})$ ausgehen. Die obige Aussage wird damit zu
+	\begin{align*}
+	\E_{z_0}[h(Z_t)] - h(z_0) = \int_0^t \E\Bigg[ & \sum\limits_{i=1}^d \bmu^{0,i}(Z_s) \frac{\partial h}{\partial z^{0,i}}(Z_s)\\
+	& \ \ + \sum\limits_{i,i'=1}^d \left( \sum\limits_{j=1}^n \bsig^{0,i,j}(Z_s)\bsig^{0,i',j}(Z_s) \right) \frac{\partial^2 h}{\partial z^{0,i} \partial z^{0,i'}}(Z_s)\Bigg] \, ds
+	\end{align*}
 	
 
 
