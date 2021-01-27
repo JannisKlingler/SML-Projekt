@@ -109,30 +109,30 @@
 	Der \emph{Variational Autoencoder} (kurz: VAE) ist ein unsupervised Deep-Learning Algorithmus, welcher es ermöglicht niedrigdimensinale latente Darstellungen aus hochdimensionales Daten zu erlernen. Nach der Trainingsphase kann der VAE schließlich als probabilistisches Generatives Modell zum erzeugen neuer Daten verwendet werden.\\
 	Da das Modell selbst erlernen muss,
 	wie die Datenpunkte am besten gruppiert werden, wird auch das Erkennen unbekannter Eigenschaften ermöglicht.\\
-	Beim generieren von Bildern wie menschlichen Gesichtern kann die Performance dabei durchaus mit state-of-the-art Modellen wie Genrative Adversarial Networks mithalten. Die Anwendungsmöglichkeiten des Modells sind vielseitig, so werden VAEs unter anderem zum Modellieren chemischer Moleküle, zur Verarbeitung menschlicher Sprache oder zum erkennen beschädigter Daten und Schätzung von Unsicherheit eingesetzt.\\
+	Beim generieren von Bildern wie menschlichen Gesichtern kann die Performance dabei durchaus mit state-of-the-art Modellen wie Genrative Adversarial Networks mithalten. Die Anwendungsmöglichkeiten des Modells sind vielseitig, so werden VAE's unter anderem zum Modellieren chemischer Moleküle, zur Verarbeitung menschlicher Sprache oder zum erkennen beschädigter Daten und Schätzung von Unsicherheit eingesetzt.\\
 	Im Rahmen dieser Projektarbeit wollen wir mit Variational Autoencoder beschädigte Daten rekonstruieren und konzentrieren uns dabei ausschließlich auf Serien von Bildern mit einer zeitlichen Abhängigkeit, also Videosequenzen, oder kurz \emph{time series}. \\
 	Da dem \emph{Variational Autoencoder} die Annahme zugrunde liegt, dass die Verteilung der Datenpunkte
 	unabhängig und identisch verteilt ist, ist eine Anwendung auf unsere Problemstellung nicht ohne weitere
 	Anpassungen sinnvoll.\\
 	Ein erster naiver Ansatz hierfür ist es, die zeitliche Komponente in den Daten zu
-	vernachlässigen und die gesamte time series dem VAE zusammengefasst als einen Datenvektor zu übergeben. Wenn der Trainingsdatensatz unbeschädigt ist, wird der beschädigten time series die latente Darstellung zugewiesen, die einer unbeschädigten time series am nächsten kommt. Vom Decoder wird die time series nun vollständig rekonstruiert, da ihm beschädigte Daten nach dem Trainingsprozess unbekannt sind.\\
-	Ein weiterer Ansatz ergibt sich, wenn man die zeitlichen Zusammenhänge der time series
-	im Latenten Raum linear interpoliert. Hier bilden die einzelnen Frames der time series unseren Trainingsdatensatz. Durch lineare Interpolation lassen sich die Übergänge nun auch in stetiger Zeit modellieren. \\
+	vernachlässigen und die gesamte \emph{time series} dem VAE zusammengefasst als einen Datenvektor zu übergeben. Wenn der Trainingsdatensatz unbeschädigt ist, wird der beschädigten \emph{time series} die latente Darstellung zugewiesen, die einer unbeschädigten \emph{time series} am nächsten kommt. Vom Decoder wird die \emph{time series} nun vollständig rekonstruiert, da ihm beschädigte Daten nach dem Trainingsprozess unbekannt sind.\\
+	Ein weiterer Ansatz ergibt sich, wenn man die zeitlichen Zusammenhänge der \emph{time series}
+	im Latenten Raum linear interpoliert. Hier bilden die einzelnen Frames der \emph{time series} unseren Trainingsdatensatz. Durch lineare Interpolation lassen sich die Übergänge nun auch in stetiger Zeit modellieren. \\
 	Wie wir sehen werden, können beide Ansätze jedoch auf etwas komplexeren Datensätzen keine zufriedenstellende Ergebnisse mehr liefern.
-	Eine Möglichkeit diese komplexen Zusammenhängen zwischen den Zeitschritten in \emph{time series} besser zu erlernen bietet der \emph{Second Order ODE-Variational Auto-Encoder} (kurz: ODE$^2$-VAE). Die zeitlichen Abhängigkeiten unter den Datenpunkten werden hier mit Differentialgleichungen zweiter Ordnung modelliert, welche im Trainingsprozess erlernt werden. Schon nur aus drei Inputbildern kann die gesamte time series in stetiger Zeit rekonstruiert werden.\\
-	%time series noch überall klein schreiben
+	Eine Möglichkeit diese komplexen Zusammenhängen zwischen den Zeitschritten in \emph{time series} besser zu erlernen bietet der \emph{Second Order ODE-Variational Auto-Encoder} (kurz: ODE$^2$VAE). Die zeitlichen Abhängigkeiten unter den Datenpunkten werden hier mit Differentialgleichungen zweiter Ordnung modelliert, welche im Trainingsprozess erlernt werden. Schon nur aus drei Inputbildern kann die gesamte \emph{time series} in stetiger Zeit rekonstruiert werden.\\
+	%\emph{time series} noch überall klein schreiben
 	\textbf{TODO: Einleitung SDE-VAE}
 	\\
 	\\
-	In dieser Arbeit werden wir in einem theoretischen Teil die mathematischen Grundlagen einführen, auf denen der Variational Autoencoder und der ODE$^2$-VAE aufbauen.\\
+	In dieser Arbeit werden wir in einem theoretischen Teil die mathematischen Grundlagen einführen, auf denen der Variational Autoencoder und der ODE$^2$VAE aufbauen.\\
 	In einem praktischen Teil werden schließlich Anwendungsmöglichkeiten der beiden Modelle auf unsere Problemstellung präsentiert.\\
 	Dabei wird sowohl auf die Implementierung der
 	theoretischen Resultate, als auch auf die experimentellen Ergebnisse eingegangen.\\
-	Die in dieser Arbeit verwendeten Quellen sind die Paper \emph{Auto-Encoding Variational Bayes} \cite{vae}, sowie \emph{An Introduction to Variational Autoencoders}, \cite{intvae} beide von Diederik P. Kingma und Max Welling und \emph{ODE$^{\ 2}$-VAE: Deep generative second order ODEs with Bayesian neural networks} \cite{ode2vae} von Ç. Yıldız, M. Heinonen und H. Lähdesmäki.
+	Die in dieser Arbeit verwendeten Quellen sind die Paper \emph{Auto-Encoding Variational Bayes} \cite{vae}, sowie \emph{An Introduction to Variational Autoencoders}, \cite{intvae} beide von Diederik P. Kingma und Max Welling und \emph{ODE$^{\ 2}$VAE: Deep generative second order ODEs with Bayesian neural networks} \cite{ode2vae} von Ç. Yıldız, M. Heinonen und H. Lähdesmäki.
 	\newpage
 
 	\section[Theoretische Ausarbeitung]{Theoretische Ausarbeitung}
-	\emph{Einführung der Notation:} Wir orientieren uns in den ersten beiden Kapiteln an den gängigen Notationen in der Machine-Learning Fachliteratur, da hier vor allem die Paper der Autoren zusammengefasst werden. Im Kapitel zu SDE-VAE werden wir uns von dieser Notation aber entfernen, um ein mathematisch genaues Grundgerüst definieren zu können.\\ \ 
+	\emph{Einführung der Notation:} Wir orientieren uns in den ersten beiden Kapiteln an den gängigen Notationen in der Machine-Learning Fachliteratur, da hier vor allem die Paper der Autoren zusammengefasst werden. Im Kapitel zu SDE-VAE werden wir uns von dieser Notation aber entfernen, um ein mathematisch genaueres Grundgerüst definieren zu können.\\ \
 	\\
 	\begin{tabular}{|c|p{11.9cm}|}
 			\hline
@@ -156,7 +156,7 @@
 			\hline
 		\end{tabular}
 	\vspace{1cm}
-	\\
+	\subsection[Auto Encoding Variational Bayes]{Auto Encoding Variational Bayes}
 	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N} \subset \R^{P\times N}$, der aus $N$ unterschiedlichen unabhängig, identisch verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
 	In einem latenten Variablen Modell sind wir darum bemüht die Dimension des Datenpunkts zu reduzieren, um den Prozess, der die Daten erzeugt besser modellieren zu können.
 	Dafür werden sogenannte \emph{latenten Variablen} $\z$ eingeführt. Diese sind stetige und nicht beobachtbare Zufallsvariablen, welche die Eigenschaften des Bildes festlegen, die es charakterisiert.
@@ -179,7 +179,8 @@
 	Weiter führen wir wegen der Unberechenbarkeit von $p_{\boldsymbol\theta}(\z|\x)$ das Inferenzmodell $q_{\boldsymbol\phi}(\z|\x)$ ein und suchen die Parameter $\boldsymbol\phi^{*}$ für die $q_{\boldsymbol\phi^{*}}(\z|\x) \approx p_{\boldsymbol\theta}(\z|\x)$ gilt.\\
 	In einem Variational Autoencoder werden die Verteilungen $q_{\boldsymbol\phi}(\z|x)$ und $p_{\boldsymbol\theta}(\x|\z)$ durch neuronale Netze dargestellt und approximiert.\\
 	Im AEVB-Algorithmus (kurz für \emph{Auto-Encoding Variational Bayes}) können die geeigneten Parameter $\boldsymbol\phi^{*}$ und $\boldsymbol\theta^{*}$ gemeinsam erlernt werden.
-	\subsection[VAE]{AEVB-Algorithmus und Variational Autoencoder}
+
+	\subsubsection[AEVB-Algorithmus]{Der AEVB-Algorithmus}
 	Wir betrachten dafür für einen beliebigen Datenpunkt $\x \in \mathbf{X}$ die Reverse KL-Divergenz des Infernce Modells $\qenc$ nach $\penc$:
 	\begin{align*}
 	D_{KL}\big[\qenc || \penc\big] \overset{\text{Def.}}&{=} \E_{\z\sim q_{\boldsymbol\phi}}\left[\log\left(\frac{\qenc}{\penc}\right)\right] \\
@@ -230,9 +231,9 @@
 	&\simeq \frac{N}{M}\sum_{i=1}^{M}  \left(D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big] - \frac{1}{L}\sum_{l=1}^{L}\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon_{l},\textbf{x}_{i}))\big)\right)
 	\end{align*}
 
-	Praktischerweise sorgt eine groß gewählte Batchsize $|\textbf{M}| = M$, z.B. $M=100$ dafür, dass der Erwartungswert implizit durch die Batches des Stochatich Gradient Verfahrens geschätzt wird. Wir können dann die Anzahl der Stichproben von $\boldsymbol\epsilon$ für die Monte-Carlo Schätzung des Erwartungswertes $\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]$ als $L=1$ festlegen.
-	\\
-	Wir erhalten den AEVB-Algorithmus \emph{(Auto Encoding Variational Bayes)}: \\
+	Praktischerweise sorgt eine groß gewählte Batchsize $|\textbf{M}| = M$, z.B. $M=100$ dafür, dass der Erwartungswert implizit durch die Batches des Stochatich Gradient Verfahrens geschätzt wird.\\
+	Wir können dann die Anzahl der Stichproben von $\boldsymbol\epsilon$ für die Monte-Carlo Schätzung des Erwartungswertes $\mathbb{E}_{\boldsymbol\epsilon\sim p(\boldsymbol\epsilon)}\big[\log\big(p_{\boldsymbol\theta}(\textbf{x}_{i}|g_{\boldsymbol\phi}(\boldsymbol\epsilon,\textbf{x}_{i}))\big)\big]$ als $L=1$ festlegen und
+	erhalten den AEVB-Algorithmus \emph{(Auto Encoding Variational Bayes)}: \\
 
 	\hrule
 	\vspace{0,15cm}
@@ -249,7 +250,7 @@
 	\vspace{0,05cm}
 	\hrule
 	\vspace{0,3cm}
-	\ \\
+	\subsubsection[Variational Autoencoder]{Der Variational Autoencoder}
 	Beim Variational Autoencoder werden die Verteilungen $\qenc$ und $\pdec$ durch Neuronale Netze mit den Parametern $\boldsymbol\theta$ und $\boldsymbol\phi$ approximiert und durch den AEVB-Algorithmus trainiert. In diesem Kontext wird $\pdec$ auch \emph{probabilistischer Decoder} genannt und $\qenc$ \emph{probabilistischer Encoder}. \\
 	Nach der Trainingsphase können Decoder und Encoder jedoch voneinander getrennt werden. Mit dem Decoder lassen sich nun neue Daten erzeugen, indem hypotetische latente Darstellungen als Input genutzt werden.\\
 	Für das Inferenzmodell $\qenc$ wird in einem Variational Autoencoder häufig (aber nicht zwingenderweise) eine Multivariate Normalverteilung $\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})$ mit diagonaler Kovarianzmatrix gewählt. \\
@@ -338,8 +339,8 @@
 	&= \log\left(\prod_{p=1}^{P}\left(p_{i,p}\right)^{x_{i,p}}\left(1-p_{i,p}\right)^{\left(1-x_{i,p}\right)}\right) \notag \\
 	&=  \sum_{p=1}^{P}x_{i,p}\log\left(p_{i,p}\right)+\left(1-x_{i,p}\right)\log\left(1-p_{i,p}\right)
 	\end{align*}
-	\subsection[ODE$^2$-VAE]{Second Order ODE-Variational Autoencoder}
-	Gegeben sei eine time series $\mathbf{x}_{0:T}=(\mathbf x_{0}, \mathbf x_{1}, \ldots,\mathbf x_{T})\in \mathbb{R}^{P\times T}$ zu observierten Zeitpunkten $t_{0}, t_{1},\ldots,t_{T}$ mit zugehörigen latenten Zuständen $\mathbf z_{0:T}=(\mathbf z_{0}, \mathbf z_{1}, \ldots, \mathbf z_{T})\in \mathbb{R}^{Z\times T}$ geringerer Dimension. \\
+	\subsection[ODE$^2$VAE]{Second Order ODE-Variational Autoencoder}
+	Gegeben sei eine \emph{time series} $\mathbf{x}_{0:T}=(\mathbf x_{0}, \mathbf x_{1}, \ldots,\mathbf x_{T})\in \mathbb{R}^{P\times T}$ zu observierten Zeitpunkten $t_{0}, t_{1},\ldots,t_{T}$ mit zugehörigen latenten Zuständen $\mathbf z_{0:T}=(\mathbf z_{0}, \mathbf z_{1}, \ldots, \mathbf z_{T})\in \mathbb{R}^{Z\times T}$ geringerer Dimension. \\
 	Wir nehmen an, dass die zeitliche Änderung der latenten Zustände durch eine Differentialgleichung beschrieben werden kann. Das Vektorfeld der Differentialgleichung wird durch ein Neuronales Netzwerk $f_{\boldsymbol{\psi}}$, ein \emph{ODE-Network} in stetiger Zeit $t$ modelliert.
 	\begin{align*}
 	\dfrac{\partial \mathbf{z}(t)}{\partial t}&=f_{\boldsymbol{\psi}}(\mathbf{z}(t),t), \\
@@ -352,7 +353,7 @@
 	Das Integral lässt sich numerisch mit ODE-Solvern berechnen. \\
 	Wir benutzen einen VAE zur Dimensionsreduzierung. Der Encoder bestimmt den Anfangswert $\mathbf z_{0}$ der Differentialgleichung, welcher mit dem ODE-Netzwerk eine eindeutig bestimmte Kurve im latenten Raum liefert. Der Decoder rekonstruiert anschließend zu den Zeitpunkten $t_{0}, t_{1},\ldots,t_{T}$ die Inputsequenz $\mathbf x_{0:T}$. \\ \\
 	ODEs erster Ordnung sind jedoch nicht in der Lage Datensätze zufriedenstellend zu modellieren, bei denen sich auch höhere Momente ändern.
-	Wir werden daher ODEs zweiter Ordnung verwenden, welche sich äquivalent als ein System bestehend aus zwei Differentialgleichungen erster Ordung notieren lassen.\\ Der Zustand $\mathbf z_{t}=(\mathbf s_{t}, \mathbf v_{t})^{\mathrm{T}}$ zum Zeitpunkt $t$, wird dazu in eine Positionskomponente $\mathbf s_{t}$ und eine Geschwindigkeitskomponente $\mathbf v_{t}$ zerlegt, deren Anfangswerte $\mathbf s_{0}$ und $\mathbf v_{0}$ von zwei unterschiedlichen Encoder-Netzwerken, dem \emph{Position-Encoder} und dem \emph{Velocity-Encoder}, erlernt werden.\\
+	Wir werden daher ODEs zweiter Ordnung verwenden, welche sich äquivalent als ein System bestehend aus zwei Differenti\nolinebreak algleichungen erster Ordung notieren lassen.\\ Der Zustand $\mathbf z_{t}=(\mathbf s_{t}, \mathbf v_{t})^{\mathrm{T}}$ zum Zeitpunkt $t$, wird dazu in eine Positionskomponente $\mathbf s_{t}$ und eine Geschwindigkeitskomponente $\mathbf v_{t}$ zerlegt, deren Anfangswerte $\mathbf s_{0}$ und $\mathbf v_{0}$ von zwei unterschiedlichen Encoder-Netzwerken, dem \emph{Position-Encoder} und dem \emph{Velocity-Encoder}, erlernt werden.\\
 	Der Position-Encoder erhält zur Bestimmung der latenten Positionskomponente die erste Komponente $\mathbf x_{0}$ der Inputsequenz, während der Velocity-Encoder die ersten $m\geq 3$ Komponenten $\mathbf x_{0:m}$ der Inputsequenz erhällt. Dies ermöglicht uns das Encodieren der höheren Momente.
 	\begin{align*}
 	\dfrac{\partial^2 \mathbf{z}(t)}{\partial^2 t}&=f_{\boldsymbol{\psi}}\left(\mathbf{z}(t), \tfrac{\partial \mathbf{z}(t)}{\partial t}, t\right), \\
@@ -377,15 +378,15 @@
 	\end{array}\right)
 	\mathrm{d}t.
 	\end{align*}
-	Die Autoren des Papers verwenden ein Bayensisches Neuronales Netzwerk zur Modellierung der Differentialgleichung um Unsicherheit besser darstellen zu können. Wir werden aber auf ein gewöhnliches Neuronales Netzwerk zurückgreifen und im nächsten Kapitel auf Modellierung von Stochastischen Differentialgleichung eingehen.
+	Die Autoren des Papers verwenden ein Bayensisches Neuronales Netzwerk zur Modellierung der Differentialgleichung um Unsicherheit besser darstellen zu können. Wir werden aber auf ein gewöhnliches Neuronales Netzwerk zurückgreifen und im nächsten Kapitel auf die Modellierung Stochastischer Differentialgleichung eingehen.
 	\begin{figure}[h!]
 		\centering
 		\includegraphics[scale=0.57]{ODE2VAE_ODE_Net}
 		\captionsetup{labelformat=empty}
-		\caption{Schematische Darstellung des ODE$^2$-VAE. Eine Inputsequenz wird von den Encodermodellen auf die Startwerte einer Beschleunigungs- und Positionskurve abgebildet. Die Änderung der Beschleuningungskurve (blau) wird durch ein ODE-Net Modelliert und mit einem ODEsolver berechnet. Die Änderung der Positionskurve ergibt sich durch Integration über die Beschleuningungskurve. Zu festgelegten Zeitpunkten rekonstruiert der Decoder aus den Positionswerten $\mathbf{s}_t$ die Inputsequenz.}
+		\caption{Schematische Darstellung des ODE$^2$VAE. Eine Inputsequenz wird von den Encodermodellen auf die Startwerte einer Beschleunigungs- und Positionskurve abgebildet. Die Änderung der Geschwindigkeitskurve (blau) wird durch ein ODE-Net modelliert und mit einem ODEsolver berechnet. Die Änderung der Positionskurve ergibt sich durch Integrati\nolinebreak on über die Geschwindigkeitskurve. Zu festgelegten Zeitpunkten rekonstruiert der Decoder aus den Positionswerten $\mathbf{s}_t$ die Inputsequenz.}
 	\end{figure}
 
-	Als Trainingskriterium des ODE$^2$-VAE verwenden wir erneut die negative ELBO.
+	Als Trainingskriterium des ODE$^2$VAE verwenden wir erneut die negative ELBO.
 	Wir erhalten:
 	\begin{align*}
 	\log\big(p_{\boldsymbol{\theta}}(\mathbf{x}_{0:T})\big)&\ge \E_{\mathbf{z}_{0:T}\sim q_{\boldsymbol\phi,\boldsymbol\psi}}
@@ -394,7 +395,7 @@
 		\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{0}|\mathbf{z}_{0}\right)\big)\right] - D_{KL}\big[q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta}(\mathbf{z}_{0})\big]}_{\text{Vanilla-VAE ELBO}}\\ &+ \underbrace{\sum_{t=1}^T \E_{\mathbf{z}_{t}\sim q_{\text{ode }\boldsymbol\psi}}
 		\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\big)\right] - D_{KL}\big[q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t})\big]}_{\text{Dynamischer Loss}}
 	\end{align*}
-	Der erste Teil ist die ELBO eines Standard-VAEs.
+	Der erste Teil ist die ELBO eines Standard-VAE's. \textbf{TODO für was steht der zweite Teil der ELBO}
 	Als dem latenten Raum zugrundeliegenden Verteilung $p_{\boldsymbol\theta}(\mathbf{z}_{0})$ wählen wir eine parameterfreie Standardnormalverteilung $\mathcal{N}(\mathbf{0},\mathbf{I})$.\\
 	Die Encoder-Verteilung ist als Normalverteilung mit $\mathbf{z}_{0} = (\mathbf{s}_{0},\mathbf{v}_{0})^{\mathrm{T}}$ durch
 	\begin{align*}
@@ -410,11 +411,11 @@
 	\end{array}\right)\right)
 	\end{align*}
 	gegeben. Wie erläutert hängt der Output des Velocity-Encoders dabei von den ersten $m\ge3$ Zuständen ab, während der Output des Position-Encoders nur durch den ersten Zustand bestimmt wird.\\
-	Die Berechnung des Reconstruction Loss ist von der Wahl der im Decoder verwendeten Verteilung abhängig. Für unsere Datensätze werden wir eine Bernoulliverteilung verwenden.
+	Die Berechnung des \emph{reconstruction loss} ist von der Wahl der im Decoder verwendeten Verteilung abhängig. Für unsere Datensätze werden wir eine Bernoulliverteilung verwenden.
 	Die analytische Berechnung ist nun mit den Resultaten des letzten Kapitels möglich.\\
-	Die Berechnung des Dynamic Loss ist komplizierter. \\
-	Der Reconstruction Loss $\E_{\mathbf{z}_{t}\sim q_{\text{ode }\boldsymbol\psi}}
-	\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\big)\right] $ lässt sich zwar ebenfalls mit den Resultaten des ersten Kapitels berechnen, für die approximative Berechnung der KL-Divergenz
+	Die Berechnung des \emph{dynamic loss} ist komplizierter. \\
+	Der \emph{reconstruction loss} $\E_{\mathbf{z}_{t}\sim q_{\text{ode }\boldsymbol\psi}}
+	\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\big)\right] $ lässt sich zwar mit den Resultaten des ersten Kapitels berechnen, für die approximative Berechnung der KL-Divergenz
 	\begin{align*}
 	D_{KL}\big[q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t})\big]
 	&=\mathbb{E}_{\mathbf{z}_{t}\sim q_{\text{ode }\boldsymbol\psi}}\big[\log\big(q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m}) \big) - \log\big(p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) \big)\big] \\
@@ -484,23 +485,30 @@
 	\end{cases*}\\ h(t_T)&=\text{ODEintegrate}\big(h,h(t_0),t_1,t_2,\ldots,t_T,\boldsymbol\epsilon,f_{\boldsymbol\psi}\big)
 	\end{align*}
 	Der Wert
-	$\log\big(p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) \big)$, der ebenfalls für die Berechnung der KL-Divergenz benötigt wird ist nicht bestimmbar. Müsste man doch die log-Dichten mit der unbekannten, "wahren" Funktion $f_{\boldsymbol\psi^{*}}(\mathbf{s}_{t},\mathbf{v}_{t})$ mit oben hergeleiteter Formel ausrechnen.
-	Die Autoren des Papers treffen eine vereinfachende Annahme und legen wie bereits für den ersten Zustand geltend $p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) = \mathcal{N}(\mathbf{0},\mathbf{I})$ als parameterfreie multivariate Normalverteilung fest.
-	Bei uns hat sich diese Annahme als zu einschränkend herausgestellt. Das Verfahren konvergiert nur langsam und die Bilder neigen schnell dazu zu verschwimmen. \\
-	Wir schlagen ähnlich dem Ansatz zur alternativen Lossfunktion des Papers daher vor direkt die KL-Divergenz zur Encoderverteilung $q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{t}|\mathbf{x}_{t:(t+m)})$ zu minimieren. Eine wie wir finden vertretbare Annahme, da so auch sichergestellt wird, dass Encodernetzwerk und ODE-Netzwerk der selben Sequenz latente Werte mit ähnlicher Dichte zuweisen.\\
-	Nun lässt sich die ELBO analytisch berechnen und die Parameter $\boldsymbol\phi,\boldsymbol\psi,\boldsymbol\theta$ lassen sich anhand dieses Trainingskriterium aktualisieren.\\
+	$\log\big(p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) \big)$, der ebenfalls für die Berechnung der KL-Divergenz benötigt wird ist nicht bestimmbar. Müsste man doch die log-Dichten mit der unbekannten, "wahren"\  Funktion $f_{\boldsymbol\psi^{*}}(\mathbf{s}_{t},\mathbf{v}_{t})$ mit oben hergeleiteter Formel ausrechnen.
+	Die Autoren des Papers treffen eine vereinfachende Annahme und legen wie bereits für den ersten Zustand geltend $p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t}) = \mathcal{N}(\mathbf{0},\mathbf{I})$ als parameterfreie multivariate Normalverteilung fest.\\
+	Bei uns hat das aber zu dem Problem geführt, dass der KL-Term den \emph{reconstruction loss} stark übertrifft und das Verfahren im latenten Raum nur die Struktur einer Normalverteilung annehmen will ohne gleichzeitig den \emph{reconstruction loss} zufriedenstellend zu verringern. Wir greifen daher auf eine Abwandlung der im Paper vorgestellten alternativen Lossfunktion zurück. Das Verfahren konvergiert dann nur langsam und die Bilder neigen schnell dazu zu verschwimmen. \\
+	\begin{align*}
+	-\mathcal{L}(\boldsymbol\phi,\boldsymbol\psi,\boldsymbol\theta,\mathbf{x}_{0:T}) &=\underbrace{\E_{\mathbf{z}_{0}\sim q_{\text{enc }\boldsymbol\phi}}
+		\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{0}|\mathbf{z}_{0}\right)\big)\right] - \gamma D_{KL}\big[q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})||p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\z_0)\big]}_{\gamma\text{-VAE ELBO}}\\ &+ \underbrace{\sum_{t=1}^T \E_{\mathbf{z}_{t}\sim q_{\text{ode }\boldsymbol\psi}}
+		\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\big)\right] - \gamma D_{KL}\big[q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})||p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\z_t)\big]}_{\text{Dynamischer Loss}} \\ &- \gamma \underbrace{\sum_{t=0}^{T-m} D_{KL}\big[q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})||q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{t}|\mathbf{x}_{t:(t+m)})\big]}_{\text{KL-Divergenz zur Encoderverteilung}}
+	\end{align*}
+	Wir multiplizieren die KL-Divergenz mit einem Faktor $\gamma$, der im Verlauf des Trainings schrittweise von 0 auf 1 angehoben wird. So wird zu Beginn des Trainingsprozess das Anfertigen guter Rekonstruktionen priorisiert und die sinnvolle
+	Anordnung der latenten Variablen im latenten Raum erst später im Trainingsprozess vorgenommen.\\
+	Außerdem minimieren wir weiter die KL-Divergenz zur Encoderverteilung $q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{t}|\mathbf{x}_{t:(t+m)})$. So wird zusätzlich auch sichergestellt, dass Encodernetzwerk und ODE-Netzwerk der selben Sequenz latente Werte mit ähnlicher Dichte zuweisen.\\
+	Diese Lossfunktion lässt sich analytisch berechnen und die Parameter $\boldsymbol\phi,\boldsymbol\psi,\boldsymbol\theta$ werden anhand dieses Trainingskriterium aktualisiert.\\
 
-	Ebenfalls gute Ergebnisse liefert bei uns die Approximation der Integrale durch eine Summe mit Schrittweite $\mathrm{d}t=1$ und das Verwenden des Reconstruction Loss als alleiniges Trainingskriterium.\\
-	\begin{figure}[h!]
+	Ebenfalls gute Ergebnisse liefert bei uns die Approximation der Integrale durch eine Summe mit Schrittweite $\mathrm{d}t=1$ und das Verwenden des \emph{reconstruction loss} als alleiniges Trainingskriterium.\\
+	\begin{figure}[htpb!]
 		\centering
 		\includegraphics[scale=0.41]{ODE2VAE_Modell}
 		\captionsetup{labelformat=empty}
-		\caption{Das alternative Modell. Die Veränderung in der Zeit wird erneut durch das ODE-Net modelliert. Wir erhalten den Positionszustand $\mathbf{s}_{t+1} = \mathbf{s}_{t} + \mathbf{v}_{t} + f_{\boldsymbol\psi}(\mathbf{s}_{t}, \mathbf{v}_{t})$ aber durch Addition des Geschwindigkeitszustand und Auswertung des ODE-Nets, was den Rechenaufwand stark reduziert. Eine stetige Modellierung der Time Series ist nun zwar nicht mehr möglich, Einbußen in der Qualität der Rekonstruktionen konnten wir aber nicht beobachten.}
+		\caption{Das alternative Modell. Die Veränderung in der Zeit wird erneut durch das ODE-Net modelliert. Wir erhalten den Positionszustand $\mathbf{s}_{t+1} = \mathbf{s}_{t} + \mathbf{v}_{t} + f_{\boldsymbol\psi}(\mathbf{s}_{t}, \mathbf{v}_{t})$ aber durch Addition des Geschwindigkeitszustand und Auswertung des ODE-Nets, was den Rechenaufwand stark reduziert. Eine stetige Modellierung der \emph{time series} ist nun zwar nicht mehr möglich, Einbußen in der Qualität der Rekonstruktionen konnten wir aber nicht beobachten.}
 	\end{figure}
 
-	Visuell sind die Rekonstruktionen bei deutlich geringerer Trainingszeit (Bei uns ca. Faktor 30) auf unseren Datensätzen sogar etwas besser, als mit einem Neural-ODE. Dies haben wir mit unserer Lossfunktion beobachtet, aber vor allem auch mit der Lossfunktion des Papers. Wir vermuten, dass das auch an einem Implementierungsfehler unsererseits liegen könnte.
-	Durch verwenden einer Summe und Simplifizierung des Trainingskriterium gehen einige praktische Eigenschaften des Modells verloren, wie das Erzeugen neuer Daten durch ziehen aus einer Normalverteilung, das Anfertigen von Rekonstruktionen in stetiger Zeit, die mathematische Interpretation des Modells als Verteilung und somit auch das Schätzen der Wahrscheinlichkeitsdichte und schließlich noch die größere Resistenz des Modells gegenüber Overfitting.
-	Um einige dieser Modelleigenschaften zu erhalten könnte man auch als Trainingskriterium auch den Reconstruction Loss mit der Vanilla-VAE ELBO verwenden.
+	Visuell sind die Rekonstruktionen bei deutlich geringerer Trainingszeit (Bei uns ca. Faktor 30) auf unseren Datensätzen mit denen des Neural-ODE auf unseren Datensätzen vergleichbar.
+	Durch Verwenden einer Summe und Simplifizierung des Trainingskriterium gehen einige praktische Eigenschaften des Modells verloren, wie das Erzeugen neuer Daten durch ziehen aus einer Normalverteilung, das Anfertigen von Rekonstruktionen in stetiger Zeit, die mathematische Interpretation des Modells als Verteilung und somit auch das Schätzen der Wahrscheinlichkeitsdichte und schließlich noch die größere Resistenz des Modells gegenüber Overfitting.
+	Um einige dieser Modelleigenschaften zu erhalten könnte man auch als Trainingskriterium auch den \emph{reconstruction loss} mit der Vanilla-VAE ELBO verwenden.
 
 
 	\newpage
@@ -541,7 +549,7 @@
 	\textbf{Idee des VAE:}\\
 	Ein Variational Autoencoder will eine Ähnliche Struktur finden, wobei nun $(z)_*\bP$ eine Normalverteilung in $\R^d$ sein soll. Das Ziel soll sein erst mit Daten $x^1,...,x^N \, uiv \sim (x)_*\bP$ die Encoder $g$ und Decoder $f$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z_1,...,z_N$ zieht und dann den Decoder $f$ darauf anwendet.\\
 	Dabei wird der Encoder $g$ als Neuronales Netzwerk aufgebaut, dass Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ aus $\mathcal{N}\left(\mu(x),\Sigma(x)\right)$ gezogen wird. Damit können einzelne Datenpunkte anschaulich mehr Platz im latenten Raum $\R^d$ ausfüllen. Dies lässt sich auch als Maßnahme gegen Overfitting des Encoders interpretieren.\\ Es werden zusätzliche Terme in zur Verlustfunktion addiert, die dafür zu sorgen, dass $(z)_*\bP$ eine Normalverteilung ist und dass die Verteilung $(f \circ z)_*\bP$ ähnlich der Verteilung $(x)_*\bP$ ist.
-	
+
 	\newpage\noindent
 	\textbf{Idee des 2-ODE-VAE:}\\
 	Ein 2-ODE-VAE beschäftigt sich mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Der 2-ODE-VAE sucht nun einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, der punktweise die Informationen von $\tx$ encodiert, also soll $f(\tz(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Wieder wird die Struktur von $\tz$ im latenten Raum vorgeschrieben, wobei nun auch eine Vorschrift zur zeitlichen Entwicklung gemacht wird. Für spätere Zeitpunkte $t>0$ soll $\tz(t,\omega)$ als Lösung der Differenzialgleichung
@@ -553,48 +561,48 @@
 	Die Verlustfunktion besteht aus Reconstruction-Loss, Terme um Overfitting von $\bbf$ zu verhindern, sowie Terme um $(\tz(t_k,\cdot))_*\bP$ für jedes $k \leq m$ einer Normalverteilung auf $\R^d$ näher zu bringen.\\
 	\\
 	\textbf{Idee des $M$-th Order SDE-VAE:}\\
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
+
+
 	\newpage
 	\subsubsection[Lernen von SDEs]{Lernen von SDEs}
 	Sei $\tmu: \R^d \rightarrow \R^d$ und $\tsig: \R^d \rightarrow \R^{d \times n}$. Für Prozesse $X: [0,\tau] \times \Omega \rightarrow \R^d$ und $W^1,...,W^n : [0,\tau] \times \Omega \rightarrow \R$ heißt $(Z,W)$ starke Lösung der Stochastischen Differentialgleichung (SDE)
 	\begin{align*}
-	& dZ^i = \tmu^i(t,Z_t) \, dt + \sum\limits_{j=1}^n \tsig^{i,j}(t,Z_t) \, dW^j \ ,
+		& dZ^i = \tmu^i(t,Z_t) \, dt + \sum\limits_{j=1}^n \tsig^{i,j}(t,Z_t) \, dW^j \ ,
 	\end{align*}
 	falls $W^1,...,W^n$ unabhängige Brownsche Bewegungen sind und die Formel
 	\begin{align*}
-	& Z_t^i - Z_0^i = \int_0^t \tmu^i(s,Z_s) \, ds + \sum\limits_{j=1}^n \int_0^t \tsig^{i,j}(s,Z_s) \, dW^j \tag{1}
+		& Z_t^i - Z_0^i = \int_0^t \tmu^i(s,Z_s) \, ds + \sum\limits_{j=1}^n \int_0^t \tsig^{i,j}(s,Z_s) \, dW^j \tag{1}
 	\end{align*}
 	für jedes $i \leq d$ erfüllt ist. Wir sind hier nur an dem Fall, dass $\tmu(t,x)$ und $\tsig(t,x)$ nicht von $t$, sondern nur von $x$ abhängen, interessiert. Die Lösungen solcher SDEs nennt man Ito-Diffusionen.\\
 	Nach \cite{PfaffiSkript} Thm. 21.4 existiert unter den Voraussetzungen
 	\begin{align*}
-	& ||\tmu(x)||_2 + ||\tsig(x)||_2 \leq C_1 \, (1+||x||_2)\\
-	& ||\tmu(x)-\tmu(y)||_2 + ||\tsig(x)-\tsig(y)||_2 \leq C_2 \, ||x-y||_2 \tag{2}
+		& ||\tmu(x)||_2 + ||\tsig(x)||_2 \leq C_1 \, (1+||x||_2)\\
+		& ||\tmu(x)-\tmu(y)||_2 + ||\tsig(x)-\tsig(y)||_2 \leq C_2 \, ||x-y||_2 \tag{2}
 	\end{align*}
 	für jede Startverteilung $Z_0$ mit endlichem zweiten Moment und beliebige BB. $W^1,...,W^n$ eine eindeutige Lösung $Z = Z(W)$ der oben beschriebenen SDE.\\
 	Mit Hilfe des Euler-Maruyama-Verfahrens lässt sich diese Lösung approximieren. Dazu Teilen wir das Intervall $[0,\tau]$ in $m$ viele Stücke $[t_k,t_{k+1}]$ mit $\Delta t = \frac{\tau}{m}$ und $t_k = k\, \Delta t = \frac{k\tau}{m}$. Wir definieren rekursiv
 	\begin{align*}
-	& Z^i_{m,t_k} := Z^i_{m,t_{k-1}} + \tmu(Z_{m,t_{k-1}}) \, \Delta t + \sum\limits_{j=1}^n \tsig^{i,j}(Z_{m,t_{k-1}}) \, \underbrace{(W^j_{t_k}-W^j_{t_{k-1}})}_{\sim \mathcal{N}(0,\Delta t)} 
+		& Z^i_{m,t_k} := Z^i_{m,t_{k-1}} + \tmu(Z_{m,t_{k-1}}) \, \Delta t + \sum\limits_{j=1}^n \tsig^{i,j}(Z_{m,t_{k-1}}) \, \underbrace{(W^j_{t_k}-W^j_{t_{k-1}})}_{\sim \mathcal{N}(0,\Delta t)}
 	\end{align*}
 	mit $Z_{m,0} = Z_0$. Da Brownsche Bewegungen unabhängige Segmente haben, können wir analog $(\varepsilon_{j,k})_{j \leq n, k \in \N} \, uiv. \sim N(0,1)$ definieren und schreiben:
 	\begin{align*}
-	& \tZ^i_{m,t_k} := \tZ^i_{m,t_{k-1}} + \tmu(\tZ_{m,t_{k-1}}) \, \Delta t + \sum\limits_{j=1}^n \tsig^{i,j}(\tZ_{m,t_{k-1}}) \, \sqrt{\Delta t} \, \varepsilon_{j,k} \ .
+		& \tZ^i_{m,t_k} := \tZ^i_{m,t_{k-1}} + \tmu(\tZ_{m,t_{k-1}}) \, \Delta t + \sum\limits_{j=1}^n \tsig^{i,j}(\tZ_{m,t_{k-1}}) \, \sqrt{\Delta t} \, \varepsilon_{j,k} \ .
 	\end{align*}
 	Solche $\tX_m$ lassen sich nun leicht mit dem Computer generieren und wir wissen nach Euler-Maruyama, dass ein $c > 0$ existiert, sodass für jedes $t \in [0,\tau]$ gilt:
 	\begin{align*}
-	& \E[||Z_{m,t} - Z_t||_2] \leq \frac{c}{\sqrt{m}} \ .
+		& \E[||Z_{m,t} - Z_t||_2] \leq \frac{c}{\sqrt{m}} \ .
 	\end{align*}
-	
+
 	\newpage
 	\noindent
-	
+
 	Damit wir die SDE aus vielen Realisierungen (Pfaden) lernen können, führen wir die zusätzliche Voraussetzung ein, dass $\tsig : \R^d \rightarrow \R^{d \times n}$ durch ein $C_3 > 0$ gleichmäßig beschränkt ist, also $||\tsig(x)||_2 \leq C_3 \ , \ \forall x \in \R^d$.\\
 	Unter den bisherigen Voraussetzungen können wir \cite{PfaffiSkript} Thm. 21.15 anwenden und erhalten, dass $(Z_t)_{t \in [0,\tau]}$ ein starker Markov-Prozess ist, dessen Generator gegeben ist durch
 	\begin{align*}
@@ -605,20 +613,20 @@
 	& \E_{z_0}[Z_{\frac{\tau}{m}} - z_0] = \E_{z_0}[Z_{\frac{\tau}{m}} - Z_{m,\frac{\tau}{m}} + Z_{m,\frac{\tau}{m}} - z_0]\\
 	& = \E_{z_0}[Z_{\frac{\tau}{m}} - Z_{m,\frac{\tau}{m}}] + \frac{\tau}{m} \tmu(z_0)
 	\end{align*}
-	
+
 	\newpage
 	Seien $z_0,...,z_m$ gegeben durch $z_k = Z_{t_k}$, wobei $Z = Z(W)$ die Lösung der SDE (1) ist. Wie wir in (2) vorausgesetzt hatten, sind $\tmu$ und $\tsig$ Lipschitz-stetig mit Konstante $C_2$. Für jedes $\varepsilon > 0$ sei $m_\varepsilon$ groß genug, sodass $C_2 \, \Delta t = \frac{C_2 \, \tau}{m_\varepsilon} \leq \varepsilon$.\\
 	$W^1,...,W^n$ sind Brownsche Bewegungen, also Martingale. Nach Aufbau des stochastischen Integrals, ist $\left(\int_0^t H_s \, dW^j_s \right)_{t \in [0,\tau]}$ für beliebige previsible Prozesse $H$ auch ein Martingal. Damit gilt
 	\begin{align*}
-	& \E[z^i_{k+1}-z^i_k] = \E[Z^i_{t_{k+1}}-Z^i_{t_k}] = \E\left[ \int_{t_k}^{t_{k+1}} \tmu^i(Z_s) \, ds + \sum\limits_{j=1}^n \int_{t_k}^{t_{k+1}} \tsig^{i,j}(Z_s) \, dW^j_s \right]\\
-	& = \E\left[ \int_{t_k}^{t_{k+1}} \tmu^i(Z_s) \, ds \right] = \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)] \, ds\\
-	& = \Delta t \, \E[\tmu^i(Z_{t_k})] + \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)-\tmu^i(Z_{t_k})] \, ds \ .
+		& \E[z^i_{k+1}-z^i_k] = \E[Z^i_{t_{k+1}}-Z^i_{t_k}] = \E\left[ \int_{t_k}^{t_{k+1}} \tmu^i(Z_s) \, ds + \sum\limits_{j=1}^n \int_{t_k}^{t_{k+1}} \tsig^{i,j}(Z_s) \, dW^j_s \right]\\
+		& = \E\left[ \int_{t_k}^{t_{k+1}} \tmu^i(Z_s) \, ds \right] = \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)] \, ds\\
+		& = \Delta t \, \E[\tmu^i(Z_{t_k})] + \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)-\tmu^i(Z_{t_k})] \, ds \ .
 	\end{align*}
 	Wir nutzen diese Rechnung und die Wahl von $m_\varepsilon$ um
 	\begin{align*}
-	& \left| \E[z^i_{k+1}-z^i_k - \Delta t \, \tmu^i(Z_{t_k})] \right| \leq \left| \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)-\tmu^i(Z_{t_k})] \, ds \right|\\
-	& \leq \int_{t_k}^{t_{k+1}} \E[|\tmu^i(Z_s)-\tmu^i(Z_{t_k})|] \, ds \leq C_2 \int_{t_k}^{t_{k+1}} \E[|Z_s-Z_{t_k}|] \, ds\\
-	& \leq 
+		& \left| \E[z^i_{k+1}-z^i_k - \Delta t \, \tmu^i(Z_{t_k})] \right| \leq \left| \int_{t_k}^{t_{k+1}} \E[\tmu^i(Z_s)-\tmu^i(Z_{t_k})] \, ds \right|\\
+		& \leq \int_{t_k}^{t_{k+1}} \E[|\tmu^i(Z_s)-\tmu^i(Z_{t_k})|] \, ds \leq C_2 \int_{t_k}^{t_{k+1}} \E[|Z_s-Z_{t_k}|] \, ds\\
+		& \leq
 	\end{align*}
 	zu erhalten.
 
@@ -627,6 +635,44 @@
 
 	\newpage
 	\section[Empirische Untersuchung]{Empirische Untersuchung}
+	\subsection[Datensätze]{Die verwendeten Datensätze}
+	\subsubsection{Rotating MNIST}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.4]{rotatingMNIST}
+	\end{figure}
+	Bei dem Datensatz \emph{rotatingMNIST} handelt es sich um eine Modifikation des bekannten MNIST-Datensatzes. Die Grauwerte der Bilder
+	des MNIST-Datensatzes wurden von uns zunächst binärisiert, um durch eine Bernoulli-Verteilung im Decoder dargestellt werden zu können.
+	Hierbei wurden die Farbwerte 0 bis 127 auf den Wert 0 abgebildet und die Werte 128 bis 255 auf den Wert 1. \\
+	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 10}$ aus dem Datensatz enthält eine Sequenz von 10 Frames, von einem Frame auf das nachfolgende Frame rotiert die entsprechende Ziffer um 36$^\circ$ gegen den Uhrzeigersinn. Insgesamt wird so eine Rotation um 360$^\circ$ dargestellt. \\
+	Der Trainingsdatensatz besteht aus 60000 Sequenzen und der Testdatensatz aus 10000 Sequenzen. Der Code zum erzeugen des Datensatz wurde von uns selbst geschrieben und erlaubt es, falls gewünscht auch eine andere Frameanzahl festzulegen.
+
+	\subsubsection{Bouncing Balls}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.4]{bouncingBalls}
+	\end{figure}
+	Der Datensatz \emph{bouncingBalls} besteht aus Bildsequenzen, die Bewegungen dreier gleichgroßer zweidimensionaler Bälle enthalten. Die Bälle befinden sich zum Anfangszeitpunkt in zufälliger Position im Bild und bewegen sich mit normiertem Beschleunigungsvektor in zufällige Richtungen. Dabei können sie miteinander und den Bildrändern kollidieren.
+	Die zugrundeliegenden physikalischen Gesetze einer elastischen Kollisionen zwischen den Bällen und mit den Bildrändern können in \cite{ElastKol} nachgelesen werden und sollen von unserem Modell erlernt werden. \\
+	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 10}$ aus dem Datensatz enthält 10 Frames. Der Wert 1 bedeutet, dass sich an der jeweiligen
+	Stelle auf dem Frame ein Ball befindet.\\
+	Obwohl dieser Datensatz dem des Papers zum ODE$^2$VAE sehr ähnelt ist er für das Modell komplexer zu erlernen, da bei uns zum einen weniger Frames enthalten sind, zwischen diesen aber mehr Zeit vergeht.\\
+	Der Trainingsdatensatz besteht aus 60000 Sequenzen und der Testdatensatz aus 10000 Sequenzen.
+	Der Code zum erzeugen des Datensatz wurde von uns selbst geschrieben und ermöglicht es, falls erwünscht auch eine andere Anzahl der Bälle, Frames, Auflösung und unterschiedlichen Radius zu wählen.
+
+	\subsubsection{AVI-Motion}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.5]{AVIMotion}
+	\end{figure}
+	Der Datensatz \emph{AVI-Motion} besteht aus Bildsequenzen, die drei menschliche Bewegungen (klatschen, boxen und winken) darstellen. Der ursprünglische Datensatz enthält zu diesen Bewegungen je 4 Videosequenzen von jeweils 25 unterschiedlichen Personen, die jeweils mehrere Sekunden lang sind und eine Auflösung von $160\times120$ Pixel haben. Der Datensatz kann von der Website \cite{Dataset} heruntergeladen werden.
+	Wir haben die Videosequenzen auf eine Auflösung von $60\times60$ reduziert, indem wir die Personen mittig in einem $120\times120$ großen Ausschnitt zentiert haben und die Auflösung schließlich durch Mean-Pooling verringert haben. \\
+	Ein Datenpunkt $\x\in [0,1]^{60\times 60\times 8}$ enthält 8 Frames. Die Farbwerte sind stetige Grauwerte zwischen 0 (schwarz) und 1 (weiß). Wir wollen auf diesem Datensatz testen, ob sich das Modell des ODE$^2$VAE dazu eignet, reale Videosequenzen zu modellieren.\\
+	Der Trainingsdatensatz besteht dazu aus 17472 Sequenzen und der Testdatensatz aus 112 Sequenzen. Im Gegensatz zu den anderen Datensätzen legen wir die Batchsize hier auf $M=112$ fest (da $112 | 17472$).
+
+	\subsubsection{TODO: SDE Datensatz}
+	\textbf{TODO}
+	\newpage
 	\subsection[VAE]{Ergebnisse: VAE}
 
 
@@ -634,25 +680,24 @@
 
 
 
-	\textbf{TODO: Bild einfügen VAE Rekonstruktion mit Interpolation}
-	\begin{figure}[!htbp]
-		\centering
-		\includegraphics[scale=0.8]{interpolation}
-		\caption{Rekonstruktion der \emph{time series} mittels VAE mit Interpolation.}
-	\end{figure}
-	\textbf{TODO: Bild einfügen VAE Rekonstruktion ohne Interpolation}
-	\begin{figure}[!htbp]
-		\centering
-		\includegraphics[scale=0.8]{whole_sequence_mnist}
-		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
-	\end{figure}
-	\begin{figure}[!htbp]
-		\centering
-		\includegraphics[scale=0.8]{whole_sequence_bouncingBalls}
-		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
-	\end{figure}
-	\newpage
-	\subsection[ODE$^2$-VAE]{Ergebnisse: ODE$^2$-VAE}
+%	\begin{figure}[!htbp]
+%		\centering
+%		\includegraphics[scale=0.8]{interpolation}
+%		\caption{Rekonstruktion der \emph{time series} mittels VAE mit Interpolation.}
+%	\end{figure}
+
+%	\begin{figure}[!htbp]
+%		\centering
+%		\includegraphics[scale=0.8]{whole_sequence_mnist}
+%		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+%	\end{figure}
+%	\begin{figure}[!htbp]
+%		\centering
+%		\includegraphics[scale=0.8]{whole_sequence_bouncingBalls}
+%		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+%	\end{figure}
+%	\newpage
+%	\subsection[ODE$^2$VAE]{Ergebnisse: ODE$^2$VAE}
 
 %	\begin{figure}
 %		\begin{minipage}[position=l]{0.33\textwidth}
@@ -667,7 +712,7 @@
 %				\includegraphics[scale=0.499]{Reconstructions}
 %			\end{mdframed}
 %		\end{minipage}
-		%\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$-VAE %(untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie %erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um %Vorhersagen für die restlichen Zeitpunkte zu treffen.}
+%		\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
 %	\end{figure}
 
 	\begin{figure}
@@ -690,10 +735,10 @@
 
 	\begin{table}[htb]
 		\begin{center}
-			\begin{tabular}{p{4cm}>{\centering\arraybackslash}p{1.6cm}>{\centering\arraybackslash}p{2.5cm}>{\centering\arraybackslash}p{2.5cm}>{\centering\arraybackslash}p{1.5cm}>{\centering\arraybackslash}p{1.5cm}}\toprule
+			\begin{tabular}{p{4cm}>{\centering\arraybackslash}p{1.6cm}>{\centering\arraybackslash}p{2.5cm}>{\centering\arraybackslash}p{2.5cm}>{\centering\arraybackslash}p{2cm}>{\centering\arraybackslash}p{1.5cm}}\toprule
 				\textbf{\ }	&\textbf{Vanilla-}\newline\textbf{VAE}	&\textbf{\ \ Latente}\newline\textbf{Interpolation}
-				&\textbf{alternativer}\newline\textbf{ODE$^2$-VAE}
-				&\textbf{ODE$^2$-VAE}
+				&\textbf{alternativer}\newline\textbf{ODE$^2$VAE}
+				&\textbf{ODE$^2$VAE}
 				&\textbf{SDE-}\newline\textbf{VAE} \\
 
 				\textbf{Rekonstruktionen} \newline \textbf{in stetiger Zeit}& $\times$	& $\checkmark$ &$\times$ & $\checkmark$	& \\
@@ -707,11 +752,15 @@
 	\subsection[SDE-VAE]{Ergebnisse: SDE-VAE}
 	\newpage
 	\section[Modellstrukturen]{Modellstrukturen}
-	VAE für gesamte Sequenz
+	Diese Modellstruktur haben wir für die Implementierung des Vanilla-VAE's verwendet. Als Input dient hier die gesamte Videosequenz. Falls nur ein
+	einzelnes Frame betrachtet werden soll, (z.B. auf dem normalen MNIST-Datensatz oder für lineare Interpolation) muss im Input-Layer des Encoders und im Output-Layer des Decoders die Channelsize von 10 auf 1 reduziert werden.
 
 	\begin{table}[htb]
+		\small
 		\begin{center}
-			\begin{tabular}{llcccc}\toprule
+			\begin{tabular}{llcccc}
+				\toprule
+				\toprule
 				\textbf{\ }	&\textbf{Encoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
 				\textbf{1.}	&Input-Layer	& (28, 28, 10)		& 0		& - 			&- \\
@@ -726,13 +775,7 @@
 				\textbf{10.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (20, 20)				& 0	& - 			&- \\
 				\textbf{11.}&$\mathbf{z}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 20				& 0	& - 			&-\\
 				\bottomrule
-			\end{tabular}
-		\end{center}
-	\end{table}
-
-	\begin{table}[htb]
-		\begin{center}
-			\begin{tabular}{llcccc}\toprule
+				\toprule
 				\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
 				\textbf{1.}	&Input-Layer	& 20		& 0		& - 			&- \\
@@ -745,13 +788,19 @@
 				\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
 				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 10)	& 5130  	& 3 $\times$ 3; padding 			&sigmoid \\
 				\bottomrule
+				\bottomrule
 			\end{tabular}
 		\end{center}
 	\end{table}
-	ODE2VAE rotatingMNIST, bouncingBalls
-	\begin{table}[htb]
+	\newpage
+	Die Modellstruktur des ODE$^2$VAE für die Datensätze rotatingMNIST und bouncingBalls. Im ODE-Net verwenden wir als Aktivierungsfunktion den
+	Tangens hyperbolicus, da die ReLu-Funktion zum Modellieren von Differentialgleichungen, aufgrund relu$'(x)=0$, ungeeignet ist.
+	\begin{table}[htb!]
+		\footnotesize
 		\begin{center}
-			\begin{tabular}{llcccc}\toprule
+			\begin{tabular}{llcccc}
+				\toprule
+				\toprule
 				\textbf{\ }	&\textbf{Positionencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
 				\textbf{1.}	&Input-Layer	& (28, 28, \ 1)		& 0		& - 			&- \\
@@ -766,13 +815,7 @@
 				\textbf{10.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (20, 20)				& 0	& - 			&- \\
 				\textbf{11.}&$\mathbf{s}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 20				& 0	& - 			&-\\
 				\bottomrule
-			\end{tabular}
-		\end{center}
-	\end{table}
-
-	\begin{table}[htb]
-		\begin{center}
-			\begin{tabular}{llcccc}\toprule
+				\toprule
 				\textbf{\ }	&\textbf{Velocityencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
 				\textbf{1.}	&Input-Layer	& (28, 28, \ 3)		& 0		& - 			&- \\
@@ -786,29 +829,19 @@
 				\textbf{9.}	&Dense-Layer 			& 20 + 20				& 10280	& - 			&- \\
 				\textbf{10.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (20, 20)				& 0	& - 			&- \\
 				\textbf{11.}&$\mathbf{v}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 20				& 0	& - 			&-\\
+				\toprule
+				\textbf{\ } &Concatenate $\mathbf{z}=(\mathbf{s},\mathbf{v})$& (2, 20) & 0 & - & -\\
 				\bottomrule
-			\end{tabular}
-		\end{center}
-	\end{table}
-
-	\begin{table}[htb]
-		\begin{center}
-			\begin{tabular}{llccc}\toprule
-				\textbf{\ }	&\textbf{ODE-Net}	&\textbf{Outputgröße} &\textbf{Parameter}  &\textbf{Aktivierung}\\
+				\toprule
+				\textbf{\ }	&\textbf{ODE-Net}	&\textbf{Outputgröße} &\textbf{Parameter} &-  &\textbf{Aktivierung}\\
 				\midrule
-				\textbf{1.}	&Input-Layer	& (2, 20)		& 0			&- \\
-				\textbf{2.}	&Flatten	 	& 40			& 0			&- \\
-				\textbf{3.}	&Dense-Layer			& 100			& 4100		&tanh \\
-				\textbf{4.}	&Dense-Layer			& 100			& 10100		&tanh \\
-				\textbf{5.}	&Dense-Layer			& 20			& 2020		&- \\
+				\textbf{1.}	&Input-Layer	& (2, 20)		& 0		&-	&- \\
+				\textbf{2.}	&Flatten	 	& 40			& 0		&-	&- \\
+				\textbf{3.}	&Dense-Layer			& 100			& 4100	&-	&tanh \\
+				\textbf{4.}	&Dense-Layer			& 100			& 10100	&-	&tanh \\
+				\textbf{5.}	&Dense-Layer			& 20			& 2020	&-	& \\
 				\bottomrule
-			\end{tabular}
-		\end{center}
-	\end{table}
-
-	\begin{table}[htb]
-		\begin{center}
-			\begin{tabular}{llcccc}\toprule
+				\toprule
 				\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
 				\textbf{1.}	&Input-Layer	& 20		& 0		& - 			&- \\
@@ -819,17 +852,20 @@
 				\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 64)	& 0		& 2 $\times$ 2 	&- \\
 				\textbf{7.}	&Conv2DTranspose& (14, 14, \ 32)	& 18464		& 3 $\times$ 3 			&relu \\
 				\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
-				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 1)	& 513  	& 3 $\times$ 3; padding 			&sigmoid \\
+				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ \ 1)	& 513  	& 3 $\times$ 3; padding 			&sigmoid \\
+				\bottomrule
 				\bottomrule
 			\end{tabular}
 		\end{center}
 	\end{table}
-	\noindent
 	\newpage
-	ODE2VAE Videosequenzen
-	\begin{table}[htb]
+	Die Modellstruktur des ODE$^2$VAE für den Datensatz AVI-Motion.
+	\begin{table}[htb!]
+		\footnotesize
 		\begin{center}
-			\begin{tabular}{llcccc}\toprule
+			\begin{tabular}{llcccc}
+				\toprule
+				\toprule
 				\textbf{\ }	&\textbf{Positionencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
 				\textbf{1.}	&Input-Layer	& (60, 60, \ 1)		& 0		& - 			&- \\
@@ -846,13 +882,7 @@
 				\textbf{11.}&Split-Layer($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)   & (30, 30)				& 0	& - 			&- \\
 				\textbf{12.}&$\mathbf{s}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$	& 30				& 0	& - 			&-\\
 				\bottomrule
-			\end{tabular}
-		\end{center}
-	\end{table}
-
-	\begin{table}[htb]
-		\begin{center}
-			\begin{tabular}{llcccc}\toprule
+				\toprule
 				\textbf{\ }	&\textbf{Velocityencoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
 				\textbf{1.}	&Input-Layer	& (60, 60, \ 4)		& 0		& - 			&- \\
@@ -868,29 +898,19 @@
 				\textbf{10.}	&Dense-Layer 			& 30 + 30				& 38460	& - 			&- \\
 				\textbf{11.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (30, 30)				& 0	& - 			&- \\
 				\textbf{12.}&$\mathbf{v}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& 30				& 0	& - 			&-\\
+				\toprule
+				\textbf{\ } &Concatenate $\mathbf{z}=(\mathbf{s},\mathbf{v})$& (2, 30) & 0 & - & -\\
 				\bottomrule
-			\end{tabular}
-		\end{center}
-	\end{table}
-
-	\begin{table}[htb]
-		\begin{center}
-			\begin{tabular}{llccc}\toprule
-				\textbf{\ }	&\textbf{ODE-Net}	&\textbf{Outputgröße} &\textbf{Parameter}  &\textbf{Aktivierung}\\
+				\toprule
+				\textbf{\ }	&\textbf{ODE-Net}	&\textbf{Outputgröße} &\textbf{Parameter} &- &\textbf{Aktivierung}\\
 				\midrule
-				\textbf{1.}	&Input-Layer	& (2, 30)		& 0			&- \\
-				\textbf{2.}	&Flatten	 	& 60			& 0			&- \\
-				\textbf{3.}	&Dense-Layer			& 120			& 7320		&tanh \\
-				\textbf{4.}	&Dense-Layer			& 120			& 14520		&tanh \\
-				\textbf{5.}	&Dense-Layer			& 30			& 3630		&- \\
+				\textbf{1.}	&Input-Layer	& (2, 30)		& 0		&-	&- \\
+				\textbf{2.}	&Flatten	 	& 60			& 0		&-	&- \\
+				\textbf{3.}	&Dense-Layer			& 120			& 7320	&-	&tanh \\
+				\textbf{4.}	&Dense-Layer			& 120			& 14520	&-	&tanh \\
+				\textbf{5.}	&Dense-Layer			& 30			& 3630	&-	&- \\
 				\bottomrule
-			\end{tabular}
-		\end{center}
-	\end{table}
-
-	\begin{table}[htb]
-		\begin{center}
-			\begin{tabular}{llcccc}\toprule
+				\toprule
 				\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
 				\textbf{1.}	&Input-Layer	& 20				& 0		& - 			&- \\
@@ -903,13 +923,15 @@
 				\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 32)	& 0	& 2 $\times$ 2 			&- \\
 				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 32)	& 16416  	& 3 $\times$ 3; padding 			&relu \\
 				\textbf{10.}&Up-Sampling2D	& (56, 56, \ 32)	& 0	& 2 $\times$ 2 			&- \\
-				\textbf{11.}&Conv2DTranspose& (60, 60,\ \ 1)	& 801  	& 5 $\times$ 5 &sigmoid \\
+				\textbf{11.}&Conv2DTranspose& (60, 60,\ \ \ 1)	& 801  	& 5 $\times$ 5 &sigmoid \\
+				\bottomrule
 				\bottomrule
 			\end{tabular}
 		\end{center}
 	\end{table}
 	\newpage
-	.
+	\textbf{To-Do: SDE-VAE Modellstruktur}\\
+	Die Modellstruktur des SDEVAE für den Datensatz XXYYZZ
 	\newpage
 	\section[Quellenangabe]{Quellenangabe}
 	\begin{thebibliography}{9}
@@ -959,9 +981,14 @@
 
 		\bibitem{Hutchin}
 		http://blog.shakirm.com/2015/09/machine-learning-trick-of-the-day-3-hutchinsons-trick/
-		
+
 		\bibitem{PfaffiSkript}
 		https://www.stochastik.uni-freiburg.de/professoren/pfaffelhuber/inhalte/2020zyklus
 
+		\bibitem{ElastKol}
+		https://en.wikipedia.org/wiki/Elastic\_collision
+
+		\bibitem{Dataset}
+		https://www.csc.kth.se/cvap/actions/
 	\end{thebibliography}
 \end{document}
