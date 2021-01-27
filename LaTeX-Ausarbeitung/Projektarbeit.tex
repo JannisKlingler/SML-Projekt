@@ -16,7 +16,7 @@
 \usepackage[utf8]{inputenc}
 \pagestyle{plain}
 \pagenumbering{arabic}
-\usepackage[square,sort,comma,numbers]{natbib}
+%\usepackage[square,sort,comma,numbers]{natbib}
 \usepackage{pifont}
 \usepackage{array}
 
@@ -27,7 +27,7 @@
 \usepackage{xcolor}
 \usepackage[ngerman]{babel}
 \usepackage{booktabs}
-\usepackage{chemformula} % Für die chemische Formel
+%\usepackage{chemformula} % Für die chemische Formel
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{bigints}
@@ -178,7 +178,7 @@
 	Die gemeinsame Verteilung $p(\x,\z) = p(\x|\z)p(\z)$ lässt sich anhand der Daten approximieren, dabei sind die Datenpunkte Realisierungen dieser Verteilung. Wäre nun $p(\x)$ beobachtbar, was nach Annahme nicht gilt, könnten wir auch $p(\z|\x)$ errechnen. Eine Umkehrung dieser Überlegung gilt ebenfalls. \\
 
 
-	Die Verteilungen $p(\x|\z),\ p(\z|\x),\ p(\z)$ und $p(\x)$ fassen wir als durch ${\boldsymbol\theta}$ parametrisierte Familien auf. Für die optimalen Parameter $\boldsymbol\theta^{*}$ soll dabei gelten $p_{\boldsymbol\theta^{*}}(\x) \approx p(\x)$.\\
+	Die Verteilungen $p(\x|\z),\ p(\z|\x),\ p(\z)$ und $p(\x)$ fassen wir als durch ${\boldsymbol\theta}$ parametrisierte Familien auf. Für die optimalen Parameter $\boldsymbol\theta^{*}$ soll die Verteilung  $p_{\boldsymbol\theta^{*}}(\x)$ die wahre Verteilung $p(\x)$ möglichst gut approximieren.\\
 	Weiter führen wir wegen der Unberechenbarkeit von $p_{\boldsymbol\theta}(\z|\x)$ das Inferenzmodell $q_{\boldsymbol\phi}(\z|\x)$ ein und suchen die Parameter $\boldsymbol\phi^{*}$ für die $q_{\boldsymbol\phi^{*}}(\z|\x) \approx p_{\boldsymbol\theta}(\z|\x)$ gilt.\\
 	In einem Variational Autoencoder werden die Verteilungen $q_{\boldsymbol\phi}(\z|x)$ und $p_{\boldsymbol\theta}(\x|\z)$ durch neuronale Netze dargestellt und approximiert.\\
 	Im AEVB-Algorithmus (kurz für \emph{Auto-Encoding Variational Bayes}) können die geeigneten Parameter $\boldsymbol\phi^{*}$ und $\boldsymbol\theta^{*}$ gemeinsam erlernt werden.
@@ -692,46 +692,69 @@
 	\textbf{TODO}
 	\newpage
 	\subsection[VAE]{Ergebnisse: VAE}
+	In Abbildung \ref{Abb:VAEmitInterpol} sehen wir 10 Sequenzen mit jeweils 5 Rekonstruktionen 
+	fehlender Bilder mittels linearer Interpolation im latenten Raum. Der zugrunde liegende Datensatz ist der von uns erstellte Rotating MNIST Datensatz. Hierbei 
+	wurde aus der Sequenz von Bildern jedes zweite Bild gelöscht. Um die fehlenden Bilder zu rekonstruieren werden die latenten Darstellungen zweier benachbarter 
+	Bilder gemittelt. Das Ergebnis wird als latente Darstellung für das fehlendene Bild verwendet und mithilfe des Decoders erstellt. \\
+	Auffallend ist, dass diese Methode relativ gute Rekonstruktionen liefert. 
+	Je nach Sequenz schwanken die Rekonstruktionen jedoch zwischen minimalen Abweichungen bis hin zu stark verschwommenen oder falsch rekonstruierten Bildern. Hierbei können wir gut sehen, dass die Cluster im latenten Raum 
+	nicht immer konvex angeordnet sind. So wird beispielweise bei der siebten und 
+	neunten Sequenz eine 9 zu einer 0 bzw. einer 8 rekonstruiert. Sobald ein Cluster eine annähernd konvexe Form hat erhalten wir, wie beispielweise in der 
+	dritten, vierten, fünften oder achten Sequenz, eine sehr gute Rekonstruktion.\\
+	\\
+	In Abbildung \ref{Abb:VAEohneInterpolMNIST} sehen wir drei Sequenzen mit 
+	drei zufällig ausgewählten fehlenden Bildern. Direkt unter einer 
+	beschädigten Sequenz befindet sich die jeweilige Rekonstruktion. 
+	Der zugrunde liegende Datensatz ist der Rotating MNIST Datensatz. Hierbei 
+	wurde der VAE auf unbeschädigten Sequenzen aus dem rotating MNIST Datensatz 
+	trainiert, indem die gesamte Sequenz zu einem großen Bild zusammengefasst wurde. Die zeitliche Abhängigkeit der Sequenzen wird also im latenten Raum 
+	zusammengefasst. Wir haben nun die Sequenzen aus dem Testdatensatz beschädigt, indem wir den Farbwert dreier zufällig ausgewählter Bilder aus der Sequenz 
+	auf 0 gesetzt haben. Da der VAE auf vollständigen Daten trainiert wurde, 
+	kann er also nur vollständige Daten rekonstruieren. Verwenden wir also unsere 
+	beschädigten Sequenzen, erhalten wir die folgenden Rekonstruktionen.\\
+	Die Rekonstruktionen sind auffallend gut, bis auf die bissl schwache Beleuchtung (siehe 8).
 
 
 
 
 
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.8]{interpolation}
+		\caption{Rekonstruktion der \emph{time series} mittels VAE mit Interpolation.}
+		\label{Abb:VAEmitInterpol}
+	\end{figure}
 
-%	\begin{figure}[!htbp]
-%		\centering
-%		\includegraphics[scale=0.8]{interpolation}
-%		\caption{Rekonstruktion der \emph{time series} mittels VAE mit Interpolation.}
-%	\end{figure}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.8]{whole_sequence_mnist}
+		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+		\label{Abb:VAEohneInterpolMNIST}
+	\end{figure}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.8]{whole_sequence_bouncingBalls}
+		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+		\label{Abb:VAEohneInterpolbouncingBalls}
+	\end{figure}
+	\newpage
+	\subsection[ODE$^2$VAE]{Ergebnisse: ODE$^2$VAE}
 
-%	\begin{figure}[!htbp]
-%		\centering
-%		\includegraphics[scale=0.8]{whole_sequence_mnist}
-%		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
-%	\end{figure}
-%	\begin{figure}[!htbp]
-%		\centering
-%		\includegraphics[scale=0.8]{whole_sequence_bouncingBalls}
-%		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
-%	\end{figure}
-%	\newpage
-%	\subsection[ODE$^2$VAE]{Ergebnisse: ODE$^2$VAE}
-
-%	\begin{figure}
-%		\begin{minipage}[position=l]{0.33\textwidth}
-%			\begin{mdframed}[style=inner]
-%				\center{Modellinput\vspace{0.2cm}}
-%				\includegraphics[scale=0.5]{Modellinput}
-%			\end{mdframed}
-%		\end{minipage}
-%		\begin{minipage}[position=r]{0.67\textwidth}
-%			\begin{mdframed}[style=inner]
-%				\center{Extrapolation\vspace{0.2cm}}
-%				\includegraphics[scale=0.499]{Reconstructions}
-%			\end{mdframed}
-%		\end{minipage}
-%		\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
-%	\end{figure}
+	\begin{figure}
+		\begin{minipage}[position=l]{0.33\textwidth}
+			\begin{mdframed}[style=inner]
+				\center{Modellinput\vspace{0.2cm}}
+				\includegraphics[scale=0.5]{Modellinput}
+			\end{mdframed}
+		\end{minipage}
+		\begin{minipage}[position=r]{0.67\textwidth}
+			\begin{mdframed}[style=inner]
+				\center{Extrapolation\vspace{0.2cm}}
+				\includegraphics[scale=0.499]{Reconstructions}
+			\end{mdframed}
+		\end{minipage}
+		\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
+	\end{figure}
 
 	\begin{figure}
 		\begin{minipage}[position=l]{0.5\textwidth}
