@@ -522,7 +522,7 @@
 	\nabla v(\cdot,\omega) &= \bbf\big(s(\cdot,\omega),v(\cdot,\omega)\big)
 	\end{align*}
 	vorausgesetzt, wobei die 'Differential Function' $\bbf = f_\psi$ dann durch ein Neuronales Netzwerk approximiert wurde.\\
-	Wir haben die folgenden Möglichkeiten in Betracht gezogen um den 2-ODE-VAE zu verallgemeinern:
+	Wir haben die folgenden Möglichkeiten in Betracht gezogen um den ODE$^2$VAE zu verallgemeinern:
 	\begin{itemize}
 		\item Die Pfade der latenten Darstellungen als Lösungen von Differentialgleichungen von Grad $M \geq 2$ voraussetzen. Z.B. hieße das für $M=3$:
 		\begin{align*}
@@ -538,35 +538,35 @@
 		\nabla w(\cdot,\omega) &= \bbf_3\big(s(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)
 		\end{align*}
 
-		\item Einen Variational Encoder auf jedes Frame (Datenpunkt $x_i$) separat anwenden. Bisher wurde der Encoder nur auf die ersten Frames angewendet um $s(0,\cdot), v(0,\cdot)$ zu finden. Dies geht, wie wir später sehen werden, mit der Betrachtung von Stochastic Differntial Equations (SDEs) einher.
+		\item Einen Probabilistic Encoder auf jedes Frame $x_i$ separat anwenden. Bisher wurde der Encoder nur auf die ersten Frames angewendet um $s(0,\cdot), v(0,\cdot)$ zu finden. Dies geht, wie wir später sehen werden, mit der Betrachtung von Stochastic Differential Equations (SDEs) einher.
 	\end{itemize}
 
 	\newpage
 	\subsubsection[Notation]{Einführung der Notation}
-	Zunächst führen wir eine Notation ein, die eher an den Standards der Stochastik und weniger an denen von Machine-Learning orientiert ist. Dazu wiederholen wir auch grob die Idee eines 2-ODE-VAE.\\
+	Zunächst führen wir eine Notation ein, die eher an den Standards der Stochastik und weniger an denen von Machine-Learning orientiert ist. Dazu wiederholen wir auch grob die Idee eines ODE$^2$VAE.\\
 	\\
 	\textbf{Idee des Autoencoders:}\\
 	Sei $(\bP,\Omega,\mathcal{A})$ ein Wahrscheinlichkeitsraum mit der Zufallsvariable $x : \Omega \rightarrow \R^D$. Bei einem normalen Autoencoder wird angenommen, dass eine weitere Zufallsvariable $z: \Omega \rightarrow \R^d$ existiert, sodass $x = f(z)$ und $z = g(x)$ für messbare Funktionen $f,g$. Die funktionen $f$ (Decoder) und $g$ (Encoder) werden dabei von Neuronalen Netzwerken anhand eines Großen Datensatzes $x^1,...,x^N \, uiv \sim (x)_*\bP$ erlernt. Als Verlustfunktion verwendet man den Reconstruction-Loss plus eventuelle Regularisierungsterme um Overfitting zu verhindern.\\
 	Man stellt fest, dass der latente Raum hier eher unstrukturiert in dem Sinne ist, dass das Bildmaß $(f)_*\bP$ auf $\R^d$ vielleicht nur an ein paar stellen den Großteil seiner Masse verteilt. An diesen Stellen im latenten Raum könnten wiederum kleine Schwankungen große Unterschiede in den Rekonstruktionen ausmachen. Anschaulich ist das Problem mit Autoencodern, dass sie den latenten Raum $\R^d$ nicht 'gleichmäßig' nutzen.\\
 	\\
 	\textbf{Idee des VAE:}\\
-	Ein Variational Autoencoder will eine Ähnliche Struktur finden, wobei nun $(z)_*\bP$ eine Normalverteilung in $\R^d$ sein soll. Das Ziel soll sein erst mit Daten $x^1,...,x^N \, uiv \sim (x)_*\bP$ die Encoder $g$ und Decoder $f$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z^1,...,z^N$ zieht und dann den Decoder $f$ darauf anwendet.\\
-	Dabei wird der Encoder $g$ als Neuronales Netzwerk aufgebaut, das Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ aus $\mathcal{N}\left(\mu(x),\Sigma(x)\right)$ gezogen wird. Damit können einzelne Datenpunkte anschaulich mehr Platz im latenten Raum $\R^d$ ausfüllen. Dies lässt sich auch als Maßnahme gegen Overfitting des Encoders interpretieren.\\ Es werden zusätzliche Terme in zur Verlustfunktion addiert, die dafür zu sorgen, dass $(z)_*\bP$ eine Normalverteilung ist und dass die Verteilung $(f \circ z)_*\bP$ ähnlich der Verteilung $(x)_*\bP$ ist.
+	Ein Variational Autoencoder will eine Ähnliche Struktur finden, wobei nun $(z)_*\bP$ eine vorgegebene Verteilung (z.B. Normalverteilung in $\R^d$) sein soll. Das Ziel soll sein erst mit Daten $x^1,...,x^N \, uiv \sim (x)_*\bP$ die Encoder $g$ und Decoder $f$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z^1,...,z^N$ zieht und dann den Decoder $f$ darauf anwendet.\\
+	Dabei wird der Encoder $g$ als Neuronales Netzwerk aufgebaut, das Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ aus einer von $x$ abhängigen Verteilung, beispielsweise $\mathcal{N}\left(\mu(x),\Sigma(x)\right)$, gezogen wird. Damit können einzelne Datenpunkte anschaulich mehr Platz im latenten Raum $\R^d$ ausfüllen. Dies lässt sich auch als Maßnahme gegen Overfitting des Encoders interpretieren.\\ Es werden zusätzliche Terme zur Verlustfunktion addiert, die dafür zu sorgen, dass $(z)_*\bP$ eine Normalverteilung ist und dass die Verteilung $(f \circ z)_*\bP$ ähnlich der Verteilung $(x)_*\bP$ ist.
 
 	\newpage\noindent
-	\textbf{Idee des 2-ODE-VAE:}\\
-	Ein 2-ODE-VAE beschäftigt sich mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Der 2-ODE-VAE sucht nun einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, der punktweise die Informationen von $\tx$ encodiert, also soll $f(\tz(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Wieder wird die Struktur von $\tz$ im latenten Raum vorgeschrieben, wobei nun auch eine Vorschrift zur zeitlichen Entwicklung gemacht wird. Für spätere Zeitpunkte $t>0$ soll $\tz(t,\omega)$ als Lösung der Differenzialgleichung
+	\textbf{Idee des ODE$^2$VAE:}\\
+	Ein ODE$^2$VAE beschäftigt sich mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Der ODE$^2$VAE sucht nun einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, der punktweise die Informationen von $\tx$ encodiert, also soll $f(\tz(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Wieder wird die Struktur von $\tz$ im latenten Raum vorgeschrieben, wobei nun auch eine Vorschrift zur zeitlichen Entwicklung gemacht wird. Für spätere Zeitpunkte $t>0$ soll $\tz(t,\omega)$ als Lösung der Differentialgleichung
 	\begin{align*}
 	\nabla s(\cdot,\omega) &= v(\cdot,\omega)\\
 	\nabla v(\cdot,\omega) &= \bbf\big(s(\cdot,\omega),v(\cdot,\omega)\big)
 	\end{align*}
-	nur von $s(0,\omega)$, $v(0,\omega)$ und $\bbf$ abhängen. In der Literatur wird hier das $\tz$ als gemeinsamer Vektor $(s,v)$ betrachtet. Es wird allerdings nur $s$ an den Decoder weitergeben, also soll $f(s(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Die Anfangswerte $s(0,\cdot)$ und $v(0,\cdot)$ werden durch jeweils einen VAE bestimmt, die als Input $x_0$, beziehungsweise $(x_0,x_1,x_2)$, erhalten.\\
+	nur von $s(0,\omega)$, $v(0,\omega)$ und $\bbf$ abhängen. In der Literatur wird hier das $\tz$ als gemeinsamer Vektor $(s,v)$ betrachtet. Es wird allerdings nur $s$ an den Decoder weitergeben, also soll $f(s(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Die Anfangswerte $s(0,\cdot)$ und $v(0,\cdot)$ werden durch jeweils einen Encoder bestimmt, die als Input $x_0$, beziehungsweise mindestens drei anfangsframes für $v(0,\cdot)$, erhalten.\\
 	Die Verlustfunktion besteht aus Reconstruction-Loss, Terme um Overfitting von $\bbf$ zu verhindern, sowie Terme um $(\tz(t_k,\cdot))_*\bP$ für jedes $k \leq m$ einer Normalverteilung auf $\R^d$ näher zu bringen.\\
-	Der 2-ODE-VAE liefert gute Ergebnisse beim Beschreiben von einfachen Bewegungsabläufen, deren Informationsgehalt nicht mit der Zeit zunimmt. Aber gerade bei chaotischen Systemen ist die Vorschrift, dass sämtliche Information schon zu Beginn (in den ersten drei Frames) vorhanden sein muss eher dem Lernen abträglich.\\
+	Der ODE$^2$VAE liefert gute Ergebnisse beim Beschreiben von einfachen Bewegungsabläufen, deren Informationsgehalt nicht mit der Zeit zunimmt. Aber gerade bei chaotischen Systemen ist die Vorschrift, dass sämtliche Information schon zu Beginn (in den ersten drei Frames) vorhanden sein muss eher dem Lernen abträglich.\\
 	Besonders ist in einem etwas chaotischerem Setting das generieren von glaubhaften Time-Series $x_0,...,x_m$ nicht möglich, da spätere $x_k, x_{k+1}$ immer deterministisch von einer gemeinsamen Zufallsvariable abhängen.\\
 	\\
 	\textbf{Idee des $M$-th Order SDE-VAE:}\\
-	Wir beschäftigen uns wieder mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Wie schon beim 2-ODE-VAE suchen wir einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, für den $f(\tz(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ ist. Hier gehen wir jedoch von einer anderen Zeitlichen Struktur aus.\\
+	Wir beschäftigen uns wieder mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Wie schon beim ODE$^2$VAE suchen wir einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, für den $f(\tz(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ ist. Hier gehen wir jedoch von einer anderen Zeitlichen Struktur aus.\\
 	Wir schreiben $\tz = \tz^{(0)}$ und setzen voraus, dass Zufallsvariablen (Startverteilungen)
 	$$\tz^{(1)}(0,\cdot) ,..., \tz^{(M-1)}(0,\cdot): \Omega \rightarrow \R^d$$
 	existieren, sodass $\tz^{(k)}$ für alle $k < M$ die $d$-Dimensionale SDE
@@ -580,11 +580,11 @@
 	: & & : \\
 	\tz^{(M-1,1)}(t,\omega) & .. & \tz^{(M-1,d)}(t,\omega)
 	\end{pmatrix} \in \R^{M \times d} \ .$$
-	Es wird nur die Erste Zeile von $Z$ (analog zu $s$ im 2-ODE-VAE) an den Decoder weitergegeben. Die Funktionen $\bmu : \R^{M \times d} \rightarrow \R^{M \times d}$ und $\bsig : \R^{M \times d} \rightarrow \R^{M \times d \times n}$ werden mit Neuronalen Netzwerken gelernt.\\
+	Es wird nur die Erste Zeile von $Z$ (analog zu $s$ im ODE$^2$VAE) an den Decoder weitergegeben. Die Funktionen $\bmu : \R^{M \times d} \rightarrow \R^{M \times d}$ und $\bsig : \R^{M \times d} \rightarrow \R^{M \times d \times n}$ werden mit Neuronalen Netzwerken gelernt.\\
 	Das Ziel hierbei ist nicht diese Lösung direkt in einen Encoder einzugeben um die eingegebenen Daten zu rekonstruieren, sondern anhand des gelernten $\bmu$ eine ODE ohne 'Unsicherheit' $\bsig$ zu simulieren. Diese glatte Lösung der ODE wird dann in die Decoder eingegeben. Die Rekonstruktionen sollen anschaulich weniger chaotisch sein, als die eingegebenen Daten.\\
 	Das erlernte $\bsig$ kann verwendet werden um neue Pfade von $Z$ zu ziehen (simulieren), mit denen man glaubhaft neue Daten generieren kann.\\
 	\\
-	Der 2-ODE-VAE ist nur ein einfacher Spezialfall dieser Darstellung. Wenn wir nämlich $M=2$, $\bsig = 0$ und $\bmu^{(0)}(\tz^{(0)},\tz^{(1)}) = \tz^{(1)}$ setzen, dann erfüllt $\bmu^{(0)}(\tz^{(0)},\tz^{(1)})$ dieselbe Rolle, wie $\bbf$ im 2-ODE-VAE.\\
+	Der ODE$^2$VAE ist nur ein einfacher Spezialfall dieser Darstellung. Wenn wir nämlich $M=2$, $\bsig = 0$ und $\bmu^{(0)}(\tz^{(0)},\tz^{(1)}) = \tz^{(1)}$ setzen, dann erfüllt $\bmu^{(0)}(\tz^{(0)},\tz^{(1)})$ dieselbe Rolle, wie $\bbf$ im ODE$^2$VAE.\\
 	\\
 	TODO: Verteilung von $Z_0$
 
@@ -609,8 +609,8 @@
 		& ||\bmu(x)||_2 + ||\bsig(x)||_2 \leq C_1 \, (1+||x||_2)\\
 		& ||\bmu(x)-\bmu(y)||_2 + ||\bsig(x)-\bsig(y)||_2 \leq C_2 \, ||x-y||_2 \tag{2}
 	\end{align*}
-	für jede Startverteilung $Z_0$ mit endlichem zweiten Moment und beliebige BB. $W^1,...,W^n$ eine eindeutige Lösung $Z = Z(W)$ der oben beschriebenen SDE.\\
-	Mit Hilfe des Euler-Maruyama-Verfahrens lässt sich diese Lösung approximieren. Dazu Teilen wir das Intervall $[0,\tau]$ in $m$ viele Stücke $[t^m_k,t^m_{k+1}]$ mit $\Delta t = \frac{\tau}{m}$ und $t^m_k = k\, \Delta t^m = \frac{k\tau}{m}$. Wir definieren rekursiv
+	für jede Startverteilung $Z_0$ mit endlichem zweiten Moment und beliebige Brownsche Bewegungen. $W^1,...,W^n$ eine eindeutige Lösung $Z = Z(W)$ der oben beschriebenen SDE.\\
+	Mit Hilfe des Euler-Maruyama-Verfahrens lässt sich diese Lösung approximieren. Dazu Teilen wir das Intervall $[0,\tau]$ in $m$ viele Stücke $[t^m_k,t^m_{k+1}]$ mit $\Delta t = \frac{\tau}{m}$ und $t^m_k = k \Delta t^m = \frac{k\tau}{m}$. Wir definieren rekursiv
 	\begin{align*}
 		& Z^i_{m,t^m_k} := Z^i_{m,t^m_{k-1}} + \bmu^i(Z_{m,t^m_{k-1}}) \, \Delta t + \sum\limits_{j=1}^n \bsig^{i,j}(Z_{m,t^m_{k-1}}) \, \underbrace{(W^j_{t_k}-W^j_{t_{k-1}})}_{\sim \mathcal{N}(0,\Delta t)}
 	\end{align*}
