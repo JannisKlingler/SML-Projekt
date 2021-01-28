@@ -27,11 +27,12 @@ CNN_complexity = 20 #wird zur zeit garnicht verwenden
 SDE_Net_complexity = 8*latent_dim # scheint mit 50 immer gut zu klappen
 forceHigherOrder = False
 
+data_path = 'C:/Users/Jannis/Desktop/Daten/'
 
 try:
     #raise Exception('Ich will den Datensatz neu erstellen')
-    x_train = np.load(data_path+'SDE_Zeug_Neu/rotatingMNIST_train.npy')
-    x_test = np.load(data_path+'SDE_Zeug_Neu/rotatingMNIST_test.npy')
+    x_train = np.load(data_path+'rotatingMNIST_train.npy')
+    x_test = np.load(data_path+'rotatingMNIST_test.npy')
     x_train = x_train[0:train_size]
     x_test = x_test[0:test_size]
 except:
@@ -49,8 +50,8 @@ except:
     x_train = np.transpose(np.array(x_train_rot), [0, 2, 3, 1])
     x_test = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
     try:
-        np.save(data_path+'SDE_Zeug_Neu/rotatingMNIST_train', x_train)
-        np.save(data_path+'SDE_Zeug_Neu/rotatingMNIST_test', x_test)
+        np.save(data_path+'rotatingMNIST_train', x_train)
+        np.save(data_path+'rotatingMNIST_test', x_test)
     except:
         print('could not save Dataset')
     print('Dataset generated')
@@ -63,9 +64,9 @@ print('train-shape:', x_train.shape)
 
 
 
-encoder = keras.models.load_model('TODO/SML-Projekt/encoder,M=2,e=30,l=10')
-decoder = keras.models.load_model('TODO/SML-Projekt/decoder,M=2,e=30,l=10')
-ms_Net = keras.models.load_model('TODO/SML-Projekt/ms_Net,M=2,e=30,l=10')
+encoder = tf.keras.models.load_model(data_path+'encoder,M=2,e=30,l=10')
+decoder = tf.keras.models.load_model(data_path+'decoder,M=2,e=30,l=10')
+ms_Net = tf.keras.models.load_model(data_path+'ms_Net,M=2,e=30,l=10')
 
 
 
