@@ -576,9 +576,9 @@
 	\end{align*}
 	erfüllt. Dies lässt sich als eine gemeinsame SDE im Raum der $(M \times d)$-Matrizen, anstatt wie gewohnt im $\R^d$, betrachten. Wir betrachten also den Matrix-wertigen Prozess
 	$$ Z_t(\omega) = \begin{pmatrix}
-	\tz^{(0),1}(t,\omega) & .. & \tz^{(0),d}(t,\omega)\\
+	\tz^{(0,1)}(t,\omega) & .. & \tz^{(0,d)}(t,\omega)\\
 	: & & : \\
-	\tz^{(M-1),1}(t,\omega) & .. & \tz^{(M-1),d}(t,\omega)
+	\tz^{(M-1,1)}(t,\omega) & .. & \tz^{(M-1,d)}(t,\omega)
 	\end{pmatrix} \in \R^{M \times d} \ .$$
 	Es wird nur die Erste Zeile von $Z$ (analog zu $s$ im 2-ODE-VAE) an den Decoder weitergegeben. Die Funktionen $\bmu : \R^{M \times d} \rightarrow \R^{M \times d}$ und $\bsig : \R^{M \times d} \rightarrow \R^{M \times d \times n}$ werden mit Neuronalen Netzwerken gelernt.\\
 	Das Ziel hierbei ist nicht diese Lösung direkt in einen Encoder einzugeben um die eingegebenen Daten zu rekonstruieren, sondern anhand des gelernten $\bmu$ eine ODE ohne 'Unsicherheit' $\bsig$ zu simulieren. Diese glatte Lösung der ODE wird dann in die Decoder eingegeben. Die Rekonstruktionen sollen anschaulich weniger chaotisch sein, als die eingegebenen Daten.\\
@@ -651,9 +651,37 @@
 	Sei $(\bP, \Omega, \mathcal{A})$ ein Wahrscheinlichkeitsraum und $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ ein stetiger Prozess. Für $0=t_0<...<t_m=\tau$ definieren wir die Zufallsvariablen $x_k := \tx(t_k,\cdot)$. Wir gehen der Einfachheit halber davon aus, dass die Abstände $t_k-t_{k-1}$ alle gleich sind, also $t_k = k\frac{\tau}{m} = k \, \Delta t$.\\
 	Gegeben seien Daten $(x_1^p,...,x_m^p)_{p \in \N}\, uiv. \sim (x_1,...,x_m)_*\bP$. Wir definieren einen Encoder $g: \R^D \rightarrow \R^d$ und einen Decoder $f: \R^d \rightarrow \R^D$ für $d<<D$. Dabei ist $g(x)$ gegeben $x$ nicht deterministisch, sondern wird (bedingt) unabhängig aus einer $d$-dimensionalen Normalverteilung $\mathcal{N}(\mu(x),\Sigma(x))$ gezogen. Wir schreiben formell $\bP(g(x_k) \mid x_k) = \mathcal{N}(\mu(x_k),\Sigma(x_k))$ für alle $k \leq m$.\\
 	Die Funktionen $\mu: \R^d \rightarrow \R^d$, $\Sigma: \R^d \rightarrow \operatorname{Diag}(d \times d)$ sowie $f: \R^d \rightarrow \R^D$ werden durch CNNs dargestellt. Für unseren genauen Aufbau für Anwendung auf den rotating-MNIST Datensatz siehe Sektion 4.\\
-	Wir definieren die Zufallsvariablen $z_0,...,z_m : \Omega \rightarrow \R^{d}$ durch $z_k = z^{(0)}_k := g(x_k)$. Analog benennen wir die encodierten Daten $z_k^p(\omega) = z_k^{(0),p}(\omega) := g_\omega(x_k^p(\omega))$.\\
-	TODO
-	%Mit diesen Werten definieren wir nun die empirischen ersten Ableitungen $z_k^{(1),p} := \frac{1}{\Delta t} \, (z_{k+1}^{(0),p} - z_k^{(0),p}) \in \R^d$. Die Vorstellung als Annäherung einer Ableitung ist hier eigentlich falsch, da Lösungen von SDEs mit positivem $\bsig$ nirgends differenzierbar sind, aber wie wir schon bei der Theorie zum Lernen von SDEs gesehen hatten, ist $\E[\frac{1}{\Delta t} \, (z_{k+1}^{(0),p} - z_k^{(0),p}) \mid z_k^{(0),p}] \approx \bmu(z_k^{(0),p})$, also eignen die $z_k^{(1),p}$ sich zumindest bei großen Datensätzen zum erlernen von 
+	Wir definieren die Zufallsvariablen $z_0,...,z_m : \Omega \rightarrow \R^{d}$ durch $z_k = z^{(0)}_k := g(x_k)$. Analog benennen wir die encodierten Daten $z_k^p(\omega) = z_k^{(0),p}(\omega) := g_\omega(x_k^p(\omega))\in \R^d$.\\
+	Wir wollen $z^{(0)}_k$ interpretieren, als seien sie Momentaufnahmen
+	$$z^{(0)}_k = \tz^{(0)}(t_k,\cdot) = ( \tz^{(0,1)}(t_k,\cdot),...,\tz^{(0,d)}(t_k,\cdot))$$
+	eines Prozesses
+	$$ Z_t(\omega) = \begin{pmatrix}
+	\tz^{(0,1)}(t,\omega) & .. & \tz^{(0,d)}(t,\omega)\\
+	: & & : \\
+	\tz^{(M-1,1)}(t,\omega) & .. & \tz^{(M-1,d)}(t,\omega)
+	\end{pmatrix} \in \R^{M \times d} \ ,$$
+	der die Lösung eine noch unbekannten SDE ist. Um die SDE zu lernen, definieren wir $\bmu : \R^{M \times d} \rightarrow \R^{m \times d}$ und $\bsig: \R^{M \times d} \rightarrow \R^{m \times d \times n}$ als Neuronale Netzwerke. Um diese Netzwerke trainieren zu können, benötigen wir auch für $0<l<M$ empirische Daten $(z_1^{(l),p},...,z_m^{(l),p})_{p \in \N}$. Diese könnten durch weitere Encoder entstehen, wie es bereits im 2-ODE-VAE für den Startwert $v(0,\cdot)$ gemacht wird. Falls $M$ eher klein ist, oder von einer geringen 'Unsicherheit' $\bsig$ ausgegangen werden kann, kann man die $(z_1^{(l),p},...,z_m^{(l),p})_{p \in \N}$ auch als empirische Ableitungen $z_k^{(l),p} := \frac{1}{\Delta t} \, (z_{k+1}^{(l-1),p} - z_k^{(l-1),p}) \in \R^d$ definieren. Die Vorstellung als Annäherung einer Ableitung ist hier eigentlich falsch, da Lösungen von SDEs mit positivem $\bsig$ nirgends differenzierbar sind, aber wie wir schon bei der Theorie zum Lernen von SDEs gesehen hatten, ist $\E[\frac{1}{\Delta t} \, (z_{k+1}^{(l-1),p} - z_k^{(l-1),p}) \mid z_k^{(l-1),p}] \approx \bmu(z_k^{(l-1),p})$, also eignen die $z_k^{(l),p}$ sich zumindest bei großen Datensätzen um SDEs höherer Ordnung zu lernen.
+	
+	\newpage
+	\noindent
+	
+	Für unser Modell definieren wir und nun einen 'Reconstructor' $R_{\bmu,\bsig} : \R^{M \times d} \rightarrow \prod\limits_{k=0}^m \R^{M \times d}$, der zu gegebenen Anfangswerten $(z^{0}_0,...,z^{M-1}_0) = Z_0$ mit Hilfe der Funktionen $\bmu, \bsig$ das Euler-Maruyama-Verfahren anwendet um $Z_{m,t_1},...,Z_{m,t_m} \in \R^{M \times d}$ (Notation aus Theorie zum Lernen von SDEs) nacheinander zu Konstruieren.\\
+	Wir verwenden dabei zur Rekonstruktion besonders $R_{\bmu,0}$, da für $\bsig = 0$ das Euler-Maruyama-Verfahren mit dem Euler-Verfahren übereinstimmt und wir damit $z_{1,rec}^{(l),p},...,z_{m,rec}^{(l),p} := Z_{m,t_1},...,Z_{m,t_m}$ glatter als die eingegebenen $z_1^{(l),p},...,z_m^{(l),p}$ rekonstruieren können.\\
+	\\
+	Wir definieren die folgenden Verlustfunktionen:
+	\begin{itemize}
+		\item Reconstruction-Loss:
+		\begin{align*}
+		& L_r(x_0,...,x_m) := 
+		\end{align*}
+		
+		\item Pointwise-Loss
+		
+		\item Covariance-Loss
+		
+		\item Sigma-Size-Loss
+	\end{itemize}
+	
 	
 	
 	
