@@ -135,7 +135,7 @@
 	\newpage
 
 	\section[Theoretische Ausarbeitung]{Theoretische Ausarbeitung}
-	\emph{Einführung der Notation:} Wir orientieren uns in den ersten beiden Kapiteln an den gängigen Notationen in der Machine-Learning Fachliteratur, da hier vor allem die Paper der Autoren zusammengefasst werden. Im Kapitel zu SDE-VAE werden wir uns von dieser Notation aber entfernen, um ein mathematisch genaueres Grundgerüst definieren zu können.\\ \
+	\emph{Einführung der Notation:} Wir orientieren uns in den ersten beiden Kapiteln an den gängigen Notationen in der Machine-Learning Fachliteratur, da hier vor allem die Paper der Autoren zusammengefasst werden. Im Kapitel zu SDE-VAE werden wir uns von dieser Notation aber entfernen, um ein mathematisch genaueres Grundgerüst definieren zu können. Dieser Teil kann eigenständig gelesen werden, wir fassen die wichtigsten Ideen der ersten zwei Kapitel dort noch einmal zusammen.\\ \
 	\\
 	\begin{tabular}{|c|p{11.9cm}|}
 			\hline
@@ -743,6 +743,9 @@
 		\centering
 		\includegraphics[scale=0.5]{AVIMotion}
 	\end{figure}
+	50 epochen
+
+
 	Der Datensatz \emph{AVI-Motion} besteht aus Bildsequenzen, die drei menschliche Bewegungen (klatschen, boxen und winken) darstellen. Der ursprünglische Datensatz enthält zu diesen Bewegungen je 4 Videosequenzen von jeweils 25 unterschiedlichen Personen, die jeweils mehrere Sekunden lang sind und eine Auflösung von $160\times120$ Pixel haben. Der Datensatz kann von der Website \cite{Dataset} heruntergeladen werden.
 	Wir haben die Videosequenzen auf eine Auflösung von $60\times60$ reduziert, indem wir die Personen mittig in einem $120\times120$ großen Ausschnitt zentiert haben und die Auflösung schließlich durch Mean-Pooling verringert haben. \\
 	Ein Datenpunkt $\x\in [0,1]^{60\times 60\times 8}$ enthält 8 Frames. Die Farbwerte sind stetige Grauwerte zwischen 0 (schwarz) und 1 (weiß). Wir wollen auf diesem Datensatz testen, ob sich das Modell des ODE$^2$VAE dazu eignet, reale Videosequenzen zu modellieren.\\
@@ -750,73 +753,132 @@
 
 	\subsubsection{TODO: SDE Datensatz}
 	\textbf{TODO}
-	\newpage
-	\subsection[VAE]{Ergebnisse: VAE}
-	In Abbildung \ref{Abb:VAEmitInterpol} sehen wir 10 Sequenzen mit jeweils 5 Rekonstruktionen 
-	fehlender Bilder mittels linearer Interpolation im latenten Raum. Der zugrunde liegende Datensatz ist der von uns erstellte Rotating MNIST Datensatz. Hierbei 
-	wurde aus der Sequenz von Bildern jedes zweite Bild gelöscht. Um die fehlenden Bilder zu rekonstruieren werden die latenten Darstellungen zweier benachbarter 
-	Bilder gemittelt. Das Ergebnis wird als latente Darstellung für das fehlendene Bild verwendet und mithilfe des Decoders erstellt. \\
-	Auffallend ist, dass diese Methode relativ gute Rekonstruktionen liefert. 
-	Je nach Sequenz schwanken die Rekonstruktionen jedoch zwischen minimalen Abweichungen bis hin zu stark verschwommenen oder falsch rekonstruierten Bildern. Hierbei können wir gut sehen, dass die Cluster im latenten Raum 
-	nicht immer konvex angeordnet sind. So wird beispielweise bei der siebten und 
+	\subsection[Ergebnisse]{Ergebnisse}
+	\subsubsection{Methode 1: Lineare Interpolation im latenten Raum}
+	\begin{figure}[h!]
+	\begin{minipage}{0.5\textwidth}
+		%			\begin{mdframed}[style=inner]
+		\includegraphics[scale=0.395]{interpolation}
+		%			\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.5\textwidth}
+		%		\begin{mdframed}[style=inner]
+		\includegraphics[scale=0.33]{rotatingMNIST_VAElat}
+		%		\end{mdframed}
+	\end{minipage}
+	\end{figure}
+	In den zwei Abbildungen sehen wir zehn Bildsequenzen aus den Datensätzen rotatingMNIST und bouncingBalls. Die Bilder zu den Zeitpunkten $t=0,2,4,6,8$ sind Modellinput und die Bilder den Zeitpunkten $t=1,3,4,7,9$ sind Rekonstruktionen der fehlenden Bilder mittels linearer Interpolation im latenten Raum. \\
+	Das Modell wird auf den Datenpunkten für 50 Epochen trainiert, indem die time series $\mathbf{x}_{0:T}$ in voneinander unabhängige Datenpunkte $\{\mathbf{x}_t\}_{i=0}^T$ aufgeteilt werden.
+	Um die fehlenden Bilder zu rekonstruieren, werden die vom Decoder bestimmten latenten Darstellungen durch eine Gerade $\z_{t+1} = \z_t + a(\z_{t+2}-\z_t)$ verbunden, welche zum gewünschten Zeitpunkt, bei uns $a = 0.5$ und $a = 1.5$ für $t=9$, ausgewertet wird. 
+	Das Ergebnis wird als latente Darstellung für das fehlendene Bild verwendet und mithilfe des Decoders rekonstruiert. \\
+	Theoretisch lassen sich so zwischen zwei Bildern beliebig viele Rekonstruktionen anfertigen.\\
+	Auffallend ist, dass diese Methode nicht immer gute Rekonstruktionen liefert. 
+	Je nach Sequenz schwanken die Rekonstruktionen zwischen minimalen Abweichungen bis hin zu stark verschwommenen oder falsch rekonstruierten Bildern. Hierbei können wir gut sehen, dass die Cluster im latenten Raum 
+	nicht immer konvex angeordnet sind. So wird beispielweise im linken Bild bei der siebten und 
 	neunten Sequenz eine 9 zu einer 0 bzw. einer 8 rekonstruiert. Sobald ein Cluster eine annähernd konvexe Form hat erhalten wir, wie beispielweise in der 
-	dritten, vierten, fünften oder achten Sequenz, eine sehr gute Rekonstruktion.\\
+	dritten, vierten, fünften oder achten Sequenz, eine gute Rekonstruktion. Die Methode ist daher auf Datensätzen mit vielen Eigenschaften, oder mit Bildern, die in ihren Eigenschaften zu weit auseinanderliegen ungeeignet, da die Interpolationsgerade oft auch durch ein anderes Cluster geht.
 	\\
-	In Abbildung \ref{Abb:VAEohneInterpolMNIST} sehen wir drei Sequenzen mit 
-	drei zufällig ausgewählten fehlenden Bildern. Direkt unter einer 
-	beschädigten Sequenz befindet sich die jeweilige Rekonstruktion. 
-	Der zugrunde liegende Datensatz ist der Rotating MNIST Datensatz. Hierbei 
-	wurde der VAE auf unbeschädigten Sequenzen aus dem rotating MNIST Datensatz 
-	trainiert, indem die gesamte Sequenz zu einem großen Bild zusammengefasst wurde. Die zeitliche Abhängigkeit der Sequenzen wird also im latenten Raum 
-	zusammengefasst. Wir haben nun die Sequenzen aus dem Testdatensatz beschädigt, indem wir den Farbwert dreier zufällig ausgewählter Bilder aus der Sequenz 
-	auf 0 gesetzt haben. Da der VAE auf vollständigen Daten trainiert wurde, 
-	kann er also nur vollständige Daten rekonstruieren. Verwenden wir also unsere 
-	beschädigten Sequenzen, erhalten wir die folgenden Rekonstruktionen.\\
-	Die Rekonstruktionen sind auffallend gut, bis auf die bissl schwache Beleuchtung (siehe 8).
-
-
-
-
-
-	\begin{figure}[!htbp]
-		\centering
-		\includegraphics[scale=0.8]{interpolation}
-		\caption{Rekonstruktion der \emph{time series} mittels VAE mit Interpolation.}
-		\label{Abb:VAEmitInterpol}
-	\end{figure}
-
-	\begin{figure}[!htbp]
-		\centering
-		\includegraphics[scale=0.8]{whole_sequence_mnist}
-		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
-		\label{Abb:VAEohneInterpolMNIST}
-	\end{figure}
-	\begin{figure}[!htbp]
-		\centering
-		\includegraphics[scale=0.8]{whole_sequence_bouncingBalls}
-		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
-		\label{Abb:VAEohneInterpolbouncingBalls}
-	\end{figure}
-	\newpage
-	\subsection[ODE$^2$VAE]{Ergebnisse: ODE$^2$VAE}
-
-	\begin{figure}
-		\begin{minipage}[position=l]{0.33\textwidth}
-			\begin{mdframed}[style=inner]
-				\center{Modellinput\vspace{0.2cm}}
-				\includegraphics[scale=0.5]{Modellinput}
-			\end{mdframed}
+	\subsubsection{Methode 2: Vanilla-VAE}
+		\begin{figure}[h!]
+		\begin{minipage}{0.32\textwidth}
+%			\begin{mdframed}[style=inner]
+				\center{Modellinput\vspace{0.1cm}}
+				\includegraphics[scale=0.22]{rotatingMNIST_VAE}
+%			\end{mdframed}
 		\end{minipage}
-		\begin{minipage}[position=r]{0.67\textwidth}
-			\begin{mdframed}[style=inner]
-				\center{Extrapolation\vspace{0.2cm}}
-				\includegraphics[scale=0.499]{Reconstructions}
-			\end{mdframed}
+		\begin{minipage}{0.32\textwidth}
+%		\begin{mdframed}[style=inner]
+			\center{Trainingsdaten vollständig\vspace{0.1cm}}
+			\includegraphics[scale=0.22]{rotatingMNIST_VAElat}
+%		\end{mdframed}
 		\end{minipage}
-		\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$VAE (untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um Vorhersagen für die restlichen Zeitpunkte zu treffen.}
-	\end{figure}
+		\begin{minipage}{0.32\textwidth}
+%			\begin{mdframed}[style=inner]
+				\center{Trainingsdaten beschädigt\vspace{0.1cm}}
+				\includegraphics[scale=0.22]{rotatingMNIST_VAElat2}
+%			\end{mdframed}
+		\end{minipage}
+%		\caption{Blablabla}
 
-	\begin{figure}
+	\begin{minipage}{0.32\textwidth}
+		%			\begin{mdframed}[style=inner]
+		\includegraphics[scale=0.22]{bouncingBalls_VAE}
+		%			\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.32\textwidth}
+		%		\begin{mdframed}[style=inner]
+		\includegraphics[scale=0.22]{bouncingBalls_VAElat}
+		%		\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.32\textwidth}
+		%			\begin{mdframed}[style=inner]
+		\includegraphics[scale=0.22]{bouncingBalls_VAElat2}
+		%			\end{mdframed}
+	\end{minipage}
+	%		\caption{Blablabla}
+	\end{figure}
+	In den sechs Abbildungen sehen wir je zehn Bildsequenzen aus den Datensätzen rotatingMNIST und bouncingBalls. 
+	Ganz Links ist der Modellinput abgebildet. Wir haben aus diesem jeweils 0 bis 9 Frames entfernt, die von unserem Modell rekonstruiert werden sollen.\\
+	Dafür haben wir einen VAE für 100 Epochen auf den Datensätzen trainiert, wobei die time series als gesamtes als Modellinput verwendet.\\
+	Mittig sind die Rekonstruktionen eines VAE abgebildet, der auf einem unbeschädigten Datensatz trainiert wurde und nach dem Training beschädigte Sequenzen des Testdatensatz rekonstruieren sollte. Die Idee dahinter ist, dass dem Modell diese Daten unbekannt sind und sie nach Abbildung in den latenten Raum daher vom Decoder vollständig rekonstruiert werden.
+	Die Rekonstruktionen werden aber immer schlechter beleuchtet, je mehr Daten aus dem ursprünglichem Bild fehlen. \\
+	Wir behelfen uns daher mit einem Trick. Wir beschädigen auch den Trainingsdatensatz, trainieren den VAE aber darauf die gesamte Sequenz und nicht das beschädigte Inputbild zu rekonstruieren. Wie man in den Abbildungen rechts erkennen kann führt das zu einer deutlichen Verbesserung der Modellperformance.\\
+
+
+%	\begin{figure}[!htbp]
+%		\centering
+%		\includegraphics[scale=0.8]{interpolation}
+%		\caption{Rekonstruktion der \emph{time series} mittels VAE mit Interpolation.}
+%		\label{Abb:VAEmitInterpol}
+%	\end{figure}
+
+%	\begin{figure}[!htbp]
+%		\centering
+%		\includegraphics[scale=0.8]{whole_sequence_mnist}
+%		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+%		\label{Abb:VAEohneInterpolMNIST}
+%	\end{figure}
+%	\begin{figure}[!htbp]
+%		\centering
+%		\includegraphics[scale=0.8]{whole_sequence_bouncingBalls}
+%		\caption{Rekonstruktion der \emph{time series} mittels VAE ohne Interpolation.}
+%		\label{Abb:VAEohneInterpolbouncingBalls}
+%	\end{figure}
+%	\newpage
+
+	%\begin{figure}
+	%	\begin{minipage}[position=l]{0.33\textwidth}
+	%		\begin{mdframed}[style=inner]
+	%			\center{Modellinput\vspace{0.2cm}}
+	%			\includegraphics[scale=0.5]{Modellinput}
+	%		\end{mdframed}
+		%\end{minipage}
+		%\begin{minipage}[position=r]{0.67\textwidth}
+		%	\begin{mdframed}[style=inner]
+		%		\center{Extrapolation\vspace{0.2cm}}
+		%		\includegraphics[scale=0.499]{Reconstructions}
+		%	\end{mdframed}
+		%\end{minipage}
+		%\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$VAE %(untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie %erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um %Vorhersagen für die restlichen Zeitpunkte zu treffen.}
+%	\end{figure}
+	\subsubsection{Methode 3: ODE$^2$VAE}
+		\begin{figure}[h!]
+		\begin{minipage}{0.5\textwidth}
+			%			\begin{mdframed}[style=inner]
+			\includegraphics[scale=0.33]{rotatingMNIST_VAE}
+			%			\end{mdframed}
+		\end{minipage}
+		\begin{minipage}{0.5\textwidth}
+			%		\begin{mdframed}[style=inner]
+			\includegraphics[scale=0.33]{rotatingMNIST_VAElat}
+			%		\end{mdframed}
+		\end{minipage}
+	\end{figure}
+	Auf diesen beiden Abbildungen sind die Rekonstruktionen eines ODE$^2$VAE, auf den Datensätzen rotatingMNIST und bouncingBalls zu erkennen. Das Modell wird für 40 Epochen auf einem unbeschädigten Datensatz trainiert und erhält zum anfertigen der Rekonstruktionen aber nur die ersten drei Bilder der time series. 
+	In einer Abbildung ist zeilenweise zuerst die Ground Truth und eine Zeile unterhalb die Rekonstruktion des Modellinputs und ab dem vierten Bild schließlich die vom Modell vorgenommene Extrapolation der time series abgebildet. Wie man gut sehen kann ist die Modellperformance auf dem Datensatz rotatingMNIST hervorragend, während auf  bouncingBalls der chaotischen Natur des Datensatzes geschuldet auch einige Vorhersagen nicht gut aussehen. Dies dürfte daran liegen, dass sich anfänglich kleine Fehler in der Vorhersage mit fortlaufender Zeit immer weiter verschlimmern. \\
+	Wir vermuten deswegen, dass das Modell davon profitieren könnte die Priorverteilung durch beispielsweise Inverse Autoregressive Flow von einer Normalverteilung zu einer aussagekräftigeren Verteilung zu transformieren. So könnte sicher gestellt werden, dass die Startposition sehr genau encodiert wird, was einem aufsummieren von Fehlern entgegenwirken würde.
+	Dennoch von allen Methoden liefert dieses Modell auf den Datensätzen bereits auch so die besten Ergebnisse. Sollen nur ein oder zwei Frames rekonstruiert werden und sind die vorherigen drei Frames bekannt ist eine Rekonstruktion annährend fehlerfrei. 
+	\begin{figure}[h!]
 		\begin{minipage}[position=l]{0.5\textwidth}
 			\begin{mdframed}[style=inner]
 				\center{Modellinput\vspace{0.2cm}}
@@ -829,10 +891,10 @@
 				\includegraphics[scale=0.47]{movies_extrapolation}
 			\end{mdframed}
 		\end{minipage}
-		\caption{Blablabla}
 	\end{figure}
+	Auf dem Datensatz AVI-Motion werden ebenfalls gute Ergebnisse erzielt. Die Bewegungen werden vom Modell gut vervollständigt, wir haben im Gegensatz zu den anderen Datensätzen dem Modell zur Bestimmung von $\mathbf{v}_0$ jedoch vier Bilder gezeigt. Die Extrapolation ist zwar etwas unscharf, könnte aber durch das Training von beispielsweise Adversarial Variational Autoencodern weiter an Qualität gewinnen. 
 	\newpage
-
+	\subsubsection{Methode 4: SDE$^n$VAE}
 
 	\begin{table}[htb]
 		\begin{center}
@@ -844,13 +906,12 @@
 
 				\textbf{Rekonstruktionen} \newline \textbf{in stetiger Zeit}& $\times$	& $\checkmark$ &$\times$ & $\checkmark$	& \\
 				\textbf{Beobachtungs-}\newline\textbf{zeitpunkte können}\newline \textbf{unregelmäßig sein}	& $\times$	&  $\checkmark$ & $\times$ &$\checkmark$	& \\
-				\textbf{Extrapolation}	& $\times$	& $\times$ & $\checkmark$ & $\checkmark$	& \\
+				\textbf{Extrapolation}	& $\times$	& $(\checkmark)$ & $\checkmark$ & $\checkmark$	& \\
+				\textbf{Trainingsdatensatz} \newline\textbf{mit fehlenden} \newline\textbf{Bildern möglich} 	& $\times$	& $\checkmark$ & $(\checkmark)$ & $(\checkmark)$	& \\
 				\bottomrule
 			\end{tabular}
 		\end{center}
 	\end{table}
-
-	\subsection[SDE-VAE]{Ergebnisse: SDE-VAE}
 	\newpage
 	\section[Modellstrukturen]{Modellstrukturen}
 	Diese Modellstruktur haben wir für die Implementierung des Vanilla-VAE's verwendet. Als Input dient hier die gesamte Videosequenz. Falls nur ein
