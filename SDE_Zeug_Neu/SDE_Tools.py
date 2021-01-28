@@ -158,9 +158,7 @@ class mu_sig_Net(tf.keras.Model):
 
     def call(self, inputs):
         #inputs hat dim: batch_size x frames-M+1 x M x latent_dim
-        print('called ms_Net on:',inputs.shape)
         frames_List = tf.split(inputs, inputs.shape[1], axis=1)
-        #print('changed:',frames_List)
         ms_List = []
         for x in frames_List:
             #x hat dim: batch_size x 1 x M x latent_dim
@@ -180,47 +178,22 @@ class mu_sig_Net(tf.keras.Model):
             for l in self.sig_layerList:
                 sig = l(sig)
             #sig hat dim: batch_size x M x latent_dim x n
-            print('mu and sig:', mu.shape, sig.shape)
+
             mu_sig = tf.keras.layers.Concatenate(axis=-1)([mu,sig])
             #mu_sig hat dim: batch_size x M x latent_dim x 1+n
-
             ms_List.append(mu_sig)
-        print('ms_Net output0:',len(ms_List),ms_List[0].shape)
+
         ms_List = tf.stack(ms_List, axis=1)
-        print('ms_Net output:',ms_List.shape)
+        #ms_List hat dim: batch_size x frames-M+1 x M x latent_dim x 1+n
         return ms_List
-
-
-'''
-    def mu(self, x):
-        x1 = self.mu_layer1(x)
-        x2 = self.mu_layer2(x1)
-        x3 = self.mu_layer3(x2)
-        return x3
-
-    def sig(self, x):
-        sig = self.sig_layer1(x)
-        sig = self.sig_layer2(sig)
-        sig = self.sig_layer3(sig)
-        sig = self.sig_layer4(sig)
-        return sig
-'''
 
 ########################################################
 #Verlustfunktion definieren
 
-'''
-def reconstruction_loss(X_org, X_rec):
-    Diff = X_org - X_rec
-    Diff = tf.map_fn(norm1,Diff)
-    Diff = K.sum(Diff)
-    return Diff
-'''
 
 def make_reconstruction_Loss(M, n, Time, frames, batch_size, T_reconstructor, derivatives, norm=abs):
     def reconstruction_loss(Z_org, Z_rec):
-        #X_org = tf.split(X_org, batch_size, axis=0)
-        #X_org = tf.stack(X_org, axis=0)
+
         print('SDE_rec_loss_inp:',Z_org.shape)#, Z_rec.shape)
         if Z_rec is None:
             #Z_derivatives = derivatives(Z_org)
@@ -240,16 +213,18 @@ def make_reconstruction_Loss(M, n, Time, frames, batch_size, T_reconstructor, de
 
 def make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net,norm=abs):
     def pointwise_loss(Z_org, ms_rec):
-        print('p_loss-inp1:', Z_org.shape)
+        #Z_org hat dim: batch_size x frames-M+1 x M x latent_dim
+        mu_approx = frames/Time * (Z_org[:,1:,:,:] - Z_org[:,:-1,:,:])
+        #mu_approx hat dim: batch_size x frames-M x M x latent_dim
+
         if ms_rec is None:
             ms_rec = ms_Net(Z_org)
-        print('p_loss-inp2:', ms_rec.shape)
-        Z_delta = Z_org[:,1:,:,:] - Z_org[:,:-1,:,:]
+        #ms_rec hat dim: batch_size x frames-M+1 x M x latent_dim x 1+n
+
         mu = ms_rec[:,:-1,:,:,0]
-        fps = frames/Time
-        rec_delta = mu/fps
-        Difference = Z_delta - rec_delta
-        #Diff = tf.map_fn(lambda arg1: tf.map_fn(lambda arg2: tf.map_fn(lambda arg3: tf.map_fn(abs,arg3),arg2),arg1),Difference)
+        #mu hat dim: batch_size x frames-M x M x latent_dim
+
+        Difference = mu - mu_approx
         Diff = tf.map_fn(abs, Difference)
         Diff = K.mean(Diff)
         return Diff
@@ -271,7 +246,6 @@ def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, norm=abs)
         fps = frames/Time
         rec_delta = mu/fps
         random_delta = [Z_delta[:,:,0,:] - rec_delta[:,:-1,0,:]]
-        #print('random_delta:',random_delta.shape)
         random_delta = tf.transpose(random_delta, [1,2,3,0])
         #random_delta hat dim: batch_size x frames[lokal] x latent_dim x 1
         covar = list(map(lambda i: tf.keras.layers.Dot(axes=2)([random_delta[:,i,:,:],random_delta[:,i,:,:]]), range(random_delta.shape[1])))
@@ -285,17 +259,15 @@ def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, norm=abs)
         sum_sig = tf.stack(sum_sig, axis=1)
         theoretical_covar = K.sum(sum_sig, axis=1)/fps
         #theoretical_covar hat dim: batch_size x frames[lokal] x latent_dim x latent_dim
-        #print('theoretical_covar:',theoretical_covar.shape)
 
         Diff_sq_var = covar - theoretical_covar
         Diff_sq_var = tf.map_fn(norm,Diff_sq_var)
-        #print('Diff_sq_var:',Diff_sq_var.shape)
         Diff_sq_var = K.mean(Diff_sq_var)/(latent_dim**2)
         return Diff_sq_var
 
     return covariance_loss
 
-
+'''
 def make_sigma_size_Loss(latent_dim, ms_Net, norm=abs):
     def sigma_size_loss(Z_org, ms_rec):
         #Z_org hat dim: batch_size x frames-M+1 x M x latent_dim
@@ -308,19 +280,4 @@ def make_sigma_size_Loss(latent_dim, ms_Net, norm=abs):
         return sig_size
 
     return sigma_size_loss
-
-def make_anti_regularizer_Loss(latent_dim, s_Net, Model, norm=abs):
-    def anti_regularizer_loss(X_org):
-        _,_,_,X_rec,_ = Model.fullcall(X_org)
-        print('ar_loss X_rec:',X_rec.shape)
-        one_variance = X_rec[:,1:,:] - X_rec[:,:-1,:]
-        one_variance = tf.map_fn(abs, one_variance)
-        one_variance = K.sum(one_variance, axis=1)
-        print('one_variance:',one_variance.shape)
-        loss = -tf.map_fn(abs, one_variance)
-
-        avg_norm = tf.map_fn(abs, X_rec)
-        avg_norm = K.mean(avg_norm)
-        return K.mean(loss)/avg_norm
-
-    return anti_regularizer_loss
+'''

@@ -20,10 +20,10 @@ tf.compat.v1.keras.backend.set_session(session)
 
 ########################################################
 # %% hyperparameter
-epochs = 30
-latent_dim = 15  #5-30 sollte gut gehen
+epochs = 3
+latent_dim = 10  #5-30 sollte gut gehen
 batch_size = 50  # eher klein halten, unter 100 falls möglich, 50 klappt gut
-train_size = 60000
+train_size = 500
 test_size = 10 # wird hier noch nicht gebraucht
 frames = 20  # Number of images in every datapoint. Choose accordingly to dataset size.
 act_CNN = 'relu'  # Activation function 'tanh' is used in odenet.
@@ -40,8 +40,8 @@ CNN_complexity = 20 #wird zur zeit garnicht verwenden
 SDE_Net_complexity = 8*latent_dim # scheint mit 50 immer gut zu klappen
 forceHigherOrder = False
 
-VAE_epochs_starting = 10
-SDE_epochs_starting = 20
+VAE_epochs_starting = 1
+SDE_epochs_starting = 2
 
 
 
@@ -127,18 +127,18 @@ def SDELoss(Z_derivatives, ms_rec):
     #S += alpha*1*ms_rec_loss(Z_enc_List,Z_rec_List)
     S += 10*p_loss(Z_derivatives,ms_rec)
     S += 0.5*cv_loss(Z_derivatives,ms_rec)
-    S += 1000*ss_loss(Z_derivatives,ms_rec) #mal ohne probieren
+    #S += 1000*ss_loss(Z_derivatives,ms_rec) #mal ohne probieren
     return S
 
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += 5*ms_rec_loss(Z_enc_List,Z_rec_List)
-    #S += beta*10*p_loss(Z_derivatives,None)
-    #S += beta*0.5*cv_loss(Z_derivatives,None)
+    #S += 5*ms_rec_loss(Z_enc_List,Z_rec_List)
+    S += 4*p_loss(Z_derivatives,None)
+    S += 0.4*cv_loss(Z_derivatives,None)
     #S += beta*100*ss_loss(Z_derivatives,None)
     return S
 
-beta = 0.05
+beta = 0.2
 
 def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
@@ -253,12 +253,12 @@ SDE_VAE.summary()
 
 
 
-
+'''
 #Modell speichern
 encoder.save(data_path+'SDE_Zeug_Neu/encoder'+',M={}'.format(M)+',e={}'.format(epochs)+',l={}'.format(latent_dim))
 decoder.save(data_path+'SDE_Zeug_Neu/decoder'+',M={}'.format(M)+',e={}'.format(epochs)+',l={}'.format(latent_dim))
 ms_Net.save(data_path+'SDE_Zeug_Neu/ms_Net'+',M={}'.format(M)+',e={}'.format(epochs)+',l={}'.format(latent_dim))
-
+'''
 
 
 '''

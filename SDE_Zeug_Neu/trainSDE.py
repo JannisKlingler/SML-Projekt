@@ -16,7 +16,7 @@ tf.random.set_seed(1)
 
 latent_dim = 6
 nrBrMotions = 1
-epochs = 20
+epochs = 30
 M = 2
 forceHigherOrder = False
 
@@ -33,7 +33,7 @@ Ntest = 10
 d = M*latent_dim
 n = nrBrMotions
 batch_size = 50
-complexity = 50
+complexity = 100
 
 
 ########################################################
@@ -70,7 +70,7 @@ def sigma(x):
 #x_test = np.array(list(map(lambda i : SDE_Tools.ItoDiffusion(2, n, T, frames, simulated_frames, X_0[i], mu, sigma) , range(Ntest))))
 #x_train = x_train[:Ntrain,:,:-1]
 
-x_train = np.load('C:/Users/bende/Documents/Uni/SML-Projekt/SDE_Daten.npy')
+x_train = np.load('C:/Users/bende/Documents/Uni/SML-Projekt/SDE_Zeug_Neu/SDE_Daten.npy')
 x_train = x_train[:Ntrain]
 
 print('x_train shape:',x_train.shape)
@@ -107,11 +107,11 @@ def loss(x_org,ms_rec):
     S = 0
     #S += 1*rec_loss(x_org,None)
     S += 10*p_loss(x_org, ms_rec)
-    S += 0.5*cv_loss(x_org, ms_rec)
-    S += 1000*ss_loss(x_org, ms_rec)
+    S += 1*cv_loss(x_org, ms_rec)
+    #S += 1000*ss_loss(x_org, ms_rec)
     return S
 
-ms.compile(optimizer='adam', loss=loss, metrics=[ss_loss, lambda x,m: rec_loss(x,None)])  #, metrics=[lambda x,m: rec_loss(x[:,0,:])])
+ms.compile(optimizer='adam', loss=loss, metrics=[cv_loss, lambda x,m: rec_loss(x,None)])  #, metrics=[lambda x,m: rec_loss(x[:,0,:])])
 ms.fit(x_train_derivatives, x_train_derivatives, epochs=epochs, batch_size=batch_size, shuffle=False)
 ms.summary()
 

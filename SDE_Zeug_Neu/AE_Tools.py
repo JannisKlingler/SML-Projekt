@@ -241,8 +241,6 @@ class VariationalAutoencoder(tf.keras.Model):
 #Hiermit stimmt etwas nicht
 def make_simple_reconstruction_loss(batchsize):
     def reconstruction_loss(X_org, X_rec):
-        #X_org = tf.split(X_org, batchSize, axis=0)
-        #X_org = tf.stack(X_org, axis=0)
         print('X_org:',X_org)
         print('X_rec:',X_rec)
         Diff = X_org - X_rec
@@ -251,7 +249,7 @@ def make_simple_reconstruction_loss(batchsize):
         return Diff
     return reconstruction_loss
 
-
+'''
 def make_VAE_loss(encoder, decoder, frames):
     def VAE_loss(X_org, X_rec):
         X_org = X_org[:,0,:,:,:]
@@ -266,113 +264,19 @@ def make_VAE_loss(encoder, decoder, frames):
         kl_div = .5 * K.sum(1. + 2. * v_log_sig - K.square(v_mu) - 2. * K.exp(v_log_sig))
         return log_p_xz #- kl_div
     return VAE_loss
-
+'''
 
 
 
 def make_binary_crossentropy_rec_loss(M,frames):
-    b = M//2+1
-    a = M-b
     def reconstruction_loss(X_org, X_rec):
         print('GGGGG0 X_org:',X_org.shape)
         X_values = X_org[:,:frames-M+1,:,:,:]
-        print('GGGGG X_org:',X_values.shape)
-        #X_rec = X_rec[:,:,:,:,:]
-        #print('len:',len(X_rec))
         print('X_rec:',X_rec.shape)
-        #if len(X_values[0]) > len(X_rec[0]):
-            #print('cutting X_org to {} frames'.format(len(X_rec[0])))
-            #X_values = X_values[:,:len(X_rec[0]),:,:]
         r = tf.keras.losses.binary_crossentropy(X_values, X_rec)
         return r
     return reconstruction_loss
 
 
-
-'''
-
-########################################################
-# %% hyperparameter
-epochs = 1
-latent_dim = 5  # Dimensionality for latent variables. 20-30 works fine.
-batch_size = 100  # ≥100 as suggested by Kingma in Autoencoding Variational Bayes.
-train_size = 60000  # Data points in train set. Choose accordingly to dataset size.
-test_size = 100  # Data points in test set. Choose accordingly to dataset size.
-batches = int(train_size / batch_size)
-frames = 1  # Number of images in every datapoint. Choose accordingly to dataset size.
-armortized_len = 3  # Sequence size seen by velocity encoder network.
-act = 'relu'  # Activation function 'tanh' is used in odenet.
-T = 1  # number of seconds of the video
-fps = T/frames
-n = 1
-pictureWidth = 28
-pictureHeight = 28
-pictureColors = 1
-M = 1
-complexity = 10
-
-(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-
-x_train = x_train[0:train_size]
-x_train = np.where(x_train > 127.5, 1.0, 0.0).astype('float32')
-x_test = x_test[0:test_size]
-x_test = np.where(x_test > 127.5, 1.0, 0.0).astype('float32')
-
-print('train starting shape:', x_train.shape)
-
-# Dim: train_size x frames x pictureWidth x pictureHeight x pictureColors
-x_train = np.transpose(np.array([[x_train]]), (2, 0, 3, 4, 1))
-print('train-shape:', x_train.shape)
-
-
-# Dim: test_size x frames x pictureWidth x pictureHeight x pictureColors
-x_test = np.transpose(np.array([[x_test]]), (2, 0, 3, 4, 1))
-
-
-########################################################
-# Datensatz für Encoder erstellen
-
-# Dim: train_size*(frames-M+1) x pictureWidth x pictureHeight x (M*pictureColors)
-x_train_longlist = AE_Tools.make_training_data(x_train, train_size, frames, M)
-print('new_train_shape:', x_train_longlist.shape)
-
-
-######################################
-
-# P_dec = AE_Tools.FramewiseDecoder(latent_dim, pictureWidth,
-# pictureHeight, pictureColors, act, complexity=complexity)
-decoder_input = tf.keras.layers.Input(shape=(latent_dim,))
-x = tf.keras.layers.Dense(128, activation='relu')(decoder_input)
-x = tf.keras.layers.Dense(4 * 4 * 64, activation='relu')(x)
-x = tf.keras.layers.Reshape((4, 4, 64))(x)
-x = tf.keras.layers.Conv2DTranspose(32, (3, 3), activation='relu')(x)
-x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
-x = tf.keras.layers.Conv2DTranspose(16, (3, 3), activation='relu')(x)
-x = tf.keras.layers.UpSampling2D(size=(2, 2))(x)
-decoder_output = tf.keras.layers.Conv2DTranspose(1, (4, 4), padding='same', activation='sigmoid')(x)
-
-
-decoder = tf.keras.Model(decoder_input, decoder_output)
-VAE = tf.keras.Model(encoder_input, decoder(encoder(encoder_input)[-1]))
-
-
-# P_enc = AE_Tools.LocalEncoder(latent_dim, M, pictureWidth, pictureHeight,
-# pictureColors, act, complexity=complexity, variational=True)
-# AE = AE_Tools.SimpleAutoencoder(P_enc, P_dec)
-# VAE = AE_Tools.VariationalAutoencoder(P_enc, decoder)
-
-# ms_Net = SDE_Tools.mu_sig_Net(latent_dim, n, act, 10)
-# reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(latent_dim*pictureColors, n, T, frames, ms_Net, batch_size)
-
-loss = AE_Tools.make_binary_crossentropy_rec_loss(M)
-
-# AE.compile(optimizer='adam', loss=loss)
-# AE.fit(x_train_longlist, x_train_longlist[:,:,:,:,:], epochs=epochs, batch_size=batch_size, shuffle=False)
-
-
-VAE.compile(optimizer='adam', loss=loss)
-VAE.fit(x_train_longlist[:, 0, :, :, :], x_train_longlist[:, 0, :, :, :],
-        epochs=epochs, batch_size=batch_size, shuffle=False)
-'''
 
 #
