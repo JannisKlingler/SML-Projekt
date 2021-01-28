@@ -20,16 +20,15 @@ tf.compat.v1.keras.backend.set_session(session)
 
 ########################################################
 # %% hyperparameter
-epochs = 3
-latent_dim = 10  #5-30 sollte gut gehen
+epochs = 10
+latent_dim = 5  #5-30 sollte gut gehen
 batch_size = 50  # eher klein halten, unter 100 falls möglich, 50 klappt gut
-train_size = 500
+train_size = 6000
 test_size = 10 # wird hier noch nicht gebraucht
 frames = 20  # Number of images in every datapoint. Choose accordingly to dataset size.
 act_CNN = 'relu'  # Activation function 'tanh' is used in odenet.
 act_ms_Net = 'tanh'
 Time = 50  # number of seconds of the video
-SDE_Time = 250
 fps = Time/frames
 n = 1
 pictureWidth = 28
@@ -40,8 +39,9 @@ CNN_complexity = 20 #wird zur zeit garnicht verwenden
 SDE_Net_complexity = 8*latent_dim # scheint mit 50 immer gut zu klappen
 forceHigherOrder = False
 
-VAE_epochs_starting = 1
-SDE_epochs_starting = 2
+VAE_epochs_starting = 5
+SDE_epochs_starting = 20
+expected_SDE_complexity = 20
 
 
 
@@ -108,13 +108,13 @@ encoder = AE_Tools.make_Clemens_encoder(latent_dim)
 decoder = AE_Tools.make_Clemens_decoder(latent_dim)
 
 ms_Net = SDE_Tools.mu_sig_Net(M, latent_dim, n, act_ms_Net, SDE_Net_complexity, forceHigherOrder=forceHigherOrder)
-reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(latent_dim*pictureColors, latent_dim*pictureColors, n, SDE_Time, frames-M+1, ms_Net, batch_size, applyBM=False)
+reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(latent_dim*pictureColors, latent_dim*pictureColors, n, Time, frames-M+1, ms_Net, expected_SDE_complexity, applyBM=False)
 
 
 rec_loss = AE_Tools.make_binary_crossentropy_rec_loss(M, frames)
 ms_rec_loss = SDE_Tools.make_reconstruction_Loss(M, n, Time, frames, batch_size, reconstructor, derivatives)
-p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, SDE_Time, frames, ms_Net)
-cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, SDE_Time, frames, batch_size, ms_Net)
+p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, expected_SDE_complexity)
+cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, expected_SDE_complexity)
 ss_loss = SDE_Tools.make_sigma_size_Loss(latent_dim, ms_Net)
 
 
@@ -129,12 +129,12 @@ def SDELoss(Z_derivatives, ms_rec):
     S += 0.5*cv_loss(Z_derivatives,ms_rec)
     #S += 1000*ss_loss(Z_derivatives,ms_rec) #mal ohne probieren
     return S
-
+alpha = 0.5
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
     #S += 5*ms_rec_loss(Z_enc_List,Z_rec_List)
-    S += 4*p_loss(Z_derivatives,None)
-    S += 0.4*cv_loss(Z_derivatives,None)
+    S += alpha*10*p_loss(Z_derivatives,None)
+    S += alpha*1*cv_loss(Z_derivatives,None)
     #S += beta*100*ss_loss(Z_derivatives,None)
     return S
 
@@ -145,7 +145,7 @@ def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivativ
     #S += alpha*1*ms_rec_loss(Z_enc_List,Z_rec_List)
     S += beta*10*p_loss(Z_derivatives,None)
     S += beta*0.5*cv_loss(Z_derivatives,None)
-    S += beta*1000*ss_loss(Z_derivatives,None)
+    #S += beta*1000*ss_loss(Z_derivatives,None)
     return S
 
 ########################################################
@@ -233,7 +233,7 @@ SDE_VAE.compile(optimizer='adam', loss= lambda x,arg:arg)
 SDE_VAE.fit(x_train, x_train, epochs=VAE_epochs_starting, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
 
-SDE_VAE.apply_ms_Net = True
+#SDE_VAE.apply_ms_Net = True
 SDE_VAE.custom_loss = FullLoss
 
 ########################################################
@@ -244,13 +244,14 @@ z_train_derivatives = tf.constant(z_train_derivatives)
 ms_Net.fit(z_train_derivatives, z_train_derivatives, epochs=SDE_epochs_starting, batch_size=batch_size, shuffle=False)
 ms_Net.summary()
 
+'''
 ########################################################
 #Abwechselnd En-&Decoder und SDE-Rekonstruktion trainieren
 SDE_VAE.compile(optimizer='adam', loss= lambda x,arg:arg)
 SDE_VAE.fit(x_train, x_train, epochs=epochs, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
-
-
+'''
+SDE_VAE.apply_ms_Net = True
 
 
 '''

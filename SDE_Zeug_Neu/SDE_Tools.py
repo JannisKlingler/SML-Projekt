@@ -4,6 +4,7 @@ import tensorflow as tf
 from math import sin, cos, sqrt, pi, floor, ceil, exp, log
 from keras import backend as K
 
+
 #tf.random.set_seed(1)
 
 #X_org hat dim: None x frames x latent_dim
@@ -77,7 +78,7 @@ def Reconstructor(d, latent_dim, n, T, frames, simulated_frames, X_0_List, ms_Ne
     return X
 '''
 
-def make_Tensorwise_Reconstructor(d, latent_dim, n, T, frames, ms_Net, batchSize, simulated_frames=False, applyBM=False):
+def make_Tensorwise_Reconstructor(d, latent_dim, n, T, frames, ms_Net, expected_SDE_complexity, simulated_frames=False, applyBM=False):
     if not simulated_frames:
         simulated_frames = frames
     fps = simulated_frames/T
@@ -89,7 +90,8 @@ def make_Tensorwise_Reconstructor(d, latent_dim, n, T, frames, ms_Net, batchSize
         for i in range(simulated_frames):
             mu = ms_Net(tf.transpose([X_sim[-1]],[1,0,2,3]))[:,0,:,:,0]
             #mu hat dim: None x M x latent_dim
-            X_sim.append(X_sim[-1] + mu/fps)
+            #X_sim.append(X_sim[-1] + mu/fps) #Original
+            X_sim.append(X_sim[-1] + mu*expected_SDE_complexity)
         X = []
         for i in range(frames):
             X.append(X_sim[floor(i*simulated_frames/frames)])
@@ -211,10 +213,11 @@ def make_reconstruction_Loss(M, n, Time, frames, batch_size, T_reconstructor, de
     return reconstruction_loss
 
 
-def make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net,norm=abs):
+def make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, expected_SDE_complexity,norm=abs):
     def pointwise_loss(Z_org, ms_rec):
         #Z_org hat dim: batch_size x frames-M+1 x M x latent_dim
-        mu_approx = frames/Time * (Z_org[:,1:,:,:] - Z_org[:,:-1,:,:])
+        #mu_approx = frames/Time * (Z_org[:,1:,:,:] - Z_org[:,:-1,:,:]) #Original
+        mu_approx = (Z_org[:,1:,:,:] - Z_org[:,:-1,:,:])/expected_SDE_complexity
         #mu_approx hat dim: batch_size x frames-M x M x latent_dim
 
         if ms_rec is None:
@@ -230,7 +233,7 @@ def make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net,norm=abs):
         return Diff
     return pointwise_loss
 
-def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, norm=abs):
+def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, expected_SDE_complexity, norm=abs):
     def covariance_loss(Z_org, ms_rec):
         #Z_org hat dim: batch_size x frames-M+1 x M x latent_dim
         Z_delta = Z_org[:,1:,:,:]-Z_org[:,:-1,:,:]
@@ -244,7 +247,8 @@ def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, norm=abs)
         #sig hat dim: batch_size x frames-M+1 x M x latent_dim x n
 
         fps = frames/Time
-        rec_delta = mu/fps
+        #rec_delta = mu/fps Original
+        rec_delta = mu*expected_SDE_complexity
         random_delta = [Z_delta[:,:,0,:] - rec_delta[:,:-1,0,:]]
         random_delta = tf.transpose(random_delta, [1,2,3,0])
         #random_delta hat dim: batch_size x frames[lokal] x latent_dim x 1
@@ -257,7 +261,8 @@ def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, norm=abs)
         #sig hat dim: batch_size x frames[lokal] x latent_dim x n
         sum_sig = list(map(lambda i: tf.keras.layers.Dot(axes=2)([sig[:,i,:,:],sig[:,i,:,:]]), range(sig.shape[1])))
         sum_sig = tf.stack(sum_sig, axis=1)
-        theoretical_covar = K.sum(sum_sig, axis=1)/fps
+        #theoretical_covar = K.sum(sum_sig, axis=1)/fps #Original
+        theoretical_covar = K.sum(sum_sig, axis=1)*expected_SDE_complexity
         #theoretical_covar hat dim: batch_size x frames[lokal] x latent_dim x latent_dim
 
         Diff_sq_var = covar - theoretical_covar
@@ -267,7 +272,7 @@ def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, norm=abs)
 
     return covariance_loss
 
-'''
+
 def make_sigma_size_Loss(latent_dim, ms_Net, norm=abs):
     def sigma_size_loss(Z_org, ms_rec):
         #Z_org hat dim: batch_size x frames-M+1 x M x latent_dim
@@ -280,4 +285,3 @@ def make_sigma_size_Loss(latent_dim, ms_Net, norm=abs):
         return sig_size
 
     return sigma_size_loss
-'''

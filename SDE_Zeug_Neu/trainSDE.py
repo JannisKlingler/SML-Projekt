@@ -16,7 +16,7 @@ tf.random.set_seed(1)
 
 latent_dim = 6
 nrBrMotions = 1
-epochs = 30
+epochs = 10
 M = 2
 forceHigherOrder = False
 
@@ -24,7 +24,7 @@ akt_fun = 'tanh'
 
 frames = 20
 simulated_frames = frames
-T = 200
+T = 10
 #T = 2*pi
 fps = frames//T
 Ntrain = 5000
@@ -34,6 +34,7 @@ d = M*latent_dim
 n = nrBrMotions
 batch_size = 50
 complexity = 100
+expected_SDE_complexity = 20
 
 
 ########################################################
@@ -95,11 +96,11 @@ print('new train shape:',x_train_derivatives.shape)
 derivatives = SDE_Tools.make_tensorwise_derivatives(M, frames, fps)
 ms = SDE_Tools.mu_sig_Net(M,latent_dim,n,akt_fun,complexity,forceHigherOrder=forceHigherOrder)
 
-p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, T, frames, ms)
-cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, T, frames, batch_size, ms)#, norm=lambda x: tf.math.sqrt(abs(x)))
+p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, T, frames, ms, expected_SDE_complexity)
+cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, T, frames, batch_size, ms, expected_SDE_complexity)#, norm=lambda x: tf.math.sqrt(abs(x)))
 ss_loss = SDE_Tools.make_sigma_size_Loss(latent_dim, ms)
 
-reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(d, latent_dim, n, T, frames, ms, batch_size)
+reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(d, latent_dim, n, T, frames, ms, expected_SDE_complexity)
 rec_loss = SDE_Tools.make_reconstruction_Loss(M, n, T, frames, batch_size, reconstructor, derivatives)
 
 #loss = lambda x_org,ms_rec: 1*rec_loss(x_org,None) + 1*p_loss(x_org, ms_rec) + 0.1*cv_loss(x_org, ms_rec) + 0*ss_loss(x_org, ms_rec)
