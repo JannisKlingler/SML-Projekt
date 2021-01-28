@@ -21,10 +21,10 @@ tf.compat.v1.keras.backend.set_session(session)
 ########################################################
 # %% hyperparameter
 epochs = 10
-latent_dim = 5  #5-30 sollte gut gehen
+latent_dim = 15  #5-30 sollte gut gehen
 batch_size = 50  # eher klein halten, unter 100 falls möglich, 50 klappt gut
-train_size = 6000
-test_size = 10 # wird hier noch nicht gebraucht
+train_size = 60000
+test_size = 10000 # wird hier noch nicht gebraucht
 frames = 20  # Number of images in every datapoint. Choose accordingly to dataset size.
 act_CNN = 'relu'  # Activation function 'tanh' is used in odenet.
 act_ms_Net = 'tanh'
@@ -126,15 +126,15 @@ def SDELoss(Z_derivatives, ms_rec):
     S = 0
     #S += alpha*1*ms_rec_loss(Z_enc_List,Z_rec_List)
     S += 10*p_loss(Z_derivatives,ms_rec)
-    S += 0.5*cv_loss(Z_derivatives,ms_rec)
+    S += 1*cv_loss(Z_derivatives,ms_rec)
     #S += 1000*ss_loss(Z_derivatives,ms_rec) #mal ohne probieren
     return S
 alpha = 0.5
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    #S += 5*ms_rec_loss(Z_enc_List,Z_rec_List)
-    S += alpha*10*p_loss(Z_derivatives,None)
-    S += alpha*1*cv_loss(Z_derivatives,None)
+    S += 5*ms_rec_loss(Z_enc_List,Z_rec_List)
+    #S += alpha*10*p_loss(Z_derivatives,None)
+    #S += alpha*1*cv_loss(Z_derivatives,None)
     #S += beta*100*ss_loss(Z_derivatives,None)
     return S
 
@@ -144,7 +144,7 @@ def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivativ
     S = 20*rec_loss(X_org, X_rec_List)
     #S += alpha*1*ms_rec_loss(Z_enc_List,Z_rec_List)
     S += beta*10*p_loss(Z_derivatives,None)
-    S += beta*0.5*cv_loss(Z_derivatives,None)
+    S += beta*1*cv_loss(Z_derivatives,None)
     #S += beta*1000*ss_loss(Z_derivatives,None)
     return S
 
@@ -244,13 +244,13 @@ z_train_derivatives = tf.constant(z_train_derivatives)
 ms_Net.fit(z_train_derivatives, z_train_derivatives, epochs=SDE_epochs_starting, batch_size=batch_size, shuffle=False)
 ms_Net.summary()
 
-'''
+
 ########################################################
 #Abwechselnd En-&Decoder und SDE-Rekonstruktion trainieren
 SDE_VAE.compile(optimizer='adam', loss= lambda x,arg:arg)
 SDE_VAE.fit(x_train, x_train, epochs=epochs, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
-'''
+
 SDE_VAE.apply_ms_Net = True
 
 
@@ -261,6 +261,14 @@ decoder.save(data_path+'SDE_Zeug_Neu/decoder'+',M={}'.format(M)+',e={}'.format(e
 ms_Net.save(data_path+'SDE_Zeug_Neu/ms_Net'+',M={}'.format(M)+',e={}'.format(epochs)+',l={}'.format(latent_dim))
 '''
 
+Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List = SDE_VAE.fullcall(
+    x_test)
+np.save(data_path+'Ball/Z_enc_mean_List', Z_enc_mean_List)
+np.save(data_path+'Ball/Z_enc_log_var_List', Z_enc_log_var_List)
+np.save(data_path+'Ball/Z_enc_List', Z_enc_List)
+np.save(data_path+'Ball/Z_derivatives', Z_derivatives)
+np.save(data_path+'Ball/Z_rec_List', Z_rec_List)
+np.save(data_path+'Ball/X_rec_List', X_rec_List)
 
 '''
 #SDE-Datensatz erstellen

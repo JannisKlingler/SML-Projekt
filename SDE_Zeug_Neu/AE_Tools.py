@@ -56,6 +56,27 @@ def make_Clemens_encoder(latent_dim):
     return Clemens_encoder
 
 
+def make_ClemensM_encoder(latent_dim,M):
+    encoder_input = tf.keras.layers.Input(shape=(28, 28, 1))
+    x = tf.keras.layers.Conv2D(16, (3, 3), padding='same', activation='relu')(encoder_input)
+    x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+    x = tf.keras.layers.Conv2D(32, (3, 3), activation='relu')(x)
+    x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+    x = tf.keras.layers.Conv2D(64, (3, 3), activation='relu')(x)
+    x = tf.keras.layers.Flatten()(x)
+    x = tf.keras.layers.Dense(128, activation='relu')(x)
+
+    μ = tf.keras.layers.Dense(M*latent_dim)(x)
+    log_σ = tf.keras.layers.Dense(M*latent_dim)(x)
+
+    z = tf.keras.layers.Lambda(lambda arg: arg[0] + K.exp(arg[1]) * K.random_normal(
+        shape=(K.shape(arg[0])[0], latent_dim), mean=0.0, stddev=1.0))([μ, log_σ])
+    z = tf.keras.layers.Reshape([M,latent_dim])(z)
+
+    Clemens_encoder = tf.keras.Model(encoder_input, z)
+    return Clemens_encoder
+
+
 
 class LocalEncoder(tf.keras.Model):
     def __init__(self, latent_dim, M, pictureWidth, pictureHeight, pictureColors, act, complexity=1, variational=False):
