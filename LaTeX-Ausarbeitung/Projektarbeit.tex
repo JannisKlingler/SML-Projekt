@@ -581,12 +581,13 @@
 	\tz^{(M-1,1)}(t,\omega) & .. & \tz^{(M-1,d)}(t,\omega)
 	\end{pmatrix} \in \R^{M \times d} \ .$$
 	Es wird nur die Erste Zeile von $Z$ (analog zu $s$ im ODE$^2$VAE) an den Decoder weitergegeben. Die Funktionen $\bmu : \R^{M \times d} \rightarrow \R^{M \times d}$ und $\bsig : \R^{M \times d} \rightarrow \R^{M \times d \times n}$ werden mit Neuronalen Netzwerken gelernt.\\
-	Das Ziel hierbei ist nicht diese Lösung direkt in einen Encoder einzugeben um die eingegebenen Daten zu rekonstruieren, sondern anhand des gelernten $\bmu$ eine ODE ohne 'Unsicherheit' $\bsig$ zu simulieren. Diese glatte Lösung der ODE wird dann in die Decoder eingegeben. Die Rekonstruktionen sollen anschaulich weniger chaotisch sein, als die eingegebenen Daten.\\
-	Das erlernte $\bsig$ kann verwendet werden um neue Pfade von $Z$ zu ziehen (simulieren), mit denen man glaubhaft neue Daten generieren kann.\\
+	Das Ziel hierbei ist nicht diese Lösung direkt in einen Encoder einzugeben um die eingegebenen Daten zu rekonstruieren, sondern anhand des gelernten $\bmu$ eine ODE ohne 'Unsicherheit' $\bsig$ zu simulieren. Diese glatte Lösung der ODE kann dann in die Decoder eingegeben um anschaulich geglättete oder weniger chaotische Daten zu erhalten.\\
+	Interessant ist, dass beim Training die originalen, ungeglätteten latenten Darstellungen $\tz^{(0)}(t_0,\cdot),...,\tz^{(0)}(t_m,\cdot)$ in die Decoder eingegeben werden. Zusätzliche Verlustfunktionen sorgen dafür, dass $\bmu, \bsig$ erlernt werden sowie dass die En-\&Decoder lernen $z$ als SDEs darzustellen.\\
+	Die erlernten $\bmu,\bsig$ können verwendet werden um neue Pfade von $Z$ zu ziehen (simulieren), mit denen man glaubhaft neue Daten generieren kann.\\
 	\\
 	Der ODE$^2$VAE ist nur ein einfacher Spezialfall dieser Darstellung. Wenn wir nämlich $M=2$, $\bsig = 0$ und $\bmu^{(0)}(\tz^{(0)},\tz^{(1)}) = \tz^{(1)}$ setzen, dann erfüllt $\bmu^{(0)}(\tz^{(0)},\tz^{(1)})$ dieselbe Rolle, wie $\bbf$ im ODE$^2$VAE.\\
 	\\
-	TODO: Verteilung von $Z_0$
+	Damit man mit dem Modell besser neue Daten generieren kann, soll $(\tz(0,\cdot))_*\bP$ wie beim VAE und beim ODE$^2$VAE in die Form einer Normalverteilung auf $\R^d$ gezwungen werden. Leider hatten wir nicht mehr genug Zeit die dazu notwendigen Verlustfunktionen auf das neue Modell zuzuschneiden.
 
 
 
@@ -642,7 +643,7 @@
 	& = \sum\limits_{j,j'=1}^n \left[ \int_0^\tau \bsig^{i,j}(Z_s) \, dW_s^j, \int_0^\tau \bsig^{l,j'}(Z_s) \, dW_s^{j'} \right]\\
 	& \overset{19.37}{=} \sum\limits_{j,j'=1}^n \int_0^\tau \bsig^{i,j}(Z_s)\bsig^{l,j'}(Z_s) \, d\underbrace{\left[W^j, W^{j'} \right]_s}_{=1_{j=j'} \, s} = \sum\limits_{j=1}^n \int_0^\tau \bsig^{i,j}(Z_s)\bsig^{l,j}(Z_s) \, ds
 	\end{align*}
-	Indem wir nun den unteren Term durch $A_{i,l} := \sum\limits_{j=1}^n \Delta t^m \sum\limits_{k=1}^m \bsig^{i,j}(Z_{t_k})\bsig^{l,j}(Z_{t_k})$ und den oberen Term $[Z^i,Z^l]_\tau$ wie in der oberen Überlegung durch $B_{i,l} := (Z^i_{t^m_{k}}-Z^i_{t^m_{k-1}}) (Z^l_{t^m_{k}}-Z^l_{t^m_{k-1}})$ approximieren, können wir die ganze Matrix $\bsig \in \R^{d \times n}$ trainieren, indem wir $\sum\limits_{i,l=1}^d|A_{i,l}-B_{i,l}|$ bestrafen.\\
+	Indem wir nun den unteren Term durch $A_{i,l} := \sum\limits_{j=1}^n \Delta t^m \sum\limits_{k=1}^m \bsig^{i,j}(Z_{t_k})\bsig^{l,j}(Z_{t_k})$ und den oberen Term $[Z^i,Z^l]_\tau$ wie in der oberen Überlegung durch $B_{i,l} := (Z^i_{t^m_{k}}-Z^i_{t^m_{k-1}}) (Z^l_{t^m_{k}}-Z^l_{t^m_{k-1}})$ approximieren, können wir die ganze Matrix $\bsig \in \R^{d \times n}$ trainieren, indem wir den Abstand zwischen $A$ und $B$ bestrafen.\\
 	Wir trainieren hier effektiv nur $\bsig \bsig^* \in \R^{d \times d}$, aber viel besser kann man $\bsig$ auch nicht bestimmen, da man z.B. bei zwei unabhängigen Brownschen Bewegungen $W^1,W^2$ man nicht zwischen $\sqrt{2}W_1, W_1+W_2, W_1-W_2, \sqrt{2}W_2$ anhand ihrer Verteilung unterscheiden kann.
 	
 	
@@ -672,16 +673,34 @@
 	\begin{itemize}
 		\item Reconstruction-Loss:
 		\begin{align*}
-		& L_r(x_0,...,x_m) := 
+		& L_r := H\big((x_0,...,x_m)_*\bP, (f(z_0^{(0)}),...,f(z_m^{(0)})_*\bP)\big)
+		\end{align*}
+		Dabei steht $H$ für die Binäre Kreuzentropie zwischen den Verteilungen.
+		
+		\item Latent-Reconstruction-Loss:
+		\begin{align*}
+		& L_{lr} := \E\left[\left( \sum\limits_{k=0}^m \sum\limits_{i=1}^d (z^{(0,i)}_k-z^{(0,i)}_{k,rec})^2 \right)^{\frac{1}{2}}\right]
 		\end{align*}
 		
-		\item Pointwise-Loss
+		\item Latent-Pointwise-Loss:
+		\begin{align*}
+		& L_{lp} := \E\left[\left( \sum\limits_{k=0}^{m-1} \sum\limits_{l=1}^{M-1} \sum\limits_{i=1}^d \big(\bmu^{l,i}(z_k) - \Delta t (z^{(l-1,i)}_{k+1} - z^{(l-1,i)}_{k}) \big)^2 \right)^{\frac{1}{2}}\right]
+		\end{align*}
 		
-		\item Covariance-Loss
+		\item Latent-Covariance-Loss:
+		Wir betrachten die oben definierten $Z_{t_k}$ als Vektoren in $\R^{Md}$. Seien $A_{i,l}$ und $B_{i,l}$ wie sie in der Theorie zum lernen von SDEs definiert werden.
+		\begin{align*}
+		& L_{lcv} := \E\left[\left( \sum\limits_{i,l=1}^d \big( A_{i,l}-B_{i,l} \big)^2 \right)^{\frac{1}{2}}\right]
+		\end{align*}
 		
-		\item Sigma-Size-Loss
+		
 	\end{itemize}
+	Während des Trainings werden diese Verlustfunktionen, die eigentlich von den Zufallsvariablen $(x_0,...,x_m)$ abhängen, Batch-weise als Mittelwert über die gegebenen Daten $(x_1^p,...,x_m^p)_{p \in \N}\, uiv. \sim (x_1,...,x_m)_*\bP$ approximiert.
 	
+	\newpage
+	\noindent
+	
+	TODO:Training
 	
 	
 	
