@@ -132,7 +132,7 @@ def SDELoss(Z_derivatives, ms_rec):
 alpha = 0.5
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += 5*ms_rec_loss(Z_enc_List,Z_rec_List)
+    S += 5*ms_rec_loss(Z_derivatives,Z_rec_List)
     #S += alpha*10*p_loss(Z_derivatives,None)
     #S += alpha*1*cv_loss(Z_derivatives,None)
     #S += beta*100*ss_loss(Z_derivatives,None)
@@ -236,13 +236,14 @@ SDE_VAE.summary()
 #SDE_VAE.apply_ms_Net = True
 SDE_VAE.custom_loss = FullLoss
 
-########################################################
-#Die SDE-Rekonstruktion der latenten Darstellungen lernen lassen
-ms_Net.compile(optimizer='adam', loss=SDELoss, metrics=[ss_loss, lambda x,m: ms_rec_loss(x,None)])
-_,_,_,z_train_derivatives,_,_ = SDE_VAE.fullcall(x_train)
-z_train_derivatives = tf.constant(z_train_derivatives)
-ms_Net.fit(z_train_derivatives, z_train_derivatives, epochs=SDE_epochs_starting, batch_size=batch_size, shuffle=False)
-ms_Net.summary()
+with tf.device('/cpu:0'):
+    ########################################################
+    #Die SDE-Rekonstruktion der latenten Darstellungen lernen lassen
+    ms_Net.compile(optimizer='adam', loss=SDELoss, metrics=[ss_loss, lambda x,m: ms_rec_loss(x,None)])
+    _,_,_,z_train_derivatives,_,_ = SDE_VAE.fullcall(x_train)
+    z_train_derivatives = tf.constant(z_train_derivatives)
+    ms_Net.fit(z_train_derivatives, z_train_derivatives, epochs=SDE_epochs_starting, batch_size=batch_size, shuffle=False)
+    ms_Net.summary()
 
 
 ########################################################

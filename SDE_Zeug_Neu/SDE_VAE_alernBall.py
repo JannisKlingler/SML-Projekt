@@ -20,33 +20,34 @@ tf.compat.v1.keras.backend.set_session(session)
 
 ########################################################
 # %% hyperparameter
-epochs = 25
-latent_dim = 8  # 5-30 sollte gut gehen
+epochs = 10
+latent_dim = 10  # 5-30 sollte gut gehen
 batch_size = 50  # eher klein halten, unter 100 falls möglich, 50 klappt gut
-train_size = 60000
-test_size = 10000  # wird hier noch nicht gebraucht
-frames = 20  # Number of images in every datapoint. Choose accordingly to dataset size.
+train_size = 3000
+test_size = 100  # wird hier noch nicht gebraucht
+frames = 50  # Number of images in every datapoint. Choose accordingly to dataset size.
 act_CNN = 'relu'  # Activation function 'tanh' is used in odenet.
 act_ms_Net = 'tanh'
-Time = 10  # number of seconds of the video
-SDE_Time = 50
+Time = 50  # number of seconds of the video
 fps = Time/frames
 n = 1
 pictureWidth = 28
 pictureHeight = 28
 pictureColors = 1
 M = 2  # für 2 ist es ein 2-SDE-VAE, M sollte nie größer als frames//2 sein
+N = 3  #Achtung: die letzte (M-1)*N frames können nicht zum trainieren verwendet werden
 CNN_complexity = 20  # wird zur zeit garnicht verwenden
 SDE_Net_complexity = 8*latent_dim  # scheint mit 50 immer gut zu klappen
 forceHigherOrder = False
 reconstructWithBM = False
+expected_SDE_complexity = 20
 
-VAE_epochs_starting = 10
-SDE_epochs_starting = 20
+VAE_epochs_starting = 5
+SDE_epochs_starting = 30
 
 
-#data_path = 'C:/Users/bende/Documents/Uni/SML-Projekt/'
-data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
+data_path = 'C:/Users/bende/Documents/Uni/SML-Projekt/'
+#data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
 # %% #
 ################################################################################
 # Datensatz laden oder erstellen
@@ -86,8 +87,8 @@ print('train-shape:', x_train.shape)
 x_test = np.transpose(np.array([x_test]), (1, 4, 2, 3, 0))
 
 '''
-x_train = np.load(data_path+'SDE_Ball_train.npy')
-x_test = np.load(data_path+'SDE_Ball_test.npy')
+x_train = np.load(data_path+'Ball/SDE_Ball_train.npy')
+x_test = np.load(data_path+'Ball/SDE_Ball_test.npy')
 x_train = x_train[0:train_size]
 x_test = x_test[0:test_size]
 
@@ -114,7 +115,7 @@ x_test = np.transpose(np.array([x_test]), (1, 2, 3, 4, 0))
 ########################################################
 # Definitionen
 
-derivatives = SDE_Tools.make_tensorwise_derivatives(M, frames, fps)
+derivatives = SDE_Tools.make_tensorwise_average_derivatives(M, frames, fps)
 
 #encoder = AE_Tools.FramewiseEncoder(latent_dim, pictureWidth, pictureHeight, pictureColors, act_CNN, complexity=CNN_complexity, variational=True)
 #decoder = AE_Tools.FramewiseDecoder(latent_dim, pictureWidth, pictureHeight, pictureColors, act_CNN, complexity=CNN_complexity)
@@ -125,41 +126,41 @@ decoder = AE_Tools.make_Clemens_decoder(latent_dim)
 ms_Net = SDE_Tools.mu_sig_Net(M, latent_dim, n, act_ms_Net,
                               SDE_Net_complexity, forceHigherOrder=forceHigherOrder)
 reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(
-    latent_dim*pictureColors, latent_dim*pictureColors, n, SDE_Time, frames-M+1, ms_Net, batch_size, applyBM=reconstructWithBM)
+    latent_dim*pictureColors, latent_dim*pictureColors, n, Time, frames-M+1, ms_Net, batch_size, applyBM=reconstructWithBM)
 
 
 rec_loss = AE_Tools.make_binary_crossentropy_rec_loss(M, frames)
 ms_rec_loss = SDE_Tools.make_reconstruction_Loss(
     M, n, Time, frames, batch_size, reconstructor, derivatives)
-p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, SDE_Time, frames, ms_Net)
-cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, SDE_Time, frames, batch_size, ms_Net)
+p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, batch_size)
+cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, batch_size)
 ss_loss = SDE_Tools.make_sigma_size_Loss(latent_dim, ms_Net)
 
-
+'''
 def VAELoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
     return S
-
+'''
 
 def SDELoss(Z_derivatives, ms_rec):
     S = 0
-    #S += alpha*1*ms_rec_loss(Z_enc_List,Z_rec_List)
+    #S += 1*ms_rec_loss(Z_derivatives,None)
     S += 5*p_loss(Z_derivatives, ms_rec)
-    S += 0.5*cv_loss(Z_derivatives, ms_rec)
+    S += 1*cv_loss(Z_derivatives, ms_rec)
     # S += 1000*ss_loss(Z_derivatives,ms_rec) #mal ohne probieren
     return S
 
 
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    #S += 5*ms_rec_loss(Z_enc_List,Z_rec_List)
-    S += 4*p_loss(Z_derivatives, None)
-    S += 0.4*cv_loss(Z_derivatives, None)
+    S += 5*ms_rec_loss(Z_derivatives,Z_rec_List)
+    #S += 4*p_loss(Z_derivatives, None)
+    #S += 0.4*cv_loss(Z_derivatives, None)
     #S += beta*100*ss_loss(Z_derivatives,None)
     return S
 
 
-beta = 0.5
+beta = 0.2
 
 
 def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
@@ -204,7 +205,8 @@ class SDE_Variational_Autoencoder(tf.keras.Model):
         Z_enc_log_var_List = tf.keras.layers.Concatenate(axis=1)(Z_enc_log_var_List)
         # Z_enc_log_var_List hat dim: batch_size x frames x latent_dim
 
-        Z_derivatives = derivatives(Z_enc_List)
+        Z_derivatives = derivatives(Z_enc_List,N)
+        print('Z_derivatives:',Z_derivatives.shape)
         # Z_derivatives hat dim: batch_size x frames-M+1 x M x latent_dim
         Z_derivatives_0 = Z_derivatives[:, 0, :, :]
         # Z_derivatives_0 hat dim: batch_size x M x latent_dim
@@ -257,7 +259,7 @@ SDE_VAE.compile(optimizer='adam', loss=lambda x, arg: arg)
 SDE_VAE.fit(x_train, x_train, epochs=VAE_epochs_starting, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
 
-SDE_VAE.apply_ms_Net = True
+#SDE_VAE.apply_ms_Net = True
 SDE_VAE.custom_loss = FullLoss
 
 with tf.device('/cpu:0'):
@@ -271,11 +273,15 @@ with tf.device('/cpu:0'):
                epochs=SDE_epochs_starting, batch_size=batch_size, shuffle=False)
     ms_Net.summary()
 
+
 ########################################################
 # Abwechselnd En-&Decoder und SDE-Rekonstruktion trainieren
 SDE_VAE.compile(optimizer='adam', loss=lambda x, arg: arg)
 SDE_VAE.fit(x_train, x_train, epochs=epochs, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
+
+
+SDE_VAE.apply_ms_Net = True
 
 '''
 # Modell speichern

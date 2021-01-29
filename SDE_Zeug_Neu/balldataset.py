@@ -12,13 +12,14 @@ from math import pi, log, sin, cos, exp
 import SDE_Tools
 
 
-Ntrain = 60000  # 16 GB Arbeitsspeicher funktioniert, aber ALLE Programme davor schließen!
+Ntrain = 10000 # 16 GB Arbeitsspeicher funktioniert, aber ALLE Programme davor schließen!
 Ntest = 10000
-frames = 20
+frames = 50
 simulated_frames = 200
-T = 10
+T = 50
 n = 1
-data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
+#data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
+data_path = 'C:/Users/bende/Documents/Uni/SML-Projekt/Ball/'
 
 
 X_0 = np.array([np.zeros(Ntrain), np.ones(Ntrain)])
@@ -28,7 +29,7 @@ X_0 = np.transpose(X_0, [1, 0])
 
 
 def mu(x):
-    m = np.array([x[1], -(2*pi/T)**2*x[0]])
+    m = np.array([x[1], -(3*2*pi/T)**2*x[0]])
     #m = np.array([x[1],1])
     return m
 
@@ -36,7 +37,7 @@ def mu(x):
 
 
 def sigma(x):
-    s = np.array([[0.5], [0.2]])
+    s = np.array([[0.1], [0.2]])
     #s = np.zeros((d,n))
     return s
 
@@ -55,7 +56,7 @@ for i in range(Ntrain):
     list = []
     for j in range(frames):
         #position = [min(max(x_train[i, j, 0], -2), 2)/4+0.5, 0.5]
-        position = [x_train[i, j, 0]/8+0.5, 0.5]
+        position = [x_train[i, j, 0]/16+0.5, 0.5]
         radius = 0.12
         arr = np.zeros((28, 28))
         ro, co = draw.disk((position[0] * 28, position[1] *

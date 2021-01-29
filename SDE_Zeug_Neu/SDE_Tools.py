@@ -39,6 +39,23 @@ def make_tensorwise_derivatives(M, frames, fps):
         return tf.stack(dList, axis=2)
     return derivatives
 
+def make_tensorwise_average_derivatives(M, frames, fps):
+    def derivatives(x_org,N):
+        length = x_org.shape[1]
+        dList = [x_org]
+        for i in range(1, M):
+            x_last = dList[-1]
+            average = 0
+            for j in range(1,N+1):
+                x_derived = x_last[:, j:, :]-x_last[:, :-j, :]
+                x_derived = x_derived[:,:x_last.shape[1]-N,:]*fps
+                average += x_derived/j
+            print('ZZZZ', average.shape)
+            dList.append(average/N)
+        dList = list(map(lambda arg: arg[:, :length-(M-1)*N, :], dList))
+        return tf.stack(dList, axis=2)
+    return derivatives
+
 
 # Ausgabe-Dim: frames x d [=latent_dim]
 def ItoDiffusion(d, n, T, frames, simulated_frames, X_0, mu, sigma):
@@ -197,16 +214,17 @@ class mu_sig_Net(tf.keras.Model):
 
 
 def make_reconstruction_Loss(M, n, Time, frames, batch_size, T_reconstructor, derivatives, norm=abs):
-    def reconstruction_loss(Z_org, Z_rec):
+    def reconstruction_loss(Z_derivatives, Z_rec):
 
-        print('SDE_rec_loss_inp:', Z_org.shape)  # , Z_rec.shape)
+        print('SDE_rec_loss_inp:', Z_derivatives.shape)  # , Z_rec.shape)
         if Z_rec is None:
             #Z_derivatives = derivatives(Z_org)
             # print('CCCC0:',Z_derivatives.shape)
-            Z_0 = Z_org[:, 0, :, :]
+            Z_0 = Z_derivatives[:, 0, :, :]
             # print('CCCC0:',Z_0.shape)
-            Z_rec = T_reconstructor(Z_0)[:, :Z_org.shape[1], 0, :]
-            Z_org = Z_org[:, :, 0, :]
+            Z_rec = T_reconstructor(Z_0)[:, :Z_derivatives.shape[1], 0, :]
+        Z_rec = Z_rec[:, :Z_derivatives.shape[1], :]
+        Z_org = Z_derivatives[:, :, 0, :]
         print('SDE_rec_loss_inp2:', Z_org.shape, Z_rec.shape)
         Diff = Z_org[:, :frames-M+1, :] - Z_rec
         Diff = tf.map_fn(norm, Diff)
