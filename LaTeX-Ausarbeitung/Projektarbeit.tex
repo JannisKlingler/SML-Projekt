@@ -160,10 +160,10 @@
 		\end{tabular}
 	\vspace{1cm}
 	\subsection[Auto Encoding Variational Bayes]{Auto Encoding Variational Bayes}
-	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N} \subset \R^{P\times N}$, der aus $N$ unterschiedlichen unabhängig, identisch verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
+	Angenommen wir haben einen Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N} \subset \R^{D\times N}$, der aus $N$ unterschiedlichen unabhängig, identisch verteilten Datenpunkten $\x\sim p(\x)$ besteht, welche hochdimensionale Realisierungen einer unbekannten Zufallsvariable sind.\\
 	In einem latenten Variablen Modell sind wir darum bemüht die Dimension des Datenpunkts zu reduzieren, um den Prozess, der die Daten erzeugt besser modellieren zu können.
 	Dafür werden sogenannte \emph{latenten Variablen} $\z$ eingeführt. Diese sind stetige und nicht beobachtbare Zufallsvariablen, welche die Eigenschaften des Bildes festlegen, die es charakterisiert.
-	Der sogenannte \emph{latente Raum} $\mathcal{Z} = \R^Z$, über den die latenten Variablen $\z$ definiert sind, ist nach Wahl von viel geringerer Dimension als der Raum $\mathcal{X}$ der ursprünglichen Verteilung, d.h. $Z \ll P$.\\
+	Der sogenannte \emph{latente Raum} $\mathcal{Z} = \R^d$, über den die latenten Variablen $\z$ definiert sind, ist nach Wahl von viel geringerer Dimension als der Raum $\mathcal{X}$ der ursprünglichen Verteilung, d.h. $d \ll D$.\\
 	Das latente Variablen Modell besteht aus einem generativen Modell $p(\x|\z)$, einer Priorverteilung $p(\z)$ und dem Inference Modell $q(\z|\x)$, welches die Posteriorverteilung $p(\z|\x)$ approximiert.\\
 	Datenpunkte werden erzeugt indem zuerst eine latente Darstellung $\z \sim  p(\z)$  gezogen wird, mit welcher dann ein Datenpunkt  $\x \sim  p(\x|\z)$ durch das generative Modell ermittelt wird. Nun lässt sich $p(\x)$ über die Marginale Likelihood durch ein Integral über alle latenten Werte beschreiben.
 	\begin{align*}
@@ -270,8 +270,8 @@
 		\caption{Gegeben die Realisierungen einer Zufallsvariablen $\z\sim \mathcal{N}(\mathbf{0},\mathbf{I})$  (Links) lässt sich mit Abbildung durch eine Funktion, hier $g(\textbf{z})= \frac{\textbf{z}}{15}+\frac{\textbf{z}}{||\textbf{z}||}$ eine ganz andere Verteilung erzeugen (Rechts). Dies nutzt der VAE aus, um aus Realisierungen einer normalverteilten Zufallsvariablen komplexe Verteilungen in großer Dimension zu modellieren. Die Funktion g, beim VAE der Decoder wird aus den Daten erlernt. \textbf{}\cite{tutvae}}
 	\end{figure}
 
-	Welche Verteilung für den Decoder $\pdec$ dafür am besten geeignet ist, hängt vom Typ der zu erzeugenden Daten ab.\\ Für binäre Daten  $\textbf{x}_{i} \in \{0,1\}^{P}$ werden wir eine multivariate Bernoulliverteilung verwenden, also $p_{\theta}(\textbf{x}_{i}|\textbf{z}) =  \mathcal{B}(\boldsymbol{p}_{i})$. Gemeint ist hiermit eine elementweise Auswertung univariater Bernoulliverteilungen.\\
-	Für stetige Daten $\textbf{x}_{i} \in \mathbb{R}^{P}$ wählen wir eine multivariate Normalverteilung $p_{\theta}(\textbf{x}_{i}|\textbf{z}) = \mathcal{N}(\boldsymbol{\hat{\mu}}_{i},\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I})$.\\
+	Welche Verteilung für den Decoder $\pdec$ dafür am besten geeignet ist, hängt vom Typ der zu erzeugenden Daten ab.\\ Für binäre Daten  $\textbf{x}_{i} \in \{0,1\}^{D}$ werden wir eine multivariate Bernoulliverteilung verwenden, also $p_{\theta}(\textbf{x}_{i}|\textbf{z}) =  \mathcal{B}(\boldsymbol{p}_{i})$. Gemeint ist hiermit eine elementweise Auswertung univariater Bernoulliverteilungen.\\
+	Für stetige Daten $\textbf{x}_{i} \in \mathbb{R}^{D}$ wählen wir eine multivariate Normalverteilung $p_{\theta}(\textbf{x}_{i}|\textbf{z}) = \mathcal{N}(\boldsymbol{\hat{\mu}}_{i},\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I})$.\\
 	Hierbei sind $\boldsymbol{\hat{\mu}}_{i} = \boldsymbol{\hat{\mu}}_{\boldsymbol\theta}(\textbf{z})$ und $\boldsymbol{\hat{\sigma}}_{i}^{2} = \boldsymbol{\hat{\sigma}}_{\boldsymbol\theta}^{2}(\textbf{z}) $ bzw. $\textbf{p}_{i} = \textbf{p}_{\boldsymbol\theta}(\textbf{z})$ die Ausgaben des Decodernetzwerkes.\newpage
 	\begin{figure}[h!]
 		\centering
@@ -290,7 +290,7 @@
 		\captionsetup{labelformat=empty}
 		\caption{Erlernte latente Darstellung des MNIST-Trainingsdatensatzes im zweidimensionalen\\ latenten Raum (links) und durch das Decodernetzwerk erzeugte Daten. (rechts) Die \\latenten Darstellungen $\mathbf{z}$ wurden mit linearem Abstand im Quadrat $[-2,2]^2$ gewählt. Auf die verwendete Modellstruktur und den dazu geschriebenen Code gehen wir im praktischen Teil dieser Arbeit genauer ein. }
 	\end{figure}
-	Für eine konkrete Berechnung der ELBO betrachten wir zuerst die KL-Divergenz der nun parameterfreien Verteilung $p(\textbf{z})$ nach $q_{\boldsymbol\phi}(\textbf{z}|\textbf{x}_{i})$. $Z$ notiert hierbei die Dimension der latenten Darstellung und $p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})$ bzw. $p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z})$ die Auswertung der jeweiligen Dichtefunktion an der Stelle $\textbf{z}$.
+	Für eine konkrete Berechnung der ELBO betrachten wir zuerst die KL-Divergenz der nun parameterfreien Verteilung $p(\textbf{z})$ nach $q_{\boldsymbol\phi}(\textbf{z}|\textbf{x}_{i})$. $d$ notiert hierbei die Dimension der latenten Darstellung und $p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})$ bzw. $p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z})$ die Auswertung der jeweiligen Dichtefunktion an der Stelle $\textbf{z}$.
 
 	\begin{align*}
 	D_{KL}\big(q_{\boldsymbol\phi}(\textbf{z}|\textbf{x}_{i}) || p(\textbf{z})\big) &= \mathbb{E}_{\z\sim\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}\left[\log\left(\frac{p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})}{p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z})}\right)\right].\\
@@ -299,9 +299,9 @@
 	\end{align*}
 	Die jeweiligen Dichtefunktionen sind durch
 	\begin{align*}
-	p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})&= \frac{1}{\sqrt{2\pi^{Z} \det(\boldsymbol\sigma_{i}^{2}\mathbf{I})}}\exp\left(-\frac{1}{2}(\textbf{z}-\boldsymbol\mu_{i})^{\mathrm{T}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\right) \notag \\
-	\log(p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z}))&= -\frac{1}{2}\big(\log(2\pi^{Z} \det(\boldsymbol\sigma_{i}^{2}\mathbf{I}))+(\textbf{z}-\boldsymbol\mu_{i})^{\mathrm{T}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\big)\\ \notag
-	\log(p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z}))&= -\frac{1}{2}\left(\log(2\pi^{Z} )+\textbf{z}^{\mathrm{T}}\mathbf{I}\textbf{z}\right)
+	p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z})&= \frac{1}{\sqrt{2\pi^{d} \det(\boldsymbol\sigma_{i}^{2}\mathbf{I})}}\exp\left(-\frac{1}{2}(\textbf{z}-\boldsymbol\mu_{i})^{\mathrm{T}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\right) \notag \\
+	\log(p_{\mathcal{N}(\boldsymbol\mu_{i},\boldsymbol\sigma_{i}^{2}\mathbf{I})}(\textbf{z}))&= -\frac{1}{2}\big(\log(2\pi^{d} \det(\boldsymbol\sigma_{i}^{2}\mathbf{I}))+(\textbf{z}-\boldsymbol\mu_{i})^{\mathrm{T}}(\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}(\textbf{z}-\boldsymbol\mu_{i})\big)\\ \notag
+	\log(p_{\mathcal{N}(\mathbf{0},\mathbf{I})}(\textbf{z}))&= -\frac{1}{2}\left(\log(2\pi^{d} )+\textbf{z}^{\mathrm{T}}\mathbf{I}\textbf{z}\right)
 	\end{align*}
 	gegeben. Einsetzen und aufteilen des Erwartungswertes liefert uns
 	\begin{align*}
@@ -315,35 +315,35 @@
 	\end{align*}
 
 
-	Nun lässt sich mit ${\boldsymbol\sigma_{i}^{2}\mathbf{I}} =  \begin{psmallmatrix}\sigma_{i,1}^{2} & \ &\ \\ \ & \ddots &\ \\ \ & \ &\sigma_{i,Z}^{2}\end{psmallmatrix}$ die KL-Divergenz ausrechnen.
+	Nun lässt sich mit ${\boldsymbol\sigma_{i}^{2}\mathbf{I}} =  \begin{psmallmatrix}\sigma_{i,1}^{2} & \ &\ \\ \ & \ddots &\ \\ \ & \ &\sigma_{i,d}^{2}\end{psmallmatrix}$ die KL-Divergenz ausrechnen.
 	\begin{align*}
 	&-\frac{1}{2}\Big(\log\big(\det(\boldsymbol\sigma_{i}^{2}\mathbf{I})\big)+\mathrm{Tr}((\boldsymbol\sigma_{i}^{2}\mathbf{I})^{-1}\boldsymbol\sigma_{i}^{2}\mathbf{I})-\boldsymbol\mu_{i}^{\mathrm{T}}\textbf{I}\boldsymbol\mu_{i}-\mathrm{Tr}(\boldsymbol\sigma_{i}^{2}\mathbf{I})\Big) \notag \\
-	= &-\frac{1}{2}\left(\log\Big(\prod_{j=1}^{Z}\sigma_{i,j}^{2}\Big)+Z-\sum_{j=1}^{Z}\mu_{i,j}^{2}-\sum_{j=1}^{Z}\sigma_{i,j}^{2}\right) \notag \\
-	= &-\frac{1}{2}\sum_{j=1}^{Z}\Big(\log\big(\sigma_{i,j}^{2}\big)+1-\mu_{i,j}^{2}-\sigma_{i,j}^{2}\Big).
+	= &-\frac{1}{2}\left(\log\Big(\prod_{j=1}^{d}\sigma_{i,j}^{2}\Big)+d-\sum_{j=1}^{d}\mu_{i,j}^{2}-\sum_{j=1}^{d}\sigma_{i,j}^{2}\right) \notag \\
+	= &-\frac{1}{2}\sum_{j=1}^{d}\Big(\log\big(\sigma_{i,j}^{2}\big)+1-\mu_{i,j}^{2}-\sigma_{i,j}^{2}\Big).
 	\end{align*}
 
 	Auch $\pdec$ kann mit unserer Wahl der Verteilungen explizit ausgerechnet werden.
-	Mit $P$ wird dazu die Dimension des Inputs und Outputs notiert.
+	Mit $D$ wird dazu die Dimension des Inputs und Outputs notiert.
 	Für die Verwendung einer multivariaten Normalverteilung im Decoder ergibt sich:
 	\begin{align*}
 	\log\big(\pdec)\big) &=  \log\big(p_{\mathcal{N}(\boldsymbol{\hat{\mu}}_{i},\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I})}(\textbf{x}_{i})\big)\notag \\
-	&= -\frac{1}{2}\left(\log(2\pi^{P} \det(\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I}))+(\textbf{x}_{i}-\boldsymbol{\hat{\mu}}_{i})^{\mathrm{T}}(\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I})^{-1}(\textbf{x}_{i}-\boldsymbol{\hat{\mu}}_{i})\right) \notag \\
-	&= -\frac{1}{2}\left(\log(2\pi^{P})+\log\Big( \prod_{p=1}^{P}\hat{\sigma}_{i,p}^{2}\Big)+  \begin{pmatrix}  \frac{x_{i,1}-\hat{\mu}_{i,1}}{\hat{\sigma}_{i,1}^{2}}&\cdots& \frac{x_{i,P}-\hat{\mu}_{i,P}}{\hat{\sigma}_{i,P}^{2}}\end{pmatrix}
+	&= -\frac{1}{2}\left(\log(2\pi^{D} \det(\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I}))+(\textbf{x}_{i}-\boldsymbol{\hat{\mu}}_{i})^{\mathrm{T}}(\boldsymbol{\hat{\sigma}}_{i}^{2}\textbf{I})^{-1}(\textbf{x}_{i}-\boldsymbol{\hat{\mu}}_{i})\right) \notag \\
+	&= -\frac{1}{2}\left(\log(2\pi^{D})+\log\Big( \prod_{p=1}^{D}\hat{\sigma}_{i,p}^{2}\Big)+  \begin{pmatrix}  \frac{x_{i,1}-\hat{\mu}_{i,1}}{\hat{\sigma}_{i,1}^{2}}&\cdots& \frac{x_{i,D}-\hat{\mu}_{i,D}}{\hat{\sigma}_{i,D}^{2}}\end{pmatrix}
 	\boldsymbol{\cdot}(\textbf{x}_{i}-\boldsymbol{\hat{\mu}}_{i})\right) \notag \\
-	&= -\frac{1}{2}\left(P\log(2\pi)+\sum_{p=1}^{P}\log\left( \hat{\sigma}_{i,p}^{2}\right)+
-	\sum_{p=1}^{P}\frac{\big(x_{i,p}-\hat{\mu}_{i,p}\big)^{2}}{\hat{\sigma}_{i,p}^{2}}\right) \notag \\
-	&= -\frac{1}{2}\sum_{p=1}^{P} \left(\log\left(2\pi \hat{\sigma}_{i,p}^{2}\right) + \frac{\big(x_{i,p}-\hat{\mu}_{i,p}\big)^{2}}{\hat{\sigma}_{i,p}^{2}}\right)
+	&= -\frac{1}{2}\left(D\log(2\pi)+\sum_{p=1}^{D}\log\left( \hat{\sigma}_{i,p}^{2}\right)+
+	\sum_{p=1}^{D}\frac{\big(x_{i,p}-\hat{\mu}_{i,p}\big)^{2}}{\hat{\sigma}_{i,p}^{2}}\right) \notag \\
+	&= -\frac{1}{2}\sum_{p=1}^{D} \left(\log\left(2\pi \hat{\sigma}_{i,p}^{2}\right) + \frac{\big(x_{i,p}-\hat{\mu}_{i,p}\big)^{2}}{\hat{\sigma}_{i,p}^{2}}\right)
 	\end{align*}
 
 	Für eine bernoulliverteilte Zufallsvariable ist die Dichtefunktion  durch $p_{\mathcal{B}(\mathrm{p}_{i})}(x_{i}) = \mathrm{p}_{i}^{x_{i}}(1-\mathrm{p}_{i})^{(1-x_{i})}$ definiert. Somit ergibt sich für die Verwendung der multivariaten Bernoulliverteilung im Decoder: \\
 	\begin{align*}
 	\log\big(p_{\theta}(\textbf{x}_{i}|\textbf{z})\big) &=  \log\big(p_{\mathcal{B}(\boldsymbol{p}_{i})}(\textbf{x}_{i})\big)\notag \\
-	&= \log\left(p_{\mathcal{B}(\mathrm{p}_{1})}\left(x_{i,1}\right)\ \cdot\ldots\cdot \ p_{\mathcal{B}(\mathrm{p}_{P})}\left(x_{i,P}\right)\right)\notag \\
-	&= \log\left(\prod_{p=1}^{P}\left(p_{i,p}\right)^{x_{i,p}}\left(1-p_{i,p}\right)^{\left(1-x_{i,p}\right)}\right) \notag \\
-	&=  \sum_{p=1}^{P}x_{i,p}\log\left(p_{i,p}\right)+\left(1-x_{i,p}\right)\log\left(1-p_{i,p}\right)
+	&= \log\left(p_{\mathcal{B}(\mathrm{p}_{1})}\left(x_{i,1}\right)\ \cdot\ldots\cdot \ p_{\mathcal{B}(\mathrm{p}_{D})}\left(x_{i,D}\right)\right)\notag \\
+	&= \log\left(\prod_{p=1}^{D}\left(p_{i,p}\right)^{x_{i,p}}\left(1-p_{i,p}\right)^{\left(1-x_{i,p}\right)}\right) \notag \\
+	&=  \sum_{p=1}^{D}x_{i,p}\log\left(p_{i,p}\right)+\left(1-x_{i,p}\right)\log\left(1-p_{i,p}\right)
 	\end{align*}
 	\subsection[ODE$^2$VAE]{Second Order ODE-Variational Autoencoder}
-	Gegeben sei eine \emph{time series} $\mathbf{x}_{0:T}=(\mathbf x_{0}, \mathbf x_{1}, \ldots,\mathbf x_{T})\in \mathbb{R}^{P\times T}$ zu observierten Zeitpunkten $t_{0}, t_{1},\ldots,t_{T}$ mit zugehörigen latenten Zuständen $\mathbf z_{0:T}=(\mathbf z_{0}, \mathbf z_{1}, \ldots, \mathbf z_{T})\in \mathbb{R}^{Z\times T}$ geringerer Dimension. \\
+	Gegeben sei eine \emph{time series} $\mathbf{x}_{0:T}=(\mathbf x_{0}, \mathbf x_{1}, \ldots,\mathbf x_{T})\in \mathbb{R}^{D\times T}$ zu observierten Zeitpunkten $t_{0}, t_{1},\ldots,t_{T}$ mit zugehörigen latenten Zuständen $\mathbf z_{0:T}=(\mathbf z_{0}, \mathbf z_{1}, \ldots, \mathbf z_{T})\in \mathbb{R}^{d\times T}$ geringerer Dimension. \\
 	Wir nehmen an, dass die zeitliche Änderung der latenten Zustände durch eine Differentialgleichung beschrieben werden kann. Das Vektorfeld der Differentialgleichung wird durch ein Neuronales Netzwerk $f_{\boldsymbol{\psi}}$, ein \emph{ODE-Network} in stetiger Zeit $t$ modelliert.
 	\begin{align*}
 	\dfrac{\partial \mathbf{z}(t)}{\partial t}&=f_{\boldsymbol{\psi}}(\mathbf{z}(t),t), \\
@@ -438,11 +438,11 @@
 	\begin{proof}
 		Ein ausführlicher Beweis und weitere Erklärungen sind  in \emph{Neural Ordinary Differential Equations} \cite{neuralode} zu finden.
 	\end{proof}
-	Die Berechnung der Spur der Jacobimatrix unserer Differentialgleichung $f_{\boldsymbol\psi}(\mathbf{s}_{t},\mathbf{v}_{t})$ erfordert entsprechend der gewählten latenten Dimension $Z$ auch eine $Z$-fache Auswertung des zugrundeliegenden Netzwerkes. Um den Rechenaufwand deutlich zu verringern, verwenden wir zwei Tricks.\cite{ffjord}\\
+	Die Berechnung der Spur der Jacobimatrix unserer Differentialgleichung $f_{\boldsymbol\psi}(\mathbf{s}_{t},\mathbf{v}_{t})$ erfordert entsprechend der gewählten latenten Dimension $d$ auch eine $d$-fache Auswertung des zugrundeliegenden Netzwerkes. Um den Rechenaufwand deutlich zu verringern, verwenden wir zwei Tricks.\cite{ffjord}\\
 	Das Vektor-Matrix Produkt $\boldsymbol\epsilon^\mathrm{T} \cdot \tfrac{\partial f}{\partial\mathbf{z}}(t)$ lässt sich durch \emph{Reverse-Mode Automatic Differentiation} mit einmaliger Auswertung der Funktion $f$ berechnen und die Spur einer Matrix kann durch ein doppeltes Matrix-Vektorprodukt mit einem Zufallsvektor $\boldsymbol\epsilon$ erwartungstreu geschätzt werden.
 
 	\begin{theorem}%{$\mathrm{(Hutchinsons\ Spur\ Schätzer)}$}
-		Sei $\mathbf{M}\in \mathbb{R}^d \times \mathbb{R}^d$ eine beliebige Matrix und $\boldsymbol\epsilon \sim p(\boldsymbol\epsilon)$ eine Zufallsvariable mit $\E[\boldsymbol\epsilon] = \mathbf{0}$ und $\mathrm{Cov}(\boldsymbol\epsilon) =\mathbf{I}$. Die Spur der Matrix $\mathbf{M}$ lässt sich erwartungstreu durch ein doppeltes Matrix-Vektorprodukt der Matrix  $\mathbf{M}$ mit dem Zufallvektor $\boldsymbol\epsilon$ schätzen:
+		Sei $\mathbf{M}\in \mathbb{R}^{d \times d}$ eine beliebige Matrix und $\boldsymbol\epsilon \sim p(\boldsymbol\epsilon)$ eine Zufallsvariable mit $\E[\boldsymbol\epsilon] = \mathbf{0}$ und $\mathrm{Cov}(\boldsymbol\epsilon) =\mathbf{I}$. Die Spur der Matrix $\mathbf{M}$ lässt sich erwartungstreu durch ein doppeltes Matrix-Vektorprodukt der Matrix  $\mathbf{M}$ mit dem Zufallvektor $\boldsymbol\epsilon$ schätzen:
 		\begin{align*}
 		\mathrm{Tr}(\mathbf{M}) =
 		\E_{\boldsymbol\epsilon \sim p(\boldsymbol\epsilon)}\big[\boldsymbol\epsilon^\mathrm{T} \mathbf{M} \boldsymbol\epsilon \big].
@@ -743,15 +743,12 @@
 		\centering
 		\includegraphics[scale=0.5]{AVIMotion}
 	\end{figure}
-	50 epochen
-
-
 	Der Datensatz \emph{AVI-Motion} besteht aus Bildsequenzen, die drei menschliche Bewegungen (klatschen, boxen und winken) darstellen. Der ursprünglische Datensatz enthält zu diesen Bewegungen je 4 Videosequenzen von jeweils 25 unterschiedlichen Personen, die jeweils mehrere Sekunden lang sind und eine Auflösung von $160\times120$ Pixel haben. Der Datensatz kann von der Website \cite{Dataset} heruntergeladen werden.
 	Wir haben die Videosequenzen auf eine Auflösung von $60\times60$ reduziert, indem wir die Personen mittig in einem $120\times120$ großen Ausschnitt zentiert haben und die Auflösung schließlich durch Mean-Pooling verringert haben. \\
 	Ein Datenpunkt $\x\in [0,1]^{60\times 60\times 8}$ enthält 8 Frames. Die Farbwerte sind stetige Grauwerte zwischen 0 (schwarz) und 1 (weiß). Wir wollen auf diesem Datensatz testen, ob sich das Modell des ODE$^2$VAE dazu eignet, reale Videosequenzen zu modellieren.\\
 	Der Trainingsdatensatz besteht dazu aus 17472 Sequenzen und der Testdatensatz aus 112 Sequenzen. Im Gegensatz zu den anderen Datensätzen legen wir die Batchsize hier auf $M=112$ fest (da $112 | 17472$).
 
-	\subsubsection{TODO: SDE Datensatz}
+	\subsubsection{TODO: SDE Ball}
 	\textbf{TODO}
 	\subsection[Ergebnisse]{Ergebnisse}
 	\subsubsection{Methode 1: Lineare Interpolation im latenten Raum}
@@ -762,12 +759,10 @@
 		%			\end{mdframed}
 	\end{minipage}
 	\begin{minipage}{0.5\textwidth}
-		%		\begin{mdframed}[style=inner]
-		\includegraphics[scale=0.33]{rotatingMNIST_VAElat}
-		%		\end{mdframed}
+
 	\end{minipage}
 	\end{figure}
-	In den zwei Abbildungen sehen wir zehn Bildsequenzen aus den Datensätzen rotatingMNIST und bouncingBalls. Die Bilder zu den Zeitpunkten $t=0,2,4,6,8$ sind Modellinput und die Bilder den Zeitpunkten $t=1,3,4,7,9$ sind Rekonstruktionen der fehlenden Bilder mittels linearer Interpolation im latenten Raum. \\
+	In der Abbildungn sehen wir zehn Bildsequenzen aus dem Datensatz rotatingMNIST. Die Bilder zu den Zeitpunkten $t=0,2,4,6,8$ sind Modellinput und die Bilder den Zeitpunkten $t=1,3,4,7,9$ sind Rekonstruktionen der fehlenden Bilder mittels linearer Interpolation im latenten Raum. \\
 	Das Modell wird auf den Datenpunkten für 50 Epochen trainiert, indem die time series $\mathbf{x}_{0:T}$ in voneinander unabhängige Datenpunkte $\{\mathbf{x}_t\}_{i=0}^T$ aufgeteilt werden.
 	Um die fehlenden Bilder zu rekonstruieren, werden die vom Decoder bestimmten latenten Darstellungen durch eine Gerade $\z_{t+1} = \z_t + a(\z_{t+2}-\z_t)$ verbunden, welche zum gewünschten Zeitpunkt, bei uns $a = 0.5$ und $a = 1.5$ für $t=9$, ausgewertet wird. 
 	Das Ergebnis wird als latente Darstellung für das fehlendene Bild verwendet und mithilfe des Decoders rekonstruiert. \\
@@ -821,7 +816,7 @@
 	Ganz Links ist der Modellinput abgebildet. Wir haben aus diesem jeweils 0 bis 9 Frames entfernt, die von unserem Modell rekonstruiert werden sollen.\\
 	Dafür haben wir einen VAE für 100 Epochen auf den Datensätzen trainiert, wobei die time series als gesamtes als Modellinput verwendet.\\
 	Mittig sind die Rekonstruktionen eines VAE abgebildet, der auf einem unbeschädigten Datensatz trainiert wurde und nach dem Training beschädigte Sequenzen des Testdatensatz rekonstruieren sollte. Die Idee dahinter ist, dass dem Modell diese Daten unbekannt sind und sie nach Abbildung in den latenten Raum daher vom Decoder vollständig rekonstruiert werden.
-	Die Rekonstruktionen werden aber immer schlechter beleuchtet, je mehr Daten aus dem ursprünglichem Bild fehlen. \\
+	Die Rekonstruktionen werden dabei aber immer schlechter, je mehr Daten aus dem ursprünglichem Bild fehlen. \\
 	Wir behelfen uns daher mit einem Trick. Wir beschädigen auch den Trainingsdatensatz, trainieren den VAE aber darauf die gesamte Sequenz und nicht das beschädigte Inputbild zu rekonstruieren. Wie man in den Abbildungen rechts erkennen kann führt das zu einer deutlichen Verbesserung der Modellperformance.\\
 
 
@@ -863,20 +858,31 @@
 %	\end{figure}
 	\subsubsection{Methode 3: ODE$^2$VAE}
 		\begin{figure}[h!]
-		\begin{minipage}{0.5\textwidth}
-			%			\begin{mdframed}[style=inner]
-			\includegraphics[scale=0.33]{rotatingMNIST_VAE}
-			%			\end{mdframed}
+		\begin{minipage}{0.143\textwidth}
+			\center{\small{Modellinput}\vspace{0.1cm}}
+			\includegraphics[scale=0.325]{MNISTorig1}
+		\end{minipage}
+		\begin{minipage}{0.346\textwidth}
+			\center{Groundtruth\vspace{0.1cm}}
+			\includegraphics[scale=0.325]{MNISTorig2}
 		\end{minipage}
 		\begin{minipage}{0.5\textwidth}
-			%		\begin{mdframed}[style=inner]
-			\includegraphics[scale=0.33]{rotatingMNIST_VAElat}
-			%		\end{mdframed}
+		\center{Rekonstruktion und Extrapolation\vspace{0.1cm}}
+			\includegraphics[scale=0.325]{MNISTrec}
 		\end{minipage}
-	\end{figure}
-	Auf diesen beiden Abbildungen sind die Rekonstruktionen eines ODE$^2$VAE, auf den Datensätzen rotatingMNIST und bouncingBalls zu erkennen. Das Modell wird für 40 Epochen auf einem unbeschädigten Datensatz trainiert und erhält zum anfertigen der Rekonstruktionen aber nur die ersten drei Bilder der time series. 
-	In einer Abbildung ist zeilenweise zuerst die Ground Truth und eine Zeile unterhalb die Rekonstruktion des Modellinputs und ab dem vierten Bild schließlich die vom Modell vorgenommene Extrapolation der time series abgebildet. Wie man gut sehen kann ist die Modellperformance auf dem Datensatz rotatingMNIST hervorragend, während auf  bouncingBalls der chaotischen Natur des Datensatzes geschuldet auch einige Vorhersagen nicht gut aussehen. Dies dürfte daran liegen, dass sich anfänglich kleine Fehler in der Vorhersage mit fortlaufender Zeit immer weiter verschlimmern. \\
-	Wir vermuten deswegen, dass das Modell davon profitieren könnte die Priorverteilung durch beispielsweise Inverse Autoregressive Flow von einer Normalverteilung zu einer aussagekräftigeren Verteilung zu transformieren. So könnte sicher gestellt werden, dass die Startposition sehr genau encodiert wird, was einem aufsummieren von Fehlern entgegenwirken würde.
+			\begin{minipage}{0.152\textwidth}
+		\includegraphics[scale=0.325]{bouncingBalls_ODEorig1}
+		\end{minipage}
+		\begin{minipage}{0.35\textwidth}
+			\includegraphics[scale=0.325]{bouncingBalls_ODEorig2}
+		\end{minipage}
+		\begin{minipage}{0.5\textwidth}
+			\includegraphics[scale=0.325]{bouncingBalls_ODE}
+		\end{minipage}
+		\end{figure}
+	Auf diesen Abbildungen sind die Rekonstruktionen eines ODE$^2$VAE, auf den Datensätzen rotatingMNIST und bouncingBalls zu erkennen. Das Modell wurde für 40 Epochen auf einem unbeschädigten Datensatz trainiert und erhält zum anfertigen der Rekonstruktionen aber nur die ersten drei Bilder der time series. 
+	Dieser Modellinput ist ganz links abgebildet. Daneben ist zum besseren einordnen der Ergebnisse die Groundtruth zu sehen, die das Modell zwar nicht sieht, von ihm aber bei einer perfekten Vorhersage aus den drei Inputdaten errechnet werden soll. Rechts ist schließlich die Rekonstruktion des Modellinputs und ab dem vierten Frame die Extrapolation zu erkennen. Wie man gut sehen kann ist die Modellperformance auf dem Datensatz rotatingMNIST hervorragend, während auf  bouncingBalls, der chaotischen Natur des Datensatzes geschuldet, auch einige Vorhersagen in den hinteren Frames nicht so gut aussehen. Dies dürfte daran liegen, dass sich anfänglich kleine Fehler in der Vorhersage mit fortlaufender Zeit immer weiter verschlimmern. \\
+	Wir vermuten deswegen, dass das Modell davon profitieren könnte die Priorverteilung beispielsweise durch Inverse Autoregressive Flow von einer Normalverteilung zu einer aussagekräftigeren Verteilung zu transformieren. So könnte sicher gestellt werden, dass die Startposition sehr genau encodiert wird, was einem aufsummieren von Fehlern entgegenwirken würde.
 	Dennoch von allen Methoden liefert dieses Modell auf den Datensätzen bereits auch so die besten Ergebnisse. Sollen nur ein oder zwei Frames rekonstruiert werden und sind die vorherigen drei Frames bekannt ist eine Rekonstruktion annährend fehlerfrei. 
 	\begin{figure}[h!]
 		\begin{minipage}[position=l]{0.5\textwidth}
