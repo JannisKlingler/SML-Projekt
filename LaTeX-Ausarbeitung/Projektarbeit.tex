@@ -1123,8 +1123,8 @@
 		\end{center}
 	\end{table}
 	\newpage
-	\textbf{To-Do: SDE-VAE Modellstruktur}\\
-	\begin{table}[htb]
+	Die Modellstruktur des SDE-VAE für den Datensatz SDE Ball.
+	\begin{table}[htb!]
 		\small
 		\begin{center}
 			\begin{tabular}{llcccc}
@@ -1132,12 +1132,12 @@
 				\toprule
 				\textbf{\ }	&\textbf{Encoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
-				\textbf{1.}	&Input-Layer	& (28, 28, 1)		& 0		& - 			&- \\
+				\textbf{1.}	&Input-Layer	& (28, 28,\ \ 1)		& 0		& - 			&- \\
 				\textbf{2.}	&Conv2D 		& (28, 28, 16)		& 160	& 3 $\times$ 3; padding	&relu \\
 				\textbf{3.}	&Max-Pooling2D	& (14, 14, 16)		& 0		& 2 $\times$ 2	&- \\
 				\textbf{4.}	&Conv2D			& (12, 12, 32)		& 4640	& 3 $\times$ 3	&relu \\
 				\textbf{5.}	&Max-Pooling2D	& (6, \ \ 6, \ 32)	& 0		& 2 $\times$ 2 	&- \\
-				\textbf{6.}	&Conv2D		& (4, \ \ 4,  64)	& 18496	& 3 $\times$ 3 	&relu \\
+				\textbf{6.}	&Conv2D		& (4, \ \ 4, \ 64)	& 18496	& 3 $\times$ 3 	&relu \\
 				\textbf{7.}	&Flatten		& 1024				& 0		& - 			&- \\
 				\textbf{8.}	&Dense-Layer			& 128				& 131200	& - 			&relu \\
 				\textbf{9.}	&Dense-Layer 			& d + d				& 2 d 129	& - 			&- \\
@@ -1150,30 +1150,30 @@
 				\textbf{1.}	&Input-Layer	& d		& 0		& - 			&- \\
 				\textbf{2.}	&Dense-Layer 			& 128		& (d+1)128	& -				&relu \\
 				\textbf{3.}	&Dense-Layer			& 1024		& 132096& -				&relu \\
-				\textbf{4.}	&Reshape-Layer		& (4, \ \ 4,  64)	& 0		& -		&- \\
+				\textbf{4.}	&Reshape-Layer		& (4, \ \ 4,\ \  64)	& 0		& -		&- \\
 				\textbf{5.}	&Conv2DTranspose& (6, \ \ 6, \ 32)	& 18464	& 3 $\times$ 3 	&relu \\
 				\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 32)	& 0		& 2 $\times$ 2 	&- \\
 				\textbf{7.}	&Conv2DTranspose& (14, 14, \ 16)	& 4624		& 3 $\times$ 3 			&relu \\
 				\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 16)	& 0	& 2 $\times$ 2 			&- \\
-				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 1)	& 257  	& 3 $\times$ 3; padding 			&sigmoid \\
+				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ \ 1)	& 257  	& 3 $\times$ 3; padding 			&sigmoid \\
 				\bottomrule
 				\toprule
 				\textbf{\ }	&\textbf{$\bmu$-Netz}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
-				\textbf{1.}	&Input-Layer	& (M,d)		& 0		& - 		&- \\
+				\textbf{1.}	&Input-Layer	& (M, d)		& 0		& - 		&- \\
 				\textbf{2.}	&Flatten		& M d				& 0		& - 			&- \\
 				\textbf{3.}	&Dense-Layer			& 20 M		& (M d + 1) 20 M & -				&tanh \\
-				\textbf{4.}	&Dense-Layer		& 20 M	& (20 M + 1) 20 M		& -		&- \\
+				\textbf{4.}	&Dense-Layer		& 20 M	& (20 M + 1) 20 M		& -		&tanh \\
 				\textbf{5.}	&Dense-Layer& M d	& (20 M + 1) M d	& - 	&tanh \\
 				\textbf{6.}	&Reshape-Layer		& (M, d)	& 0		& -		&- \\
 				\bottomrule
 				\toprule
 				\textbf{\ }	&\textbf{$\bsig$-Netz}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
 				\midrule
-				\textbf{1.}	&Input-Layer	& (M,d)		& 0		& - 			&- \\
+				\textbf{1.}	&Input-Layer	& (M, d)		& 0		& - 			&- \\
 				\textbf{2.}	&Flatten		& M d				& 0		& - 			&- \\
 				\textbf{3.}	&Dense-Layer			& 20 M n		& (M d + 1) 20 M n& -				&tanh \\
-				\textbf{4.}	&Dense-Layer		& 20 M n	& (20 M n + 1) 20 M n	& -		&- \\
+				\textbf{4.}	&Dense-Layer		& 20 M n	& (20 M n + 1) 20 M n	& -		&tanh \\
 				\textbf{5.}	&Dense-Layer& M d n	& (20 M d + 1) M d n	& - 	&tanh \\
 				\textbf{6.}	&Reshape-Layer		& (M, d, n)	& 0		& -		&- \\
 				\bottomrule
