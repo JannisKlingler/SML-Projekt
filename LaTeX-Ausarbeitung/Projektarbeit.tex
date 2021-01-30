@@ -546,27 +546,32 @@
 	Zunächst führen wir eine Notation ein, die eher an den Standards der Stochastik und weniger an denen von Machine-Learning orientiert ist. Dazu wiederholen wir auch grob die Idee eines ODE$^2$VAE.\\
 	\\
 	\textbf{Idee des Autoencoders:}\\
-	Sei $(\bP,\Omega,\mathcal{A})$ ein Wahrscheinlichkeitsraum mit der Zufallsvariable $x : \Omega \rightarrow \R^D$. Bei einem normalen Autoencoder wird angenommen, dass eine weitere Zufallsvariable $z: \Omega \rightarrow \R^d$ existiert, sodass $x = f(z)$ und $z = g(x)$ für messbare Funktionen $f,g$. Die funktionen $f$ (Decoder) und $g$ (Encoder) werden dabei von Neuronalen Netzwerken anhand eines Großen Datensatzes $x^1,...,x^N \, uiv \sim (x)_*\bP$ erlernt. Als Verlustfunktion verwendet man den Reconstruction-Loss plus eventuelle Regularisierungsterme um Overfitting zu verhindern.\\
-	Man stellt fest, dass der latente Raum hier eher unstrukturiert in dem Sinne ist, dass das Bildmaß $(f)_*\bP$ auf $\R^d$ vielleicht nur an ein paar stellen den Großteil seiner Masse verteilt. An diesen Stellen im latenten Raum könnten wiederum kleine Schwankungen große Unterschiede in den Rekonstruktionen ausmachen. Anschaulich ist das Problem mit Autoencodern, dass sie den latenten Raum $\R^d$ nicht 'gleichmäßig' nutzen.\\
+	Sei $(\bP,\Omega,\mathcal{A})$ ein Wahrscheinlichkeitsraum mit der Zufallsvariable $x : \Omega \rightarrow \R^D$. Bei einem normalen Autoencoder wird angenommen, dass eine weitere Zufallsvariable $z: \Omega \rightarrow \R^d$ existiert, sodass $x = f(z)$ und $z = g(x)$ für messbare Funktionen $f,g$. Die Funktionen $f$ (Decoder) und $g$ (Encoder) werden dabei von Neuronalen Netzwerken anhand eines Großen Datensatzes $x^1,...,x^N \, uiv \sim (x)_*\bP$ erlernt. Als Verlustfunktion verwendet man beispielsweise den Reconstruction-Loss oder Mean Squared Error plus eventuelle Regularisierungsterme um Overfitting zu verhindern.\\
+	Man stellt fest, dass der latente Raum hier eher unstrukturiert in dem Sinne ist, dass das Bildmaß $(f)_*\bP$ auf $\R^d$ vielleicht nur an ein paar Stellen den Großteil seiner Masse verteilt. An diesen Stellen im latenten Raum könnten wiederum kleine Schwankungen große Unterschiede in den Rekonstruktionen ausmachen. Anschaulich ist das Problem mit Autoencodern, dass sie den latenten Raum $\R^d$ nicht 'gleichmäßig' nutzen und man keine Kontrolle darüber hat welche Anordnungen angenommen werden.\\
 	\\
 	\textbf{Idee des VAE:}\\
-	Ein Variational Autoencoder will eine Ähnliche Struktur finden, wobei nun $(z)_*\bP$ eine vorgegebene Verteilung (z.B. Normalverteilung in $\R^d$) sein soll. Das Ziel soll sein erst mit Daten $x^1,...,x^N \, uiv \sim (x)_*\bP$ die Encoder $g$ und Decoder $f$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z^1,...,z^N$ zieht und dann den Decoder $f$ darauf anwendet.\\
-	Dabei wird der Encoder $g$ als Neuronales Netzwerk aufgebaut, das Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ aus einer von $x$ abhängigen Verteilung, beispielsweise $\mathcal{N}\left(\mu(x),\Sigma(x)\right)$, gezogen wird. Damit können einzelne Datenpunkte anschaulich mehr Platz im latenten Raum $\R^d$ ausfüllen. Dies lässt sich auch als Maßnahme gegen Overfitting des Encoders interpretieren.\\ Es werden zusätzliche Terme zur Verlustfunktion addiert, die dafür zu sorgen, dass $(z)_*\bP$ eine Normalverteilung ist und dass die Verteilung $(f \circ z)_*\bP$ ähnlich der Verteilung $(x)_*\bP$ ist.
+	Einem Variational Autoencoder will man im latenten Raum eine Struktur vorgeben. $(z)_*\bP$ soll nun eine festgelegte Verteilung (z.B. Normalverteilung in $\R^d$) sein. Das Ziel soll sein erst mit Daten $x^1,...,x^N \, uiv \sim (x)_*\bP$ den Encoder $q(z|x)$ und Decoder $p(x|z)$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z^1,...,z^N$ zieht und dann den Decoder $p(x|z)$ darauf anwendet.\\
+	Dabei wird der Encoder als Neuronales Netzwerk aufgebaut, das im Falle einer Normalverteilung Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ nach Reparametrisierung aus einer von $x$ abhängigen Verteilung, beispielsweise $q(z|x) = \mathcal{N}\left(\mu(x),\Sigma(x)\right)$, gezogen wird. Damit können einzelne Datenpunkte anschaulich mehr Platz im latenten Raum $\R^d$ ausfüllen. Dies lässt sich auch als Maßnahme gegen Overfitting des Encoders interpretieren.\\ Es werden neben dem Reconstruction Loss, der der Log-Likelihood entspricht mit der KL-Divergenz noch zusätzliche Terme zur Verlustfunktion addiert, die dafür zu sorgen, dass $(z)_*\bP$ eine Normalverteilung ist und dass die Verteilung $(f \circ z)_*\bP$ ähnlich der Verteilung $(x)_*\bP$ ist.
 
 	\newpage\noindent
 	\textbf{Idee des ODE$^2$VAE:}\\
-	Ein ODE$^2$VAE beschäftigt sich mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Der ODE$^2$VAE sucht nun einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, der punktweise die Informationen von $\tx$ encodiert, also soll $f(\tz(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Wieder wird die Struktur von $\tz$ im latenten Raum vorgeschrieben, wobei nun auch eine Vorschrift zur zeitlichen Entwicklung gemacht wird. Für spätere Zeitpunkte $t>0$ soll $\tz(t,\omega)$ als Lösung der Differentialgleichung
+	Ein ODE$^2$VAE beschäftigt sich mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Der ODE$^2$VAE sucht nun einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, der punktweise die Informationen von $\tx$ encodiert, also soll der Decoder ein guter Schätzer für $\tx(t,\cdot)$ sein. Wieder wird die Struktur von $\tz$ im latenten Raum vorgeschrieben, wobei nun auch eine Vorschrift zur zeitlichen Entwicklung gemacht wird. Für spätere Zeitpunkte $t>0$ soll $\tz(t,\omega)$ als Lösung der Differentialgleichung
 	\begin{align*}
 	\nabla s(\cdot,\omega) &= v(\cdot,\omega)\\
 	\nabla v(\cdot,\omega) &= \bbf\big(s(\cdot,\omega),v(\cdot,\omega)\big)
 	\end{align*}
-	nur von $s(0,\omega)$, $v(0,\omega)$ und $\bbf$ abhängen. In der Literatur wird hier das $\tz$ als gemeinsamer Vektor $(s,v)$ betrachtet. Es wird allerdings nur $s$ an den Decoder weitergeben, also soll $f(s(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Die Anfangswerte $s(0,\cdot)$ und $v(0,\cdot)$ werden durch jeweils einen Encoder bestimmt, die als Input $x_0$, beziehungsweise mindestens drei anfangsframes für $v(0,\cdot)$, erhalten.\\
+	nur von $s(0,\omega)$, $v(0,\omega)$ und $\bbf$ abhängen. In der Literatur wird hier das $\tz$ als gemeinsamer Vektor $(s,v)$ betrachtet. Es wird allerdings nur $s$ an den Decoder weitergeben, also soll
+	%Decoder nicht als Funktion auffassen.
+	 $p(\tx(t,\cdot)|s(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Die Anfangswerte $s(0,\cdot)$ und $v(0,\cdot)$ werden durch jeweils einen Encoder bestimmt, die als Input $x_0$, beziehungsweise mindestens drei anfangsframes für $v(0,\cdot)$, erhalten.\\
 	Die Verlustfunktion besteht aus Reconstruction-Loss, Terme um Overfitting von $\bbf$ zu verhindern, sowie Terme um $(\tz(t_k,\cdot))_*\bP$ für jedes $k \leq m$ einer Normalverteilung auf $\R^d$ näher zu bringen.\\
 	Der ODE$^2$VAE liefert gute Ergebnisse beim Beschreiben von einfachen Bewegungsabläufen, deren Informationsgehalt nicht mit der Zeit zunimmt. Aber gerade bei chaotischen Systemen ist die Vorschrift, dass sämtliche Information schon zu Beginn (in den ersten drei Frames) vorhanden sein muss eher dem Lernen abträglich.\\
 	Besonders ist in einem etwas chaotischerem Setting das generieren von glaubhaften Time-Series $x_0,...,x_m$ nicht möglich, da spätere $x_k, x_{k+1}$ immer deterministisch von einer gemeinsamen Zufallsvariable abhängen.\\
 	\\
 	\textbf{Idee des $M$-th Order SDE-VAE:}\\
-	Wir beschäftigen uns wieder mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Wie schon beim ODE$^2$VAE suchen wir einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$, für den $f(\tz(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ ist. Hier gehen wir jedoch von einer anderen Zeitlichen Struktur aus.\\
+	Wir beschäftigen uns wieder mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Wie schon beim ODE$^2$VAE suchen wir einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$,
+	
+	%Decoder nicht als Funktion $f(\tz(t,\cdot))$ notieren
+	für den der Decoder ein guter Schätzer für $\tx(t,\cdot)$ ist. Hier gehen wir jedoch von einer anderen Zeitlichen Struktur aus.\\
 	Wir schreiben $\tz = \tz^{(0)}$ und setzen voraus, dass Zufallsvariablen (Startverteilungen)
 	$$\tz^{(1)}(0,\cdot) ,..., \tz^{(M-1)}(0,\cdot): \Omega \rightarrow \R^d$$
 	existieren, sodass $\tz^{(k)}$ für alle $k < M$ die $d$-Dimensionale SDE
@@ -587,7 +592,8 @@
 	\\
 	Der ODE$^2$VAE ist nur ein einfacher Spezialfall dieser Darstellung. Wenn wir nämlich $M=2$, $\bsig = 0$ und $\bmu^{(0)}(\tz^{(0)},\tz^{(1)}) = \tz^{(1)}$ setzen, dann erfüllt $\bmu^{(0)}(\tz^{(0)},\tz^{(1)})$ dieselbe Rolle, wie $\bbf$ im ODE$^2$VAE.\\
 	\\
-	Damit man mit dem Modell besser neue Daten generieren kann, soll $(\tz(0,\cdot))_*\bP$ wie beim VAE und beim ODE$^2$VAE in die Form einer Normalverteilung auf $\R^d$ gezwungen werden. Leider hatten wir nicht mehr genug Zeit die dazu notwendigen Verlustfunktionen auf das neue Modell zuzuschneiden.
+	Damit man mit dem Modell besser neue Daten generieren kann, soll $(\tz(0,\cdot))_*\bP$ wie beim VAE und beim ODE$^2$VAE in die Form einer Normalverteilung auf $\R^d$ gezwungen werden. Leider hatten wir nicht mehr genug Zeit die ELBO in diesem Fall herzuleiten und arbeiten mit provisorischen Verlustfunktionen für das neue Modell.
+	Man könnte daher argumentieren, dass unser Modell teilweise eher einem Autoencoder ähnelt, als einem Variational Autoencoder.
 
 
 
@@ -768,20 +774,24 @@
 	Der Trainingsdatensatz besteht dazu aus 17472 Sequenzen und der Testdatensatz aus 112 Sequenzen. Im Gegensatz zu den anderen Datensätzen legen wir die Batchsize hier auf $M=112$ fest (da $112 | 17472$).
 
 	\subsubsection{TODO: SDE Ball}
+		\vspace{-0.4cm}
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.405]{datasetSDE}
+	\end{figure}
+	\vspace{-0.3cm}
 	\textbf{TODO}
+	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 20}$ aus dem Datensatz enthält 20 Frames.
+	Der Trainingsdatensatz besteht aus 30000 Sequenzen und der Testdatensatz aus 5000 Sequenzen.
+
 	\subsection[Ergebnisse]{Ergebnisse}
 	\subsubsection{Methode 1: Lineare Interpolation im latenten Raum}
 	\begin{figure}[h!]
-	\begin{minipage}{0.5\textwidth}
-		%			\begin{mdframed}[style=inner]
-		\includegraphics[scale=0.395]{interpolation}
-		%			\end{mdframed}
-	\end{minipage}
-	\begin{minipage}{0.5\textwidth}
-
-	\end{minipage}
+		\begin{center}
+		\includegraphics[scale=0.55]{interpolation}
+		\end{center}
 	\end{figure}
-	In der Abbildungn sehen wir zehn Bildsequenzen aus dem Datensatz rotatingMNIST. Die Bilder zu den Zeitpunkten $t=0,2,4,6,8$ sind Modellinput und die Bilder den Zeitpunkten $t=1,3,4,7,9$ sind Rekonstruktionen der fehlenden Bilder mittels linearer Interpolation im latenten Raum. \\
+	In der Abbildung sehen wir zehn Bildsequenzen aus dem Datensatz rotatingMNIST. Die Bilder zu den Zeitpunkten $t=0,2,4,6,8$ sind Modellinput und die Bilder den Zeitpunkten $t=1,3,4,7,9$ sind Rekonstruktionen der fehlenden Bilder mittels linearer Interpolation im latenten Raum. \\
 	Das Modell wird auf den Datenpunkten für 50 Epochen trainiert, indem die time series $\mathbf{x}_{0:T}$ in voneinander unabhängige Datenpunkte $\{\mathbf{x}_t\}_{i=0}^T$ aufgeteilt werden.
 	Um die fehlenden Bilder zu rekonstruieren, werden die vom Decoder bestimmten latenten Darstellungen durch eine Gerade $\z_{t+1} = \z_t + a(\z_{t+2}-\z_t)$ verbunden, welche zum gewünschten Zeitpunkt, bei uns $a = 0.5$ und $a = 1.5$ für $t=9$, ausgewertet wird. 
 	Das Ergebnis wird als latente Darstellung für das fehlendene Bild verwendet und mithilfe des Decoders rekonstruiert. \\
