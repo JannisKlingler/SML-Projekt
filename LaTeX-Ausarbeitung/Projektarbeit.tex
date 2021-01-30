@@ -550,8 +550,8 @@
 	Man stellt fest, dass der latente Raum hier eher unstrukturiert in dem Sinne ist, dass das Bildmaß $(f)_*\bP$ auf $\R^d$ vielleicht nur an ein paar Stellen den Großteil seiner Masse verteilt. An diesen Stellen im latenten Raum könnten wiederum kleine Schwankungen große Unterschiede in den Rekonstruktionen ausmachen. Anschaulich ist das Problem mit Autoencodern, dass sie den latenten Raum $\R^d$ nicht 'gleichmäßig' nutzen und man keine Kontrolle darüber hat welche Anordnungen angenommen werden.\\
 	\\
 	\textbf{Idee des VAE:}\\
-	Einem Variational Autoencoder will man im latenten Raum eine Struktur vorgeben. $(z)_*\bP$ soll nun eine festgelegte Verteilung (z.B. Normalverteilung in $\R^d$) sein. Das Ziel soll sein erst mit Daten $x^1,...,x^N \, uiv \sim (x)_*\bP$ den Encoder $q(z|x)$ und Decoder $p(x|z)$ zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z^1,...,z^N$ zieht und dann den Decoder $p(x|z)$ darauf anwendet.\\
-	Dabei wird der Encoder als Neuronales Netzwerk aufgebaut, das im Falle einer Normalverteilung Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ nach Reparametrisierung aus einer von $x$ abhängigen Verteilung, beispielsweise $q(z|x) = \mathcal{N}\left(\mu(x),\Sigma(x)\right)$, gezogen wird. Damit können einzelne Datenpunkte anschaulich mehr Platz im latenten Raum $\R^d$ ausfüllen. Dies lässt sich auch als Maßnahme gegen Overfitting des Encoders interpretieren.\\ Es werden neben dem Reconstruction Loss, der der Log-Likelihood entspricht mit der KL-Divergenz noch zusätzliche Terme zur Verlustfunktion addiert, die dafür zu sorgen, dass $(z)_*\bP$ eine Normalverteilung ist und dass die Verteilung $(f \circ z)_*\bP$ ähnlich der Verteilung $(x)_*\bP$ ist.
+	Einem Variational Autoencoder will man im latenten Raum eine Struktur vorgeben. $(z)_*\bP$ soll nun eine festgelegte Verteilung (z.B. Normalverteilung in $\R^d$) sein. Es müssen hier auch der Encoder $g$ und Decoder $f$ nicht mehr deterministisch sein, weshalb sie in der Literatur mit $q(z|x)$ und $p(x|z)$ beschrieben werden. Das Ziel ist erst mit Daten $x^1,...,x^N \, uiv \sim (x)_*\bP$ den Encoder und Decoder zu trainieren, um dann neue Daten generieren zu können, indem man aus der Normalverteilung $(z)_*\bP$ Werte $z^1,...,z^N$ zieht und dann den Decoder $f$ darauf anwendet.\\
+	Dabei wird der Encoder als Neuronales Netzwerk aufgebaut, das im Falle einer Normalverteilung Erwartungswert $\mu(x) \in \R^d$ und Covarianzmatrix $\Sigma(x) \in \operatorname{Diag}(d\times d)$ bestimmt, bevor die latente Darstellung $z$ nach Reparametrisierung aus einer von $x$ abhängigen Verteilung, beispielsweise $g(x) = \mathcal{N}\left(\mu(x),\Sigma(x)\right)$, gezogen wird. Damit können einzelne Datenpunkte anschaulich mehr Platz im latenten Raum $\R^d$ ausfüllen. Dies lässt sich auch als Maßnahme gegen Overfitting des Encoders interpretieren.\\ Es werden neben dem Reconstruction Loss, der der Log-Likelihood entspricht mit der KL-Divergenz noch zusätzliche Terme zur Verlustfunktion addiert, die dafür zu sorgen, dass $(z)_*\bP$ eine Normalverteilung ist und dass die Verteilung $(f \circ z)_*\bP$ ähnlich der Verteilung $(x)_*\bP$ ist.
 
 	\newpage\noindent
 	\textbf{Idee des ODE$^2$VAE:}\\
@@ -562,7 +562,7 @@
 	\end{align*}
 	nur von $s(0,\omega)$, $v(0,\omega)$ und $\bbf$ abhängen. In der Literatur wird hier das $\tz$ als gemeinsamer Vektor $(s,v)$ betrachtet. Es wird allerdings nur $s$ an den Decoder weitergeben, also soll
 	%Decoder nicht als Funktion auffassen.
-	 $p(\tx(t,\cdot)|s(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Die Anfangswerte $s(0,\cdot)$ und $v(0,\cdot)$ werden durch jeweils einen Encoder bestimmt, die als Input $x_0$, beziehungsweise mindestens drei anfangsframes für $v(0,\cdot)$, erhalten.\\
+	 $f(s(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Die Anfangswerte $s(0,\cdot)$ und $v(0,\cdot)$ werden durch jeweils einen Encoder bestimmt, die als Input $x_0$, beziehungsweise mindestens drei anfangsframes für $v(0,\cdot)$, erhalten.\\
 	Die Verlustfunktion besteht aus Reconstruction-Loss, Terme um Overfitting von $\bbf$ zu verhindern, sowie Terme um $(\tz(t_k,\cdot))_*\bP$ für jedes $k \leq m$ einer Normalverteilung auf $\R^d$ näher zu bringen.\\
 	Der ODE$^2$VAE liefert gute Ergebnisse beim Beschreiben von einfachen Bewegungsabläufen, deren Informationsgehalt nicht mit der Zeit zunimmt. Aber gerade bei chaotischen Systemen ist die Vorschrift, dass sämtliche Information schon zu Beginn (in den ersten drei Frames) vorhanden sein muss eher dem Lernen abträglich.\\
 	Besonders ist in einem etwas chaotischerem Setting das generieren von glaubhaften Time-Series $x_0,...,x_m$ nicht möglich, da spätere $x_k, x_{k+1}$ immer deterministisch von einer gemeinsamen Zufallsvariable abhängen.\\
@@ -701,35 +701,9 @@
 		
 		
 	\end{itemize}
-	Während des Trainings werden diese Verlustfunktionen, die eigentlich von den Zufallsvariablen $(x_0,...,x_m)$ abhängen, Batch-weise als Mittelwert über die gegebenen Daten $(x_1^p,...,x_m^p)_{p \in \N}\, uiv. \sim (x_1,...,x_m)_*\bP$ approximiert.
-	
-	\newpage
-	\noindent
-	
-	TODO:Training
+	Während des Trainings werden diese Verlustfunktionen, die eigentlich von den Zufallsvariablen $(x_0,...,x_m)$ abhängen, Batch-weise als Mittelwert über die gegebenen Daten $(x_1^p,...,x_m^p)_{p \in \N}\, uiv. \sim (x_1,...,x_m)_*\bP$ approximiert. Die Gewichtung der Verlustfunktionen muss vom Datensatz abhängig gewählt werden. 
 	
 	
-	
-	
-	\newpage
-	\subsubsection[Theoretische Verbesserung]{Theoretische Verbesserung des Modells}
-	Unter den bisherigen Voraussetzungen können wir \cite{PfaffiSkript} Thm. 21.15 anwenden und erhalten, dass $(Z_t)_{t \in [0,\tau]}$ ein starker Markov-Prozess ist, dessen Generator gegeben ist durch
-	\begin{align*}
-	& (G^Z h)(\underbrace{z^1,...,z^d}_{=z \in \R^d}) = \sum\limits_{i=1}^d \bmu^i(z) \frac{\partial h}{\partial z^i}(z) + \sum\limits_{i,i'=1}^d \left(\sum\limits_{j=1}^n \bsig^{i,j}(z)\bsig^{i',j}(z)\right) \frac{\partial^2 h}{\partial z^i \partial z^{i'}}(z) \ .
-	\end{align*}
-	Da wir $Z$ als $\R^{M \times d}$-wertig betrachten, wird für uns daraus
-	\begin{align*}
-	& (G^Z h)(\underbrace{z}_{\in \R^{M \times d}}) = \sum\limits_{k=0}^{M-1} \sum\limits_{i=1}^d \bmu^{k,i}(z) \frac{\partial h}{\partial z^{k,i}}(z) + \sum\limits_{k,k'=0}^{M-1}\sum\limits_{i,i'=1}^d \left( \sum\limits_{j=1}^n \bsig^{k,i,j}(z)\bsig^{k',i',j}(z) \right) \frac{\partial^2 h}{\partial z^{k,i} \partial z^{k',i'}}(z) \ .
-	\end{align*}
-	Nach \cite{PfaffiSkript} Thm. 16.28 gilt für jedes $h \in C_b^2(\R^{M \times d})$, dass
-	\begin{align*}
-	& \E_{z_0}[h(Z_t)] - h(z_0) = \int_0^t \E[(G^Z h)(Z_s)] \, ds \ .
-	\end{align*}
-	Sei nun $f: \R^{d} \rightarrow \R^D$ das Decoder-Netzwerk, das nur die erste Zeile $(z^{0,1},...,z^{0,d})$ betrachtet und die anderen ignoriert. Sei $\widetilde{h} \in C_b^{2}(\R^{D})$ beliebig. Wenn wir die Aktivierungsfunktionen von $f$ glatt genug wählen, können wir von $h := \widetilde{h} \circ f \in C^2_b(\R^{M \times d})$ ausgehen. Die obige Aussage wird damit zu
-	\begin{align*}
-	\E_{z_0}[h(Z_t)] - h(z_0) = \int_0^t \E\Bigg[ & \sum\limits_{i=1}^d \bmu^{0,i}(Z_s) \frac{\partial h}{\partial z^{0,i}}(Z_s)\\
-	& \ \ + \sum\limits_{i,i'=1}^d \left( \sum\limits_{j=1}^n \bsig^{0,i,j}(Z_s)\bsig^{0,i',j}(Z_s) \right) \frac{\partial^2 h}{\partial z^{0,i} \partial z^{0,i'}}(Z_s)\Bigg] \, ds
-	\end{align*}
 	
 
 
@@ -773,16 +747,21 @@
 	Ein Datenpunkt $\x\in [0,1]^{60\times 60\times 8}$ enthält 8 Frames. Die Farbwerte sind stetige Grauwerte zwischen 0 (schwarz) und 1 (weiß). Wir wollen auf diesem Datensatz testen, ob sich das Modell des ODE$^2$VAE dazu eignet, reale Videosequenzen zu modellieren.\\
 	Der Trainingsdatensatz besteht dazu aus 17472 Sequenzen und der Testdatensatz aus 112 Sequenzen. Im Gegensatz zu den anderen Datensätzen legen wir die Batchsize hier auf $M=112$ fest (da $112 | 17472$).
 
-	\subsubsection{TODO: SDE Ball}
+	\subsubsection{SDE Ball}
 		\vspace{-0.4cm}
 	\begin{figure}[!htbp]
 		\centering
 		\includegraphics[scale=0.405]{datasetSDE}
 	\end{figure}
 	\vspace{-0.3cm}
-	\textbf{TODO}
-	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 20}$ aus dem Datensatz enthält 20 Frames.
-	Der Trainingsdatensatz besteht aus 30000 Sequenzen und der Testdatensatz aus 5000 Sequenzen.
+	Dieser einfache Datensatz zeigt einen Ball, der sich nach dem Pfad einer SDE mit einer Brownschen Bewegung ($n=1$) nach oben und unten bewegt. Die SDE von Grad $2$ hat die Form
+	\begin{align*}
+	& \bmu: \R^{2} \rightarrow \R^{2} \ ; \ \bmu(x,y) = (y,-x)\\
+	& \bsig : \R^{2} \rightarrow \R^{2 \times 1} \ ; \ \bsig(x,y) = (0.2, 0.1) \ .
+	\end{align*}
+	Für die Position des Balls wird nur die erste Koordinate der Lösung der SDE betrachtet. Falls $\bsig$ gleich $0$ wäre, würde es sich hierbei um die Differentialgleichung handeln, deren Lösung durch Sinus und Kosinus gegeben sind. Der Pfad des Balls beschreibt also anschaulich eine 'chaotische' Sinuskurve. Als Startwert der SDE wird immer $(0,1)$ gewählt.\\
+	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 50}$ aus dem Datensatz enthält 50 Frames.
+	Der Trainingsdatensatz besteht aus 3000 Sequenzen und der Testdatensatz aus 1000 Sequenzen.
 
 	\subsection[Ergebnisse]{Ergebnisse}
 	\subsubsection{Methode 1: Lineare Interpolation im latenten Raum}
@@ -928,8 +907,25 @@
 		\end{minipage}
 	\end{figure}
 	Auf dem Datensatz AVI-Motion werden ebenfalls gute Ergebnisse erzielt. Die Bewegungen werden vom Modell gut vervollständigt, wir haben im Gegensatz zu den anderen Datensätzen dem Modell zur Bestimmung von $\mathbf{v}_0$ jedoch vier Bilder gezeigt. Die Extrapolation ist zwar etwas unscharf, könnte aber durch das Training von beispielsweise Adversarial Variational Autoencodern weiter an Qualität gewinnen. 
+	
+	
 	\newpage
 	\subsubsection{Methode 4: SDE$^n$VAE}
+	Für den SDE-Ball-Datensatz erhalten wir nach 10 Epochen die folgenden Ergebnisse:\\
+	\\
+	TODO
+	\\
+	Für die Verlustfunktion haben wir dabei festgestellt, dass die Verlust-Gewichtung
+	\begin{align*}
+	& 20 \, L_r + 3 \, L_{lr} + 10 \, L_{lp} + 1 \, L_{cv}
+	\end{align*}
+	recht gut funktioniert.
+	
+	
+	
+	
+	
+	\newpage
 
 	\begin{table}[htb]
 		\begin{center}
@@ -1128,7 +1124,70 @@
 	\end{table}
 	\newpage
 	\textbf{To-Do: SDE-VAE Modellstruktur}\\
-	Die Modellstruktur des SDEVAE für den Datensatz XXYYZZ
+	\begin{table}[htb]
+		\small
+		\begin{center}
+			\begin{tabular}{llcccc}
+				\toprule
+				\toprule
+				\textbf{\ }	&\textbf{Encoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& (28, 28, 1)		& 0		& - 			&- \\
+				\textbf{2.}	&Conv2D 		& (28, 28, 16)		& 160	& 3 $\times$ 3; padding	&relu \\
+				\textbf{3.}	&Max-Pooling2D	& (14, 14, 16)		& 0		& 2 $\times$ 2	&- \\
+				\textbf{4.}	&Conv2D			& (12, 12, 32)		& 4640	& 3 $\times$ 3	&relu \\
+				\textbf{5.}	&Max-Pooling2D	& (6, \ \ 6, \ 32)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{6.}	&Conv2D		& (4, \ \ 4,  64)	& 18496	& 3 $\times$ 3 	&relu \\
+				\textbf{7.}	&Flatten		& 1024				& 0		& - 			&- \\
+				\textbf{8.}	&Dense-Layer			& 128				& 131200	& - 			&relu \\
+				\textbf{9.}	&Dense-Layer 			& d + d				& 2 d 129	& - 			&- \\
+				\textbf{10.}	&Split-Layer	($\boldsymbol{\mu}, \log\boldsymbol{\sigma}$)	& (d, d)				& 0	& - 			&- \\
+				\textbf{11.}&$\mathbf{z}=\boldsymbol{\mu}+\boldsymbol{\epsilon}\cdot\exp(\log\boldsymbol{\sigma})$		& d				& 0	& - 			&-\\
+				\bottomrule
+				\toprule
+				\textbf{\ }	&\textbf{Decoder}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& d		& 0		& - 			&- \\
+				\textbf{2.}	&Dense-Layer 			& 128		& (d+1)128	& -				&relu \\
+				\textbf{3.}	&Dense-Layer			& 1024		& 132096& -				&relu \\
+				\textbf{4.}	&Reshape-Layer		& (4, \ \ 4,  64)	& 0		& -		&- \\
+				\textbf{5.}	&Conv2DTranspose& (6, \ \ 6, \ 32)	& 18464	& 3 $\times$ 3 	&relu \\
+				\textbf{6.}	&Up-Sampling2D	& (12, 12, \ 32)	& 0		& 2 $\times$ 2 	&- \\
+				\textbf{7.}	&Conv2DTranspose& (14, 14, \ 16)	& 4624		& 3 $\times$ 3 			&relu \\
+				\textbf{8.}	&Up-Sampling2D	& (28, 28, \ 16)	& 0	& 2 $\times$ 2 			&- \\
+				\textbf{9.}	&Conv2DTranspose& (28, 28,\ \ 1)	& 257  	& 3 $\times$ 3; padding 			&sigmoid \\
+				\bottomrule
+				\toprule
+				\textbf{\ }	&\textbf{$\bmu$-Netz}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& (M,d)		& 0		& - 		&- \\
+				\textbf{2.}	&Flatten		& M d				& 0		& - 			&- \\
+				\textbf{3.}	&Dense-Layer			& 20 M		& (M d + 1) 20 M & -				&tanh \\
+				\textbf{4.}	&Dense-Layer		& 20 M	& (20 M + 1) 20 M		& -		&- \\
+				\textbf{5.}	&Dense-Layer& M d	& (20 M + 1) M d	& - 	&tanh \\
+				\textbf{6.}	&Reshape-Layer		& (M, d)	& 0		& -		&- \\
+				\bottomrule
+				\toprule
+				\textbf{\ }	&\textbf{$\bsig$-Netz}	&\textbf{Outputgröße} &\textbf{Parameter} &\textbf{Fenstergröße} &\textbf{Aktivierung}\\
+				\midrule
+				\textbf{1.}	&Input-Layer	& (M,d)		& 0		& - 			&- \\
+				\textbf{2.}	&Flatten		& M d				& 0		& - 			&- \\
+				\textbf{3.}	&Dense-Layer			& 20 M n		& (M d + 1) 20 M n& -				&tanh \\
+				\textbf{4.}	&Dense-Layer		& 20 M n	& (20 M n + 1) 20 M n	& -		&- \\
+				\textbf{5.}	&Dense-Layer& M d n	& (20 M d + 1) M d n	& - 	&tanh \\
+				\textbf{6.}	&Reshape-Layer		& (M, d, n)	& 0		& -		&- \\
+				\bottomrule
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+	
+	
+	
+	
+	
+	
+	
 	\newpage
 	\section[Quellenangabe]{Quellenangabe}
 	\begin{thebibliography}{9}
