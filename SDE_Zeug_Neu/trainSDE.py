@@ -15,7 +15,7 @@ tf.random.set_seed(1)
 
 latent_dim = 1
 nrBrMotions = 1
-epochs = 10
+epochs = 5
 M = 2
 forceHigherOrder = False
 
@@ -35,7 +35,7 @@ batch_size = 50
 complexity = 20
 expected_SDE_complexity = 1
 
-data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
+data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
 
 
 ########################################################
@@ -95,30 +95,37 @@ derivatives = SDE_Tools.make_tensorwise_derivatives(M, frames, fps)
 ms = SDE_Tools.mu_sig_Net(M, latent_dim, n, akt_fun, complexity, forceHigherOrder=forceHigherOrder)
 
 p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, T, frames, ms, expected_SDE_complexity)
-cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, T, frames, batch_size, ms, expected_SDE_complexity)#, norm=lambda x: tf.math.sqrt(abs(x)))
+# , norm=lambda x: tf.math.sqrt(abs(x)))
+cv_loss = SDE_Tools.make_covariance_Loss(
+    latent_dim, T, frames, batch_size, ms, expected_SDE_complexity)
 ss_loss = SDE_Tools.make_sigma_size_Loss(latent_dim, ms)
 
-reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(d, latent_dim, n, T, frames, ms, expected_SDE_complexity)
-rec_loss = SDE_Tools.make_reconstruction_Loss(M, n, T, frames, batch_size, reconstructor, derivatives)
+reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(
+    d, latent_dim, n, T, frames, ms, expected_SDE_complexity)
+rec_loss = SDE_Tools.make_reconstruction_Loss(
+    M, n, T, frames, batch_size, reconstructor, derivatives)
 
 #loss = lambda x_org,ms_rec: 1*rec_loss(x_org,None) + 1*p_loss(x_org, ms_rec) + 0.1*cv_loss(x_org, ms_rec) + 0*ss_loss(x_org, ms_rec)
 
-x_train_derivatives = 10*x_train_derivatives
+x_train_derivatives = 1*x_train_derivatives
+
 
 def loss(x_org, ms_rec):
     S = 0
-    S += 2*rec_loss(x_org,None) #zuletzt 2
-    S += 10*p_loss(x_org, ms_rec) #zuletzt 10
-    S += 0.5*cv_loss(x_org, ms_rec) #zuletzt 0.5
+    S += 2*rec_loss(x_org, None)  # zuletzt 2
+    S += 10*p_loss(x_org, ms_rec)  # zuletzt 10
+    S += 1.6*cv_loss(x_org, ms_rec)  # zuletzt 0.5
     #S += 1000*ss_loss(x_org, ms_rec)
     return S
 
 
-# , metrics=[lambda x,m: rec_loss(x[:,0,:])])
-ms.compile(optimizer='adam', loss=loss, metrics=[p_loss, cv_loss, lambda x, m: rec_loss(x, None)])
-ms.fit(x_train_derivatives, x_train_derivatives,
-       epochs=epochs, batch_size=batch_size, shuffle=False)
-ms.summary()
+with tf.device('/cpu:0'):
+    # , metrics=[lambda x,m: rec_loss(x[:,0,:])])
+    ms.compile(optimizer='adam', loss=loss, metrics=[
+               p_loss, cv_loss, lambda x, m: rec_loss(x, None)])
+    ms.fit(x_train_derivatives, x_train_derivatives,
+           epochs=epochs, batch_size=batch_size, shuffle=False)
+    ms.summary()
 
 
 ########################################################

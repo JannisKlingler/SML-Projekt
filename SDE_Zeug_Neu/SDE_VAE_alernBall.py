@@ -13,58 +13,63 @@ except:
     raise Exception('Could not load necessary Tools. Please execute file in its original location.')
 
 
-#Diesen Block einkommentieren, falls man Python auf der gpu laufen lässt
-'''
+# Diesen Block einkommentieren, falls man Python auf der gpu laufen lässt
+
 # Needed for gpu support on some machines
 config = tf.compat.v1.ConfigProto(
     gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.95))
 config.gpu_options.allow_growth = True
 session = tf.compat.v1.Session(config=config)
 tf.compat.v1.keras.backend.set_session(session)
-'''
 
 
 ########################################################
 # Hyperparameter
 
-#Hier bitte Pfad (absolut) angeben wo die Datensätze gespeichert werden sollen
-#Ordner muss existieren, da Python auf vielen Systemen keine Ordner erstellen darf
+# Hier bitte Pfad (absolut) angeben wo die Datensätze gespeichert werden sollen
+# Ordner muss existieren, da Python auf vielen Systemen keine Ordner erstellen darf
 #Bsp: data_path = 'C:/Users/[Name]/Desktop/Datasets/'
-data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
+data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
 
-latent_dim = 1 #Dimension des latenten Raums (d)
-frames = 50 #Anzahl der Frames im Datensatz (m+1)
-M = 2  #Ordnung der SDEs
-N = 1  #Anzahl der frames, über die gemittelt wird um Ableitungen zu approzimieren
-#Achtung: die letzten (M-1)*N frames können nicht zum trainieren verwendet werden
-#Je chaotischer die Daten, desto größer N und kleiner M>1
+latent_dim = 1  # Dimension des latenten Raums (d)
+frames = 50  # Anzahl der Frames im Datensatz (m+1)
+M = 2  # Ordnung der SDEs
+N = 1  # Anzahl der frames, über die gemittelt wird um Ableitungen zu approzimieren
+# Achtung: die letzten (M-1)*N frames können nicht zum trainieren verwendet werden
+# Je chaotischer die Daten, desto größer N und kleiner M>1
 
-reconstructWithBM = False #gibt an ob die Daten geglättet rekonstruiert werden sollen, oder ob man mit Brownschen Bewegungen neue Daten generieren will
-forceHigherOrder = False #gibt an ob wie beim ODE-2-VAE die Form einer ODE M-ten Ordnung erzwungen werden soll oder nicht
-SDE_Net_complexity = 20 #Faktor um die Komplexität der Netzwerke, welche die SDE lernen, zu bestimmen.
-#[SDE_Net_complexity] sollte proportional zur latenten Dimension gewählt werden.
+# gibt an ob die Daten geglättet rekonstruiert werden sollen, oder ob man mit Brownschen Bewegungen neue Daten generieren will
+reconstructWithBM = False
+# gibt an ob wie beim ODE-2-VAE die Form einer ODE M-ten Ordnung erzwungen werden soll oder nicht
+forceHigherOrder = False
+# Faktor um die Komplexität der Netzwerke, welche die SDE lernen, zu bestimmen.
+SDE_Net_complexity = 20
+# [SDE_Net_complexity] sollte proportional zur latenten Dimension gewählt werden.
 
-epochs = 10 #Anzahl der Epochen beim Haupt-Training
-VAE_epochs_starting = 5 #Anzahl der Epochen beim vor-Training der En-&Decoder
-SDE_epochs_starting = 10 #Anzahl der Epochen beim vor-Training der SDE-Netzwerke (geht viel schneller)
+epochs = 10  # Anzahl der Epochen beim Haupt-Training
+VAE_epochs_starting = 5  # Anzahl der Epochen beim vor-Training der En-&Decoder
+# Anzahl der Epochen beim vor-Training der SDE-Netzwerke (geht viel schneller)
+SDE_epochs_starting = 5
 batch_size = 50
-train_size = 3000 #<3000
-test_size = 100  #<1000
-act_CNN = 'relu' #Aktivierungsfunktion für En-&Decoder
-act_ms_Net = 'tanh' #Aktivierungsfunktion für SDE-Netzwerke
+train_size = 3000  # <3000
+test_size = 100  # <1000
+act_CNN = 'relu'  # Aktivierungsfunktion für En-&Decoder
+act_ms_Net = 'tanh'  # Aktivierungsfunktion für SDE-Netzwerke
 
 
-#wenn diese parameter verändert werden, müssen die Datensätze neu erstellt werden
+# wenn diese parameter verändert werden, müssen die Datensätze neu erstellt werden
 
-Time = 50 #SDEs werden besser gelernt, wenn [Time] ungefähr gleich [frames] ist.
-simulated_frames = 200 #Frames, die beim erstellen des Datensatzes simuliert werden. Das Programm sieht davon nur [frames] viele.
-simulated_Time = 3*pi #Zeit, die beim erstellen des Datensatzes simuliert wird.
-fps = Time/frames #ist in der Theorie gleich 1/(Delta t)
-n = 1 #Anzahl der Brownschen Bewegungen in der SDE
-expected_SDE_complexity = 1 #Falls die SDEs zu sehr schwanken um gut gelernt zu werden, kann dieser Wert höher gestellt werden.
+Time = 50  # SDEs werden besser gelernt, wenn [Time] ungefähr gleich [frames] ist.
+# Frames, die beim erstellen des Datensatzes simuliert werden. Das Programm sieht davon nur [frames] viele.
+simulated_frames = 200
+simulated_Time = 3*pi  # Zeit, die beim erstellen des Datensatzes simuliert wird.
+fps = Time/frames  # ist in der Theorie gleich 1/(Delta t)
+n = 1  # Anzahl der Brownschen Bewegungen in der SDE
+# Falls die SDEs zu sehr schwanken um gut gelernt zu werden, kann dieser Wert höher gestellt werden.
+expected_SDE_complexity = 1
 
 
-#Bitte nicht ändern:
+# Bitte nicht ändern:
 pictureWidth = 28
 pictureHeight = 28
 pictureColors = 1
@@ -104,7 +109,7 @@ except:
     for i in range(x_train_path.shape[0]):
         list = []
         for j in range(frames):
-            position = [x_train_path[i, j, 0]/16+0.5, 0.5]
+            position = [x_train_path[i, j, 0]/8+0.5, 0.5]
             radius = 0.12
             arr = np.zeros((28, 28))
             ro, co = draw.disk((position[0] * 28, position[1] *
@@ -118,7 +123,7 @@ except:
     for i in range(x_test_path.shape[0]):
         list = []
         for j in range(frames):
-            position = [x_test_path[i, j, 0]/16+0.5, 0.5]
+            position = [x_test_path[i, j, 0]/8+0.5, 0.5]
             radius = 0.12
             arr = np.zeros((28, 28))
             ro, co = draw.disk((position[0] * 28, position[1] *
@@ -186,23 +191,27 @@ ss_loss = SDE_Tools.make_sigma_size_Loss(latent_dim, ms_Net)
 
 MSE = tf.keras.losses.MeanSquaredError()
 
+
 def SDELoss(Z_derivatives, ms_rec):
     S = 0
-    S += 2*ms_rec_loss(Z_derivatives,None)
+    S += 2*ms_rec_loss(Z_derivatives, None)
     S += 10*p_loss(Z_derivatives, ms_rec)
-    S += 0.5*cv_loss(Z_derivatives, ms_rec)
+    S += 1.6*cv_loss(Z_derivatives, ms_rec)
     # S += 1000*ss_loss(Z_derivatives,ms_rec) #mal ohne probieren
     return S
 
-alpha = 1 #zuletzt 1
+
+alpha = 1  # zuletzt 1
+
+
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += alpha*2*ms_rec_loss(Z_derivatives,Z_rec_List) #zuletzt 2
+    S += alpha*6*ms_rec_loss(Z_derivatives, Z_rec_List)  # zuletzt 2
     S += alpha*10*p_loss(Z_derivatives, None)
     #S += 0.01/MSE(Z_rec_List, tf.constant(np.zeros(Z_rec_List.shape),dtype=tf.float32))
     #S += 10*MSE(np.ones(Z_enc_List.shape[0]),tf.map_fn(abs,Z_enc_List)/Z_enc_List.shape[1])
-    #S += MSE(np.ones(Z_enc_List.shape[0]),tf.map_fn(K.mean,Z_enc_List)) #Betrag vergessen
-    #S += alpha*0.05*cv_loss(Z_derivatives, None) #zuletzt ohne
+    # S += MSE(np.ones(Z_enc_List.shape[0]),tf.map_fn(K.mean,Z_enc_List)) #Betrag vergessen
+    # S += alpha*0.05*cv_loss(Z_derivatives, None) #zuletzt ohne
     #S += beta*100*ss_loss(Z_derivatives,None)
     return S
 
@@ -212,7 +221,7 @@ beta = 1
 
 def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += beta*1*ms_rec_loss(Z_derivatives,Z_rec_List)
+    S += beta*1*ms_rec_loss(Z_derivatives, Z_rec_List)
     S += beta*10*p_loss(Z_derivatives, None)
     S += beta*1*cv_loss(Z_derivatives, None)
     #S += beta*1000*ss_loss(Z_derivatives, None)
@@ -221,7 +230,9 @@ def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivativ
 ########################################################
 # SDE_VAE definieren
 
-SDE_VAE = SDE_VAE_Tools.SDE_Variational_Autoencoder(M, N, encoder, derivatives, reconstructor, decoder, StartingLoss)
+
+SDE_VAE = SDE_VAE_Tools.SDE_Variational_Autoencoder(
+    M, N, encoder, derivatives, reconstructor, decoder, StartingLoss)
 # inp hat dim: None x frames x pictureWidth x pictureHeight x pictureColors
 
 print('model defined')
@@ -236,9 +247,8 @@ SDE_VAE.fit(x_train, x_train, epochs=VAE_epochs_starting, batch_size=batch_size,
 SDE_VAE.summary()
 
 # Latente Darstellung zum testen abspeichern
-_,_,Z_enc_List,_,_,_ = SDE_VAE.fullcall(x_train)
-np.save(data_path+'TestIfEncoderWorks', Z_enc_List)
-
+_, _, Z_enc_List, _, _, _ = SDE_VAE.fullcall(x_train)
+np.save(data_path+'TestIfEncoderWorks2', Z_enc_List)
 
 
 ########################################################
@@ -249,7 +259,7 @@ with tf.device('/cpu:0'):
     ms_Net.compile(optimizer='adam', loss=SDELoss, metrics=[
                    ss_loss, lambda x, m: ms_rec_loss(x, None)])
     _, _, Z_enc, _, _, _ = SDE_VAE.fullcall(x_train)
-    z_train_derivatives = 10*tf.constant(derivatives(Z_enc))
+    z_train_derivatives = tf.constant(derivatives(Z_enc), dtype=tf.float32)
     ms_Net.fit(z_train_derivatives, z_train_derivatives,
                epochs=SDE_epochs_starting, batch_size=batch_size, shuffle=False)
     ms_Net.summary()
@@ -272,14 +282,14 @@ SDE_VAE.reconstruct_smoothly = True
 
 ########################################################
 # Ergebnisse speichern
-Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List = SDE_VAE.fullcall(x_test)
+Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List = SDE_VAE.fullcall(
+    x_test)
 
 np.save(data_path+'Results_SDE_Ball_Z_org_{}frames'.format(frames), x_test_path)
 np.save(data_path+'Results_SDE_Ball_X_org_{}frames'.format(frames), x_test)
 np.save(data_path+'Results_SDE_Ball_Z_enc_{}frames'.format(frames), Z_enc_List)
 np.save(data_path+'Results_SDE_Ball_Z_rec_{}frames'.format(frames), Z_rec_List)
 np.save(data_path+'Results_SDE_Ball_X_rec_{}frames'.format(frames), X_rec_List)
-
 
 
 ########################################################

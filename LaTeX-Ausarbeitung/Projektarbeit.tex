@@ -83,7 +83,7 @@
 			Im Rahmen der Vorlesung\\
 			Stochastic Machine Learning\\
 			\vspace{0.3cm}
-			vorgelegt am 10. Februar 2021 \\
+			vorgelegt am 01. Februar 2021 \\
 			\vspace{0.7cm}
 
 			\begin{figure}[h!]
@@ -127,7 +127,7 @@
 	Um auch 'chaotischere' Timeseries lernen zu können, bietet es sich an mit SDEs anstatt ODEs zu arbeiten. Dabei geht allerdings die eindeutige Rekonstruierbarkeit der latenten Darstellungen aus den Anfangswerten verloren. Wir umgehen dieses Problem, indem wir die Originalen encodierten latenten Darstellungen direkt in die Encoder eingeben und mit weiteren Lossfunktionen die Darstellung als SDE erzwingen.
 	\\
 	\\
-	In dieser Arbeit werden wir in einem theoretischen Teil die mathematischen Grundlagen einführen, auf denen der Variational Autoencoder und der ODE$^2$VAE, sowie der SDE$^M$VAE aufbauen.\\
+	In dieser Arbeit werden wir in einem theoretischen Teil die mathematischen Grundlagen einführen, auf denen der Variational Autoencoder, der ODE$^2$VAE, sowie der SDE$^M$VAE aufbauen.\\
 	In einem praktischen Teil werden schließlich Anwendungsmöglichkeiten der beiden Modelle auf unsere Problemstellung präsentiert.\\
 	Dabei wird sowohl auf die Implementierung der
 	theoretischen Resultate, als auch auf die experimentellen Ergebnisse eingegangen.\\
@@ -515,7 +515,7 @@
 
 
 	\newpage
-	\subsection[SDE-VAE]{M-th Order SDE-Variational Autoencoder}
+	\subsection[SDE$^M$VAE]{M-th Order SDE-Variational Autoencoder}
 	Bisher wurden die Pfade der latenten Darstellungen $z = (s,v) : [0,\tau] \times \Omega \rightarrow \R^d$ als Lösungen von Differentialgleichungen der Form
 	\begin{align*}
 	\nabla s(\cdot,\omega) &= v(\cdot,\omega)\\
@@ -910,7 +910,7 @@
 	
 	
 	\newpage
-	\subsubsection{Methode 4: SDE$^n$VAE}
+	\subsubsection{Methode 4: SDE$^M$VAE}
 	Für den SDE-Ball-Datensatz erhalten wir nach 10 Epochen die folgenden Ergebnisse:\\
 	\\
 	TODO
@@ -933,7 +933,7 @@
 				\textbf{\ }	&\textbf{Vanilla-}\newline\textbf{VAE}	&\textbf{\ \ Latente}\newline\textbf{Interpolation}
 				&\textbf{alternativer}\newline\textbf{ODE$^2$VAE}
 				&\textbf{ODE$^2$VAE}
-				&\textbf{SDE-}\newline\textbf{VAE} \\
+				&\textbf{SDE$^M$-}\newline\textbf{VAE} \\
 
 				\textbf{Rekonstruktionen} \newline \textbf{in stetiger Zeit}& $\times$	& $\checkmark$ &$\times$ & $\checkmark$	& $\checkmark$\\
 				\textbf{Beobachtungs-}\newline\textbf{zeitpunkte können}\newline \textbf{unregelmäßig sein}	& $\times$	&  $\checkmark$ & $\times$ &($\checkmark$)	& ($\checkmark$)\\

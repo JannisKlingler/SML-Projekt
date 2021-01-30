@@ -11,6 +11,7 @@ from keras import backend as K
 
 MAE = tf.keras.losses.MeanAbsoluteError()
 
+
 def make_derivatives(x_org, M, frames, fps):
     dList = [x_org]
     for i in range(1, M):
@@ -40,6 +41,7 @@ def make_tensorwise_derivatives(M, frames, fps):
         return tf.stack(dList, axis=2)
     return derivatives
 
+
 def make_tensorwise_average_derivatives(M, N, frames, fps):
     def derivatives(x_org):
         length = x_org.shape[1]
@@ -47,9 +49,9 @@ def make_tensorwise_average_derivatives(M, N, frames, fps):
         for i in range(1, M):
             x_last = dList[-1]
             average = 0
-            for j in range(1,N+1):
+            for j in range(1, N+1):
                 x_derived = x_last[:, j:, :]-x_last[:, :-j, :]
-                x_derived = x_derived[:,:x_last.shape[1]-N,:]*fps
+                x_derived = x_derived[:, :x_last.shape[1]-N, :]*fps
                 average += x_derived/j
             print('ZZZZ', average.shape)
             dList.append(average/N)
@@ -100,6 +102,7 @@ def Reconstructor(d, latent_dim, n, T, frames, simulated_frames, X_0_List, ms_Ne
     return X
 '''
 
+
 def make_Tensorwise_Reconstructor(d, latent_dim, n, T, frames, ms_Net, expected_SDE_complexity, simulated_frames=False, applyBM=False):
     if not simulated_frames:
         simulated_frames = frames
@@ -111,9 +114,9 @@ def make_Tensorwise_Reconstructor(d, latent_dim, n, T, frames, ms_Net, expected_
         # X_0_List hat dim: None x M x latent_dim
         X_sim = [X_0_List]
         for i in range(simulated_frames):
-            mu = ms_Net(tf.transpose([X_sim[-1]],[1,0,2,3]))[:,0,:,:,0]
-            #mu hat dim: None x M x latent_dim
-            #X_sim.append(X_sim[-1] + mu/fps) #Original
+            mu = ms_Net(tf.transpose([X_sim[-1]], [1, 0, 2, 3]))[:, 0, :, :, 0]
+            # mu hat dim: None x M x latent_dim
+            # X_sim.append(X_sim[-1] + mu/fps) #Original
             X_sim.append(X_sim[-1] + mu*expected_SDE_complexity)
         X = []
         for i in range(frames):
@@ -207,6 +210,7 @@ class mu_sig_Net(tf.keras.Model):
             ms_List.append(mu_sig)
 
         ms_List = tf.stack(ms_List, axis=1)
+
         # ms_List hat dim: batch_size x frames-M+1 x M x latent_dim x 1+n
         return ms_List
 
@@ -232,16 +236,16 @@ def make_reconstruction_Loss(M, n, Time, frames, batch_size, T_reconstructor, de
         #Diff = tf.keras.layers.Multiply()([Diff,Diff])
         Diff = K.mean(Diff)
         return MAE(Z_org[:, :frames-M+1, :], Z_rec)
-        #return Diff
+        # return Diff
     return reconstruction_loss
 
 
-def make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, expected_SDE_complexity,norm=abs):
+def make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, expected_SDE_complexity, norm=abs):
     def pointwise_loss(Z_org, ms_rec):
-        #Z_org hat dim: batch_size x frames-M+1 x M x latent_dim
-        #mu_approx = frames/Time * (Z_org[:,1:,:,:] - Z_org[:,:-1,:,:]) #Original
-        mu_approx = (Z_org[:,1:,:,:] - Z_org[:,:-1,:,:])/expected_SDE_complexity
-        #mu_approx hat dim: batch_size x frames-M x M x latent_dim
+        # Z_org hat dim: batch_size x frames-M+1 x M x latent_dim
+        # mu_approx = frames/Time * (Z_org[:,1:,:,:] - Z_org[:,:-1,:,:]) #Original
+        mu_approx = (Z_org[:, 1:, :, :] - Z_org[:, :-1, :, :])/expected_SDE_complexity
+        # mu_approx hat dim: batch_size x frames-M x M x latent_dim
 
         if ms_rec is None:
             ms_rec = ms_Net(Z_org)
@@ -253,9 +257,10 @@ def make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, expected_SDE_comple
         Difference = mu - mu_approx
         Diff = tf.map_fn(abs, Difference)
         Diff = K.mean(Diff)
-        #return Diff
+        # return Diff
         return MAE(mu, mu_approx)
     return pointwise_loss
+
 
 def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, expected_SDE_complexity, norm=abs):
     def covariance_loss(Z_org, ms_rec):
@@ -271,12 +276,13 @@ def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, expected_
         # sig hat dim: batch_size x frames-M+1 x M x latent_dim x n
 
         fps = frames/Time
-        #rec_delta = mu/fps Original
+        # rec_delta = mu/fps Original
         rec_delta = mu*expected_SDE_complexity
-        random_delta = [Z_delta[:,:,0,:] - rec_delta[:,:-1,0,:]]
-        random_delta = tf.transpose(random_delta, [1,2,3,0])
-        #random_delta hat dim: batch_size x frames[lokal] x latent_dim x 1
-        covar = list(map(lambda i: tf.keras.layers.Dot(axes=2)([random_delta[:,i,:,:],random_delta[:,i,:,:]]), range(random_delta.shape[1])))
+        random_delta = [Z_delta[:, :, 0, :] - rec_delta[:, :-1, 0, :]]
+        random_delta = tf.transpose(random_delta, [1, 2, 3, 0])
+        # random_delta hat dim: batch_size x frames[lokal] x latent_dim x 1
+        covar = list(map(lambda i: tf.keras.layers.Dot(axes=2)(
+            [random_delta[:, i, :, :], random_delta[:, i, :, :]]), range(random_delta.shape[1])))
         covar = tf.stack(covar, axis=1)
         covar = K.sum(covar, axis=1)
         # covar hat dim: batch_size x frames[lokal] x latent_dim x latent_dim
@@ -286,14 +292,14 @@ def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, expected_
         sum_sig = list(map(lambda i: tf.keras.layers.Dot(axes=2)(
             [sig[:, i, :, :], sig[:, i, :, :]]), range(sig.shape[1])))
         sum_sig = tf.stack(sum_sig, axis=1)
-        #theoretical_covar = K.sum(sum_sig, axis=1)/fps #Original
+        # theoretical_covar = K.sum(sum_sig, axis=1)/fps #Original
         theoretical_covar = K.sum(sum_sig, axis=1)*expected_SDE_complexity
-        #theoretical_covar hat dim: batch_size x frames[lokal] x latent_dim x latent_dim
+        # theoretical_covar hat dim: batch_size x frames[lokal] x latent_dim x latent_dim
 
         Diff_sq_var = covar - theoretical_covar
         Diff_sq_var = tf.map_fn(norm, Diff_sq_var)
         Diff_sq_var = K.mean(Diff_sq_var)/(latent_dim**2)
-        #return Diff_sq_var
+        # return Diff_sq_var
         return MAE(covar, theoretical_covar)
 
     return covariance_loss
