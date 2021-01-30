@@ -113,7 +113,7 @@
 	Da das Modell selbst erlernen muss,
 	wie die Datenpunkte am besten gruppiert werden, wird auch das Erkennen unbekannter Eigenschaften ermöglicht.\\
 	Beim generieren von Bildern wie menschlichen Gesichtern kann die Performance dabei durchaus mit state-of-the-art Modellen wie Genrative Adversarial Networks mithalten. Die Anwendungsmöglichkeiten des Modells sind vielseitig, so werden VAE's unter anderem zum Modellieren chemischer Moleküle, zur Verarbeitung menschlicher Sprache oder zum erkennen beschädigter Daten und Schätzung von Unsicherheit eingesetzt.\\
-	Im Rahmen dieser Projektarbeit wollen wir mit Variational Autoencoder beschädigte Daten rekonstruieren und konzentrieren uns dabei ausschließlich auf Serien von Bildern mit einer zeitlichen Abhängigkeit, also Videosequenzen, oder kurz \emph{time series}. \\
+	Im Rahmen dieser Projektarbeit wollen wir mit Variational Autoencodern beschädigte Daten rekonstruieren und konzentrieren uns dabei ausschließlich auf Serien von Bildern mit einer zeitlichen Abhängigkeit, also Videosequenzen, oder kurz \emph{time series}. \\
 	Da dem \emph{Variational Autoencoder} die Annahme zugrunde liegt, dass die Verteilung der Datenpunkte
 	unabhängig und identisch verteilt ist, ist eine Anwendung auf unsere Problemstellung nicht ohne weitere
 	Anpassungen sinnvoll.\\
@@ -124,10 +124,10 @@
 	Wie wir sehen werden, können beide Ansätze jedoch auf etwas komplexeren Datensätzen keine zufriedenstellende Ergebnisse mehr liefern.
 	Eine Möglichkeit diese komplexen Zusammenhängen zwischen den Zeitschritten in \emph{time series} besser zu erlernen bietet der \emph{Second Order ODE-Variational Auto-Encoder} (kurz: ODE$^2$VAE). Die zeitlichen Abhängigkeiten unter den Datenpunkten werden hier mit Differentialgleichungen zweiter Ordnung modelliert, welche im Trainingsprozess erlernt werden. Schon nur aus drei Inputbildern kann die gesamte \emph{time series} in stetiger Zeit rekonstruiert werden.\\
 	%\emph{time series} noch überall klein schreiben
-	\textbf{TODO: Einleitung SDE-VAE}
+	Um auch 'chaotischere' Timeseries lernen zu können, bietet es sich an mit SDEs anstatt ODEs zu arbeiten. Dabei geht allerdings die eindeutige Rekonstruierbarkeit der latenten Darstellungen aus den Anfangswerten verloren. Wir umgehen dieses Problem, indem wir die Originalen encodierten latenten Darstellungen direkt in die Encoder eingeben und mit weiteren Lossfunktionen die Darstellung als SDE erzwingen.
 	\\
 	\\
-	In dieser Arbeit werden wir in einem theoretischen Teil die mathematischen Grundlagen einführen, auf denen der Variational Autoencoder und der ODE$^2$VAE aufbauen.\\
+	In dieser Arbeit werden wir in einem theoretischen Teil die mathematischen Grundlagen einführen, auf denen der Variational Autoencoder und der ODE$^2$VAE, sowie der SDE$^M$VAE aufbauen.\\
 	In einem praktischen Teil werden schließlich Anwendungsmöglichkeiten der beiden Modelle auf unsere Problemstellung präsentiert.\\
 	Dabei wird sowohl auf die Implementierung der
 	theoretischen Resultate, als auch auf die experimentellen Ergebnisse eingegangen.\\
@@ -917,7 +917,7 @@
 	\\
 	Für die Verlustfunktion haben wir dabei festgestellt, dass die Verlust-Gewichtung
 	\begin{align*}
-	& 20 \, L_r + 3 \, L_{lr} + 10 \, L_{lp} + 1 \, L_{cv}
+	& 20 \, L_r + 3 \, L_{lr} + 10 \, L_{lp} + 1 \, L_{lcv}
 	\end{align*}
 	recht gut funktioniert.
 	
@@ -935,10 +935,10 @@
 				&\textbf{ODE$^2$VAE}
 				&\textbf{SDE-}\newline\textbf{VAE} \\
 
-				\textbf{Rekonstruktionen} \newline \textbf{in stetiger Zeit}& $\times$	& $\checkmark$ &$\times$ & $\checkmark$	& \\
-				\textbf{Beobachtungs-}\newline\textbf{zeitpunkte können}\newline \textbf{unregelmäßig sein}	& $\times$	&  $\checkmark$ & $\times$ &$\checkmark$	& \\
-				\textbf{Extrapolation}	& $\times$	& $(\checkmark)$ & $\checkmark$ & $\checkmark$	& \\
-				\textbf{Trainingsdatensatz} \newline\textbf{mit fehlenden} \newline\textbf{Bildern möglich} 	& $\times$	& $\checkmark$ & $(\checkmark)$ & $(\checkmark)$	& \\
+				\textbf{Rekonstruktionen} \newline \textbf{in stetiger Zeit}& $\times$	& $\checkmark$ &$\times$ & $\checkmark$	& $\checkmark$\\
+				\textbf{Beobachtungs-}\newline\textbf{zeitpunkte können}\newline \textbf{unregelmäßig sein}	& $\times$	&  $\checkmark$ & $\times$ &($\checkmark$)	& ($\checkmark$)\\
+				\textbf{Extrapolation}	& $\times$	& $(\checkmark)$ & $\checkmark$ & $\checkmark$	& $\checkmark$\\
+				\textbf{Trainingsdatensatz} \newline\textbf{mit fehlenden} \newline\textbf{Bildern möglich} 	& $\times$	& $\checkmark$ & $(\checkmark)$ & $(\checkmark)$	&$\times$ \\
 				\bottomrule
 			\end{tabular}
 		\end{center}
