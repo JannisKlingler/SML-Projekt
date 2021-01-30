@@ -26,16 +26,12 @@ X_0 = np.array([np.zeros(Ntrain), np.ones(Ntrain)])
 X_0 = np.transpose(X_0, [1, 0])
 
 # mu : R^d -> R^d
-
-
 def mu(x):
     m = np.array([x[1], -(3*2*pi/T)**2*x[0]])
     #m = np.array([x[1],1])
     return m
 
 # sigma: R^d -> R^(nxd)
-
-
 def sigma(x):
     s = np.array([[0.1], [0.2]])
     #s = np.zeros((d,n))

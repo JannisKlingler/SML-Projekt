@@ -9,6 +9,7 @@ from keras import backend as K
 # X_org hat dim: None x frames x latent_dim
 # Output hat dim: None x frames-M+1 x M x latent_dim
 
+MAE = tf.keras.losses.MeanAbsoluteError()
 
 def make_derivatives(x_org, M, frames, fps):
     dList = [x_org]
@@ -39,8 +40,8 @@ def make_tensorwise_derivatives(M, frames, fps):
         return tf.stack(dList, axis=2)
     return derivatives
 
-def make_tensorwise_average_derivatives(M, frames, fps):
-    def derivatives(x_org,N):
+def make_tensorwise_average_derivatives(M, N, frames, fps):
+    def derivatives(x_org):
         length = x_org.shape[1]
         dList = [x_org]
         for i in range(1, M):
@@ -230,7 +231,8 @@ def make_reconstruction_Loss(M, n, Time, frames, batch_size, T_reconstructor, de
         Diff = tf.map_fn(norm, Diff)
         #Diff = tf.keras.layers.Multiply()([Diff,Diff])
         Diff = K.mean(Diff)
-        return Diff
+        return MAE(Z_org[:, :frames-M+1, :], Z_rec)
+        #return Diff
     return reconstruction_loss
 
 
@@ -251,7 +253,8 @@ def make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, expected_SDE_comple
         Difference = mu - mu_approx
         Diff = tf.map_fn(abs, Difference)
         Diff = K.mean(Diff)
-        return Diff
+        #return Diff
+        return MAE(mu, mu_approx)
     return pointwise_loss
 
 def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, expected_SDE_complexity, norm=abs):
@@ -290,7 +293,8 @@ def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, expected_
         Diff_sq_var = covar - theoretical_covar
         Diff_sq_var = tf.map_fn(norm, Diff_sq_var)
         Diff_sq_var = K.mean(Diff_sq_var)/(latent_dim**2)
-        return Diff_sq_var
+        #return Diff_sq_var
+        return MAE(covar, theoretical_covar)
 
     return covariance_loss
 

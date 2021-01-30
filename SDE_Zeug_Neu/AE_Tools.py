@@ -250,30 +250,12 @@ def make_simple_reconstruction_loss(batchsize):
         return Diff
     return reconstruction_loss
 
-'''
-def make_VAE_loss(encoder, decoder, frames):
-    def VAE_loss(X_org, X_rec):
-        X_org = X_org[:,0,:,:,:]
-        print('X_org0:',X_org.shape)
-        #X_encInp = tf.transpose([X_org],(1,2,3,0))
-        #print('X_org:',X_org.shape)
-        v_mu, v_log_sig, z = encoder(X_org)
-        X_rec = decoder(z)
-        print('X_rec:',X_rec.shape)
-        print('mu in loss:',v_mu.shape)
-        log_p_xz = 784. * frames * K.mean(tf.keras.losses.binary_crossentropy(X_org, X_rec))
-        kl_div = .5 * K.sum(1. + 2. * v_log_sig - K.square(v_mu) - 2. * K.exp(v_log_sig))
-        return log_p_xz #- kl_div
-    return VAE_loss
-'''
 
-
-
-def make_binary_crossentropy_rec_loss(M,frames):
+def make_binary_crossentropy_rec_loss(frames):
     def reconstruction_loss(X_org, X_rec):
         print('GGGGG0 X_org:',X_org.shape)
-        X_values = X_org[:,:frames-M+1,:,:,:]
         print('X_rec:',X_rec.shape)
+        X_values = X_org[:,:X_rec.shape[1],:,:,:]
         r = tf.keras.losses.binary_crossentropy(X_values, X_rec)
         return r
     return reconstruction_loss

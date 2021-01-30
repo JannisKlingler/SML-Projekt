@@ -13,7 +13,7 @@ tf.random.set_seed(1)
 ########################################################
 # Parameter festlegen
 
-latent_dim = 6
+latent_dim = 1
 nrBrMotions = 1
 epochs = 10
 M = 2
@@ -21,19 +21,21 @@ forceHigherOrder = False
 
 akt_fun = 'tanh'
 
-frames = 20
+frames = 50
 simulated_frames = frames
-T = 10
+T = 50
 #T = 2*pi
 fps = frames//T
-Ntrain = 5000
-Ntest = 10
+Ntrain = 3000
+Ntest = 100
 
 d = M*latent_dim
 n = nrBrMotions
 batch_size = 50
-complexity = 100
-expected_SDE_complexity = 20
+complexity = 20
+expected_SDE_complexity = 1
+
+data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
 
 
 ########################################################
@@ -67,7 +69,7 @@ def sigma(x):
 #x_train = np.array(list(map(lambda i : SDE_Tools.ItoDiffusion(2, n, T, frames, simulated_frames, X_0[i], mu, sigma) , range(Ntrain))))
 #x_test = np.array(list(map(lambda i : SDE_Tools.ItoDiffusion(2, n, T, frames, simulated_frames, X_0[i], mu, sigma) , range(Ntest))))
 #x_train = x_train[:Ntrain,:,:-1]
-x_train = np.load('C:/Users/bende/Documents/Uni/SML-Projekt/SDE_Zeug_Neu/SDE_Daten.npy')
+x_train = np.load(data_path+'TestIfEncoderWorks.npy')
 x_train = x_train[:Ntrain]
 
 print('x_train shape:', x_train.shape)
@@ -101,18 +103,19 @@ rec_loss = SDE_Tools.make_reconstruction_Loss(M, n, T, frames, batch_size, recon
 
 #loss = lambda x_org,ms_rec: 1*rec_loss(x_org,None) + 1*p_loss(x_org, ms_rec) + 0.1*cv_loss(x_org, ms_rec) + 0*ss_loss(x_org, ms_rec)
 
+x_train_derivatives = 10*x_train_derivatives
 
 def loss(x_org, ms_rec):
     S = 0
-    #S += 1*rec_loss(x_org,None)
-    S += 10*p_loss(x_org, ms_rec)
-    S += 1*cv_loss(x_org, ms_rec)
+    S += 2*rec_loss(x_org,None) #zuletzt 2
+    S += 10*p_loss(x_org, ms_rec) #zuletzt 10
+    S += 0.5*cv_loss(x_org, ms_rec) #zuletzt 0.5
     #S += 1000*ss_loss(x_org, ms_rec)
     return S
 
 
 # , metrics=[lambda x,m: rec_loss(x[:,0,:])])
-ms.compile(optimizer='adam', loss=loss, metrics=[cv_loss, lambda x, m: rec_loss(x, None)])
+ms.compile(optimizer='adam', loss=loss, metrics=[p_loss, cv_loss, lambda x, m: rec_loss(x, None)])
 ms.fit(x_train_derivatives, x_train_derivatives,
        epochs=epochs, batch_size=batch_size, shuffle=False)
 ms.summary()

@@ -1,13 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-#import tensorflow_probability as tfp
 import scipy as sp
 from keras import backend as K
-import SDE_Tools
-import AE_Tools
-#tfd = tfp.distributions
-# import datasets as data
+
+try:
+    import SDE_Tools
+    import AE_Tools
+    import SDE_VAE_Tools
+except:
+    raise Exception('Could not load necessary Tools. Please execute file in its original location.')
 
 '''
 # Needed for gpu support on some machines
@@ -46,15 +48,15 @@ expected_SDE_complexity = 20
 
 
 
-data_path = 'C:/Users/bende/Documents/Uni/SML-Projekt/'
+data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
 
 # %%
 ########################################################
 # Datensatz laden oder erstellen
 try:
     #raise Exception('Ich will den Datensatz neu erstellen')
-    x_train = np.load(data_path+'SDE_Zeug_Neu/rotatingMNIST_train.npy')
-    x_test = np.load(data_path+'SDE_Zeug_Neu/rotatingMNIST_test.npy')
+    x_train = np.load(data_path+'rotatingMNIST_train_{}frames.npy'.format(frames))
+    x_test = np.load(data_path+'rotatingMNIST_test_{}frames.npy'.format(frames))
     x_train = x_train[0:train_size]
     x_test = x_test[0:test_size]
 except:
@@ -111,7 +113,7 @@ ms_Net = SDE_Tools.mu_sig_Net(M, latent_dim, n, act_ms_Net, SDE_Net_complexity, 
 reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(latent_dim*pictureColors, latent_dim*pictureColors, n, Time, frames-M+1, ms_Net, expected_SDE_complexity, applyBM=False)
 
 
-rec_loss = AE_Tools.make_binary_crossentropy_rec_loss(M, frames)
+rec_loss = AE_Tools.make_binary_crossentropy_rec_loss(frames)
 ms_rec_loss = SDE_Tools.make_reconstruction_Loss(M, n, Time, frames, batch_size, reconstructor, derivatives)
 p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, expected_SDE_complexity)
 cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, expected_SDE_complexity)
@@ -150,95 +152,26 @@ def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivativ
 
 ########################################################
 # SDE_VAE definieren
-
-class SDE_Variational_Autoencoder(tf.keras.Model):
-    def __init__(self, encoder, reconstructor, decoder, custom_loss, apply_ms_Net=True):
-        super(SDE_Variational_Autoencoder, self).__init__()
-        #self.outputs = ['a','b','c','d','e']
-        self.encoder = encoder
-        self.decoder = decoder
-        self.reconstructor = reconstructor
-        self.apply_ms_Net = apply_ms_Net
-        self.custom_loss = custom_loss
-
-    def fullcall(self, inputs):
-        #inputs hat dim: batch_size x frames x pictureWidth x pictureHeight x pictureColors
-        #print('fullcall on:',inputs, inputs.shape[1])
-        frames_List = tf.split(inputs, inputs.shape[1], axis=1)
-        Z_enc_List = []
-        Z_enc_mean_List = []
-        Z_enc_log_var_List = []
-        for x in frames_List:
-            #x hat dim: batch_size x 1 x pictureWidth x pictureHeight x pictureColors
-            Z_enc_mean, Z_enc_log_var, Z_enc = self.encoder(x[:,0,:,:,:])
-            Z_enc_List.append(tf.transpose([Z_enc], [1,0,2]))
-            Z_enc_mean_List.append(tf.transpose([Z_enc_mean], [1,0,2]))
-            Z_enc_log_var_List.append(tf.transpose([Z_enc_log_var], [1,0,2]))
-        Z_enc_List = tf.keras.layers.Concatenate(axis=1)(Z_enc_List)
-        #Z_enc_List hat dim: batch_size x frames x latent_dim
-        Z_enc_mean_List = tf.keras.layers.Concatenate(axis=1)(Z_enc_mean_List)
-        #Z_enc_mean_List hat dim: batch_size x frames x latent_dim
-        Z_enc_log_var_List = tf.keras.layers.Concatenate(axis=1)(Z_enc_log_var_List)
-        #Z_enc_log_var_List hat dim: batch_size x frames x latent_dim
-
-        Z_derivatives = derivatives(Z_enc_List)
-        #Z_derivatives hat dim: batch_size x frames-M+1 x M x latent_dim
-        Z_derivatives_0 = Z_derivatives[:,0,:,:]
-        #Z_derivatives_0 hat dim: batch_size x M x latent_dim
-
-        if self.apply_ms_Net:
-            Z_rec_List = self.reconstructor(Z_derivatives_0)[:,:,0,:]
-        else:
-            Z_rec_List = Z_enc_List[:,:frames-M+1,:]
-        #Z_rec_List hat dim: batch_size x frames-M+1 x latent_dim
-
-        X_rec_List = []
-        for i in range(frames-M+1):
-            X_rec = self.decoder(Z_rec_List[:,i,:])
-            X_rec = tf.transpose([X_rec], [1,0,2,3,4])
-            X_rec_List.append(X_rec)
-        #X_rec_List = tf.stack(X_rec_List, axis=1, name = 'output_5')
-        X_rec_List = tf.keras.layers.Concatenate(axis=1)(X_rec_List)
-        #X_rec_List hat dim: batch_size x frames-M+1 x pictureWidth x pictureHeight x pictureColors
-        return [Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List]
-
-    def call(self, inputs):
-        Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List = self.fullcall(inputs)
-        #CustomLoss(inputs, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List)
-        return self.custom_loss(inputs, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List)
-
-
-########################################################
-# Model aufbauen
-
-SDE_VAE = SDE_Variational_Autoencoder(encoder, reconstructor, decoder, StartingLoss)
-
+SDE_VAE = SDE_VAE_Tools.SDE_Variational_Autoencoder(M, 1, encoder, derivatives, reconstructor, decoder, StartingLoss)
 #inp hat dim: None x frames x pictureWidth x pictureHeight x pictureColors
 
+print('model defined')
+
 
 ########################################################
-#Model ohne SDE-Rekonstruktion die latenten Darstellungen lernen lassen
-'''
-inp = tf.keras.layers.Input(shape=(pictureWidth,pictureHeight,pictureColors))
-x_train_longlist = np.concatenate(x_train, axis=0)
-#x_train_longlist hat dim: Ntrain*frames x pictureWidth x pictureHeight x pictureColors
-
-VAE = tf.keras.Model(inputs=inp, outputs=decoder(encoder(inp)[-1]))
-VAE.compile(optimizer='adam', loss=tf.keras.losses.binary_crossentropy)
-VAE.fit(x_train_longlist, x_train_longlist, epochs=VAE_epochs_starting, batch_size=batch_size*frames, shuffle=False)
-'''
-
-SDE_VAE.apply_ms_Net = False
+# Model ohne SDE-Rekonstruktion die latenten Darstellungen lernen lassen
+print('initial training for encoder and decoder to learn a first latent representation')
+SDE_VAE.reconstruct_smoothly = False
 SDE_VAE.compile(optimizer='adam', loss= lambda x,arg:arg)
 SDE_VAE.fit(x_train, x_train, epochs=VAE_epochs_starting, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
 
-#SDE_VAE.apply_ms_Net = True
-SDE_VAE.custom_loss = FullLoss
 
+########################################################
+# Die SDE-Rekonstruktion der latenten Darstellungen lernen lassen
+# Dieses training ist merklich schneller auf der haupt-cpu ohne verwendung einer gpu
+print('initial training to learn SDE governing latent representation')
 with tf.device('/cpu:0'):
-    ########################################################
-    #Die SDE-Rekonstruktion der latenten Darstellungen lernen lassen
     ms_Net.compile(optimizer='adam', loss=SDELoss, metrics=[ss_loss, lambda x,m: ms_rec_loss(x,None)])
     _,_,_,z_train_derivatives,_,_ = SDE_VAE.fullcall(x_train)
     z_train_derivatives = tf.constant(z_train_derivatives)
@@ -247,38 +180,32 @@ with tf.device('/cpu:0'):
 
 
 ########################################################
-#Abwechselnd En-&Decoder und SDE-Rekonstruktion trainieren
+# En-&Decoder und SDE-Rekonstruktion zusammen trainieren
+print('main training with SDEs and Decoders combined')
+SDE_VAE.custom_loss = FullLoss
 SDE_VAE.compile(optimizer='adam', loss= lambda x,arg:arg)
 SDE_VAE.fit(x_train, x_train, epochs=epochs, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
 
-SDE_VAE.apply_ms_Net = True
+
+########################################################
+# Modell so einstellen, dass glatter reconstruiert wird.
+SDE_VAE.reconstruct_smoothly = True
 
 
-'''
-#Modell speichern
-encoder.save(data_path+'SDE_Zeug_Neu/encoder'+',M={}'.format(M)+',e={}'.format(epochs)+',l={}'.format(latent_dim))
-decoder.save(data_path+'SDE_Zeug_Neu/decoder'+',M={}'.format(M)+',e={}'.format(epochs)+',l={}'.format(latent_dim))
-ms_Net.save(data_path+'SDE_Zeug_Neu/ms_Net'+',M={}'.format(M)+',e={}'.format(epochs)+',l={}'.format(latent_dim))
-'''
+########################################################
+# Ergebnisse speichern
+_, _, Z_enc_List, _, Z_rec_List, X_rec_List = SDE_VAE.fullcall(x_test)
 
-Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List = SDE_VAE.fullcall(
-    x_test)
-np.save(data_path+'Ball/Z_enc_mean_List', Z_enc_mean_List)
-np.save(data_path+'Ball/Z_enc_log_var_List', Z_enc_log_var_List)
-np.save(data_path+'Ball/Z_enc_List', Z_enc_List)
-np.save(data_path+'Ball/Z_derivatives', Z_derivatives)
-np.save(data_path+'Ball/Z_rec_List', Z_rec_List)
-np.save(data_path+'Ball/X_rec_List', X_rec_List)
+np.save(data_path+'Results_SDE_rotMNIST_Z_org_{}frames'.format(frames), x_test_path)
+np.save(data_path+'Results_SDE_rotMNIST_X_org_{}frames'.format(frames), x_test)
+np.save(data_path+'Results_SDE_rotMNIST_Z_enc_{}frames'.format(frames), Z_enc_List)
+np.save(data_path+'Results_SDE_rotMNIST_Z_rec_{}frames'.format(frames), Z_rec_List)
+np.save(data_path+'Results_SDE_rotMNIST_X_rec_{}frames'.format(frames), X_rec_List)
 
-'''
-#SDE-Datensatz erstellen
-Z_org = SDE_VAE.fullcall(x_train)[-4]
-print('BBBBBBBBBB',Z_org.shape)
-np.save('C:/Users/bende/Documents/Uni/SML-Projekt/SDE_Daten', Z_org)
-'''
 
-######################################
+########################################################
+# Ergebnisse darstellen
 
 #x_test = data.create_dataset(dataset_size=100, frames=10, picture_size=28, object_number=3)
 k = 0
@@ -297,12 +224,10 @@ print('enc_lat:',enc_lat.shape)
 print('rec_lat:',rec_lat.shape)
 
 fig, axs = plt.subplots(9, 10)
-for i in range(2):
+for i in range(4):
     for j in range(10):
-        axs[4*i, j].imshow(x_test_org[i,j,:,:,0], cmap='gray')
-        axs[4*i+1, j].plot(np.linspace(1,latent_dim,latent_dim),enc_lat[i,j,:],'o')
-        axs[4*i+2, j].plot(np.linspace(1,latent_dim,latent_dim),rec_lat[i,j,:],'o')
-        axs[4*i+3, j].imshow(rec_imgs[i,j,:,:,0], cmap='gray')
+        axs[2*i, j].imshow(x_test_org[i,j,:,:,0], cmap='gray')
+        axs[2*i+1, j].imshow(rec_imgs[i,j,:,:,0], cmap='gray')
 for i in range(5):
     axs[8, 2*i].plot(np.linspace(1,frames,frames),enc_lat[i,:,:],'-')
     axs[8, 2*i+1].plot(np.linspace(1,frames-M+1,frames-M+1),rec_lat[i,:,:],'-')
