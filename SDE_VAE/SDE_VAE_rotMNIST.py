@@ -43,11 +43,11 @@ forceHigherOrder = False
 SDE_Net_complexity = 8*latent_dim
 # [SDE_Net_complexity] sollte proportional zur latenten Dimension gewählt werden.
 
-VAE_epochs_starting = 15  # Anzahl der Epochen beim vor-Training der En-&Decoder
+VAE_epochs_starting = 5  # Anzahl der Epochen beim vor-Training der En-&Decoder
 SDE_epochs_starting = 20 # Anzahl der Epochen beim Training der SDE-Netzwerke (geht viel schneller)
 #Combined_epochs = 10  # Anzahl der Epochen beim Training zusammen [Optional]
 batch_size = 100
-train_size = 60000  # <=60000
+train_size = 5000  # <=60000
 test_size = 100  # <=10000
 act_CNN = 'relu'  # Aktivierungsfunktion für En-&Decoder
 act_ms_Net = 'tanh'  # Aktivierungsfunktion für SDE-Netzwerke
@@ -151,7 +151,7 @@ alpha = 0.5
 
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += 5*lr_loss(Z_derivatives, Z_rec_List)
+    S += alpha*10*lr_loss(Z_derivatives, Z_rec_List)
     S += alpha*10*p_loss(Z_derivatives,None)
     S += alpha*0.5*cv_loss(Z_derivatives,None)
     return S
@@ -250,7 +250,7 @@ _, _, enc_lat, _, rec_lat, rec_imgs = SDE_VAE.fullcall(x_test)
 fig, axs = plt.subplots(9, 10)
 for i in range(4):
     for j in range(10):
-        axs[2*i, j].imshow(x_test_org[i, j, :, :, 0], cmap='gray')
+        axs[2*i, j].imshow(x_test[i, j, :, :, 0], cmap='gray')
         axs[2*i+1, j].imshow(rec_imgs[i, j, :, :, 0], cmap='gray')
 for i in range(5):
     axs[8, 2*i].plot(np.linspace(1, frames, frames), enc_lat[i, :, :], '-')
