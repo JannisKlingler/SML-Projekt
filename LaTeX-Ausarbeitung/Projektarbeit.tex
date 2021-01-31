@@ -45,6 +45,7 @@
 
 \mdfdefinestyle{outer}{outerlinewidth=0.5pt,backgroundcolor=blue!5,roundcorner=10pt,outerlinecolor=blue,innerlinewidth=0.5pt,innerlinecolor=black}
 \mdfdefinestyle{inner}{leftmargin=0.1cm,rightmargin=0.1cm,outerlinewidth=0.5pt,innerlinewidth=0.5pt,innerlinecolor=black,outerlinecolor=black,backgroundcolor=lightgray!10,roundcorner=5pt,linecolor=black}
+\mdfdefinestyle{innersmall}{leftmargin=0.01cm,rightmargin=0.01cm,outerlinewidth=0.5pt,innerlinewidth=0.5pt,innerlinecolor=black,outerlinecolor=black,backgroundcolor=lightgray!10,roundcorner=5pt,linecolor=black}
 
 \newcommand{\qenc}{q_{\boldsymbol\phi}(\mathbf{z}|\mathbf{x}_i)}
 \newcommand{\qencd}{q_{\phi}(z|x_i}
@@ -865,29 +866,32 @@
 		%\caption{Groundtruth (jeweils obere Reihe) und Rekonstruktionen des ODE$^2$VAE %(untere Reihe) auf den Testdatensätzen von Rotating MNIST und Bouncing Balls. Wie %erwähnt erhält das Modell nur die ersten drei Bilder der \emph{time series}, um %Vorhersagen für die restlichen Zeitpunkte zu treffen.}
 %	\end{figure}
 	\subsubsection{Methode 3: ODE$^2$VAE}
-		\begin{figure}[h!]
-		\begin{minipage}{0.143\textwidth}
-			\center{\small{Modellinput}\vspace{0.1cm}}
-			\includegraphics[scale=0.325]{MNISTorig1}
+	\begin{figure}[h!]
+		\begin{minipage}{0.18\textwidth}
+			\begin{mdframed}[style=innersmall]
+				\center{\small{Modellinput}\vspace{0.1cm}}
+				\includegraphics[scale=0.28]{MNISTorig1}
+				\center{}
+				\includegraphics[scale=0.28]{bouncingBalls_ODEorig1}
+			\end{mdframed}
 		\end{minipage}
-		\begin{minipage}{0.346\textwidth}
-			\center{Groundtruth\vspace{0.1cm}}
-			\includegraphics[scale=0.325]{MNISTorig2}
+		\begin{minipage}{0.34\textwidth}
+			\begin{mdframed}[style=innersmall]
+				\center{Groundtruth\vspace{0.1cm}}
+				\includegraphics[scale=0.28]{MNISTorig2}
+				\center{}
+				\includegraphics[scale=0.28]{bouncingBalls_ODEorig2}
+			\end{mdframed}
 		\end{minipage}
-		\begin{minipage}{0.5\textwidth}
-		\center{Rekonstruktion und Extrapolation\vspace{0.1cm}}
-			\includegraphics[scale=0.325]{MNISTrec}
+		\begin{minipage}{0.48\textwidth}
+			\begin{mdframed}[style=innersmall]
+				\center{Rekonstruktion und Extrapolation}
+				\includegraphics[scale=0.28]{MNISTrec}
+				\center{}
+				\includegraphics[scale=0.28]{bouncingBalls_ODE}
+			\end{mdframed}
 		\end{minipage}
-			\begin{minipage}{0.152\textwidth}
-		\includegraphics[scale=0.325]{bouncingBalls_ODEorig1}
-		\end{minipage}
-		\begin{minipage}{0.35\textwidth}
-			\includegraphics[scale=0.325]{bouncingBalls_ODEorig2}
-		\end{minipage}
-		\begin{minipage}{0.5\textwidth}
-			\includegraphics[scale=0.325]{bouncingBalls_ODE}
-		\end{minipage}
-		\end{figure}
+	\end{figure}
 	Auf diesen Abbildungen sind die Rekonstruktionen eines ODE$^2$VAE, auf den Datensätzen rotatingMNIST und bouncingBalls zu erkennen. Das Modell wurde für 40 Epochen auf einem unbeschädigten Datensatz trainiert und erhält zum anfertigen der Rekonstruktionen aber nur die ersten drei Bilder der time series. 
 	Dieser Modellinput ist ganz links abgebildet. Daneben ist zum besseren einordnen der Ergebnisse die Groundtruth zu sehen, die das Modell zwar nicht sieht, von ihm aber bei einer perfekten Vorhersage aus den drei Inputdaten errechnet werden soll. Rechts ist schließlich die Rekonstruktion des Modellinputs und ab dem vierten Frame die Extrapolation zu erkennen. Wie man gut sehen kann ist die Modellperformance auf dem Datensatz rotatingMNIST hervorragend, während auf  bouncingBalls, der chaotischen Natur des Datensatzes geschuldet, auch einige Vorhersagen in den hinteren Frames nicht so gut aussehen. Dies dürfte daran liegen, dass sich anfänglich kleine Fehler in der Vorhersage mit fortlaufender Zeit immer weiter verschlimmern. \\
 	Wir vermuten deswegen, dass das Modell davon profitieren könnte die Priorverteilung beispielsweise durch Inverse Autoregressive Flow von einer Normalverteilung zu einer aussagekräftigeren Verteilung zu transformieren. So könnte sicher gestellt werden, dass die Startposition sehr genau encodiert wird, was einem aufsummieren von Fehlern entgegenwirken würde.
