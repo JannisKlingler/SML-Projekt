@@ -757,8 +757,8 @@
 	\vspace{-0.3cm}
 	Dieser einfache Datensatz zeigt einen Ball, der sich nach dem Pfad einer SDE mit einer Brownschen Bewegung ($n=1$) nach oben und unten bewegt. Die SDE von Grad $2$ hat die Form
 	\begin{align*}
-	& \bmu: \R^{2} \rightarrow \R^{2} \ ; \ \bmu(x,y) = (y,-x)\\
-	& \bsig : \R^{2} \rightarrow \R^{2 \times 1} \ ; \ \bsig(x,y) = (0.2, 0.1) \ .
+	& \bmu_{\text{org}}: \R^{2} \rightarrow \R^{2} \ ; \ \bmu_{\text{org}}(x,y) = (y,-x)\\
+	& \bsig_{\text{org}} : \R^{2} \rightarrow \R^{2 \times 1} \ ; \ \bsig_{\text{org}}(x,y) = (0.2, 0.1) \ .
 	\end{align*}
 	Für die Position des Balls wird nur die erste Koordinate der Lösung der SDE betrachtet. Falls $\bsig$ gleich $0$ wäre, würde es sich hierbei um die Differentialgleichung handeln, deren Lösung durch Sinus und Kosinus gegeben sind. Der Pfad des Balls beschreibt also anschaulich eine 'chaotische' Sinuskurve. Als Startwert der SDE wird immer $(0,1)$ gewählt.\\
 	Ein Datenpunkt $\x\in \{0,1\}^{28\times 28\times 50}$ aus dem Datensatz enthält 50 Frames.
@@ -915,15 +915,33 @@
 	
 	\newpage
 	\subsubsection{Methode 4: SDE$^M$VAE}
-	Für den SDE-Ball-Datensatz erhalten wir nach 10 Epochen die folgenden Ergebnisse:\\
+	Für den SDE-Ball-Datensatz erhalten wir schon mit einer latenten Dimension ($d=1$ und $M=2$) nach 3 Epochen gemeinsamen Trainings gefolgt von 5 Epochen zusätzlichen Trainings für das SDE-Netzwerk die folgenden Ergebnisse.\\
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.35]{SDE_Ball_rec}
+	\end{figure}
 	\\
-	TODO
+	Auf dem Bild sind originale Frames über ihren Rekonstruktionen zu sehen. Links sieht man dabei die ersten 5 und rechts die letzten 5 Frames der Time-Series.\\
+	Da man die Bewegung des Balls nicht sehr gut erkennen kann, zeigen wir stattdessen die latente Darstellung gegenüber den tatsächlichen Positionen des Balls.\\
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.4]{SDE_Ball_paths}
+	\end{figure}
 	\\
-	Für die Verlustfunktion haben wir dabei festgestellt, dass die Verlust-Gewichtung
+	Oben stehen die tatsächlichen Positionen des Balls, nach denen das Bild gezeichnet wurde. Darunter stehen die latenten Darstellungen der einzelnen Frames. Jeder Plot beschreibt genau eine Time-Series.\\
+	Wenn wir nun überprüfen wollen, ob wie die SDE auch richtig gelernt haben, können wir die Rekonstruktionen $R_{\bmu_{\text{org}},0}((0,1))$ und $R_{\bmu,0}((0,1))$ vergleichen:\\
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.25]{SDE_Ball_smooth_paths}
+	\end{figure}
+	\\
+	Wir beobachten hier eine erstaunlich genaue Approximation der SDE. Vermutlich hätten wir weniger als 3000 Time-Series zum Trainieren verwenden können. Die Kurven sehen hier nicht ganz wie Sinuskurven aus, da wir die ODE einer Sinuskurve diskret auf 50 Stellen approximieren. Wenn wir mehr Frames (also mehr Approximations-Stellen pro Zeiteinheit) hätten, sähen die Kurven eher wie Sinuskurven aus.\\
+	\\
+	Für die Verlustfunktion haben wir festgestellt, dass die Verlust-Gewichtung
 	\begin{align*}
-	& 20 \, L_r + 3 \, L_{lr} + 10 \, L_{lp} + 1 \, L_{lcv}
+	& 20 \, L_r + 5 \, L_{lr} + 10 \, L_{lp} + 1 \, L_{lcv}
 	\end{align*}
-	recht gut funktioniert.
+	(für Notation vergleiche Seite 26) recht gut funktioniert. 
 	
 	
 	

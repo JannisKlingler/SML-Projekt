@@ -86,6 +86,7 @@ try:
     print('loaded datasets')
 except:
     print('Dataset is being generated. This may take a few minutes.')
+
     X_0 = np.array([np.zeros(train_size), np.ones(train_size)])
     X_0 = np.transpose(X_0, [1, 0])
 
