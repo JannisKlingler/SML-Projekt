@@ -13,26 +13,26 @@ tf.random.set_seed(1)
 ########################################################
 # Parameter festlegen
 
-latent_dim = 1
+latent_dim = 15
 nrBrMotions = 1
-epochs = 5
+epochs = 20
 M = 2
 forceHigherOrder = False
 
 akt_fun = 'tanh'
 
-frames = 50
+frames = 20
 simulated_frames = frames
 T = 50
 #T = 2*pi
 fps = frames/T
-Ntrain = 3000
+Ntrain = 6000
 Ntest = 100
 
 d = M*latent_dim
 n = nrBrMotions
-batch_size = 50
-complexity = 20
+batch_size = 100
+complexity = 8*latent_dim
 D_t = 1
 
 data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
@@ -69,7 +69,7 @@ def sigma(x):
 #x_train = np.array(list(map(lambda i : SDE_Tools.ItoDiffusion(2, n, T, frames, simulated_frames, X_0[i], mu, sigma) , range(Ntrain))))
 #x_test = np.array(list(map(lambda i : SDE_Tools.ItoDiffusion(2, n, T, frames, simulated_frames, X_0[i], mu, sigma) , range(Ntest))))
 #x_train = x_train[:Ntrain,:,:-1]
-x_train = np.load(data_path+'TestIfEncoderWorks2.npy')
+x_train = np.load(data_path+'TestIfEncoderWorks.npy')
 x_train = x_train[:Ntrain]
 
 print('x_train shape:', x_train.shape)

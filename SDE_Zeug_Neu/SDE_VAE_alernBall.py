@@ -172,7 +172,7 @@ decoder = AE_Tools.make_MNIST_decoder(latent_dim)
 ms_Net = SDE_Tools.mu_sig_Net(M, latent_dim, n, act_ms_Net,
                               SDE_Net_complexity, forceHigherOrder=forceHigherOrder)
 reconstructor = SDE_Tools.Tensorwise_Reconstructor(
-    latent_dim*pictureColors, n, Time, frames, ms_Net, D_t, applyBM=False)
+    latent_dim*pictureColors, n, Time, frames, ms_Net, D_t)
 
 
 rec_loss = AE_Tools.make_binary_crossentropy_rec_loss(frames)
