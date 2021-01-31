@@ -21,32 +21,55 @@ tf.compat.v1.keras.backend.set_session(session)
 
 
 ########################################################
-# %% hyperparameter
-epochs = 10
-latent_dim = 15  # 5-30 sollte gut gehen
-batch_size = 60  # eher klein halten, unter 100 falls möglich, 50 klappt gut
-train_size = 6000
-test_size = 1000  # wird hier noch nicht gebraucht
-frames = 20  # Number of images in every datapoint. Choose accordingly to dataset size.
-act_CNN = 'relu'  # Activation function 'tanh' is used in odenet.
-act_ms_Net = 'tanh'
-Time = 50  # number of seconds of the video
-fps = Time/frames
-n = 1
+# Hyperparameter
+
+# Hier bitte Pfad (absolut) angeben wo die Datensätze gespeichert werden sollen
+# Ordner muss existieren, da Python auf vielen Systemen keine Ordner erstellen darf
+#Bsp: data_path = 'C:/Users/[Name]/Desktop/Datasets/'
+data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
+
+latent_dim = 15  # Dimension des latenten Raums (d)
+frames = 20  # Anzahl der Frames im Datensatz (m+1)
+M = 2  # Ordnung der SDEs
+# Achtung: die letzten (M-1) frames können nicht zum trainieren verwendet werden
+# Je chaotischer die Daten, desto größer N und kleiner M>1
+
+# gibt an ob die Daten geglättet rekonstruiert werden sollen, oder ob man mit Brownschen Bewegungen neue Daten generieren will
+reconstructWithBM = False
+# gibt an ob wie beim ODE-2-VAE die Form einer ODE M-ten Ordnung erzwungen werden soll oder nicht
+forceHigherOrder = False
+# Faktor um die Komplexität der Netzwerke, welche die SDE lernen, zu bestimmen.
+SDE_Net_complexity = 8*latent_dim
+# [SDE_Net_complexity] sollte proportional zur latenten Dimension gewählt werden.
+
+epochs = 10  # Anzahl der Epochen beim Haupt-Training
+VAE_epochs_starting = 5  # Anzahl der Epochen beim vor-Training der En-&Decoder
+# Anzahl der Epochen beim vor-Training der SDE-Netzwerke (geht viel schneller)
+SDE_epochs_starting = 10
+batch_size = 60
+train_size = 3000  # <3000
+test_size = 100  # <1000
+act_CNN = 'relu'  # Aktivierungsfunktion für En-&Decoder
+act_ms_Net = 'tanh'  # Aktivierungsfunktion für SDE-Netzwerke
+
+
+# wenn diese parameter verändert werden, müssen die Datensätze neu erstellt werden
+
+Time = 50  # SDEs werden besser gelernt, wenn [Time] ungefähr gleich [frames] ist.
+fps = Time/frames  # ist in der Theorie gleich 1/(Delta t)
+n = 1  # Anzahl der Brownschen Bewegungen in der SDE
+
+# Falls die SDEs zu sehr schwanken um gut gelernt zu werden, kann dieser Wert höher gestellt werden.
+D_t = 1 #zuletzt 20 ?
+
+
+# Bitte nicht ändern:
 pictureWidth = 28
 pictureHeight = 28
 pictureColors = 1
-M = 2  # für 2 ist es ein 2-SDE-VAE, M sollte nie größer als frames//2 sein
-CNN_complexity = 20  # wird zur zeit garnicht verwenden
-SDE_Net_complexity = 8*latent_dim  # scheint mit 50 immer gut zu klappen
-forceHigherOrder = False
-
-VAE_epochs_starting = 5
-SDE_epochs_starting = 20
-expected_SDE_complexity = 20
 
 
-data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
+data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
 
 # %%
 ########################################################
@@ -88,13 +111,6 @@ print('train-shape:', x_train.shape)
 x_test = np.transpose(np.array([x_test]), (1, 4, 2, 3, 0))
 
 
-########################################################
-# Datensatz für Encoder erstellen
-
-# Dim: train_size, (frames-M+1) x pictureWidth x pictureHeight x (M*pictureColors)
-#x_train_longlist = AE_Tools.make_training_data(x_train, train_size, frames, M)
-# print('new_train_shape:',x_train_longlist.shape)
-
 
 ########################################################
 # Definitionen
@@ -104,21 +120,21 @@ derivatives = SDE_Tools.make_tensorwise_derivatives(M, frames, fps)
 #encoder = AE_Tools.FramewiseEncoder(latent_dim, pictureWidth, pictureHeight, pictureColors, act_CNN, complexity=CNN_complexity, variational=True)
 #decoder = AE_Tools.FramewiseDecoder(latent_dim, pictureWidth, pictureHeight, pictureColors, act_CNN, complexity=CNN_complexity)
 
-encoder = AE_Tools.make_Clemens_encoder(latent_dim)
-decoder = AE_Tools.make_Clemens_decoder(latent_dim)
+encoder = AE_Tools.make_MNIST_encoder(latent_dim)
+decoder = AE_Tools.make_MNIST_decoder(latent_dim)
 
 ms_Net = SDE_Tools.mu_sig_Net(M, latent_dim, n, act_ms_Net,
                               SDE_Net_complexity, forceHigherOrder=forceHigherOrder)
-reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(
-    latent_dim*pictureColors, latent_dim*pictureColors, n, Time, frames-M+1, ms_Net, expected_SDE_complexity, applyBM=False)
+reconstructor = SDE_Tools.Tensorwise_Reconstructor(
+    latent_dim*pictureColors, latent_dim*pictureColors, n, Time, frames-M+1, ms_Net, D_t, applyBM=False)
 
 
 rec_loss = AE_Tools.make_binary_crossentropy_rec_loss(frames)
-ms_rec_loss = SDE_Tools.make_reconstruction_Loss(
+lr_loss = SDE_Tools.make_reconstruction_Loss(
     M, n, Time, frames, batch_size, reconstructor, derivatives)
-p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, expected_SDE_complexity)
+p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, D_t)
 cv_loss = SDE_Tools.make_covariance_Loss(
-    latent_dim, Time, frames, batch_size, ms_Net, expected_SDE_complexity)
+    latent_dim, Time, frames, batch_size, ms_Net, D_t)
 ss_loss = SDE_Tools.make_sigma_size_Loss(latent_dim, ms_Net)
 
 
@@ -129,7 +145,7 @@ def VAELoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivative
 
 def SDELoss(Z_derivatives, ms_rec):
     S = 0
-    S += 1*ms_rec_loss(Z_derivatives, None)  # zuletzt 0
+    S += 1*lr_loss(Z_derivatives, None)  # zuletzt 0
     S += 10*p_loss(Z_derivatives, ms_rec)
     S += 0.5*cv_loss(Z_derivatives, ms_rec)
     # S += 1000*ss_loss(Z_derivatives,ms_rec) #mal ohne probieren
@@ -141,9 +157,9 @@ alpha = 0.5
 
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += 5*ms_rec_loss(Z_derivatives, Z_rec_List)
-    #S += alpha*10*p_loss(Z_derivatives,None)
-    #S += alpha*1*cv_loss(Z_derivatives,None)
+    S += 5*lr_loss(Z_derivatives, Z_rec_List)
+    S += alpha*10*p_loss(Z_derivatives,None)
+    S += alpha*1*cv_loss(Z_derivatives,None)
     #S += beta*100*ss_loss(Z_derivatives,None)
     return S
 
@@ -153,7 +169,7 @@ def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_deriv
 
 def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += 1*ms_rec_loss(Z_derivatives, Z_rec_List)  # zuletzt 0
+    S += 1*lr_loss(Z_derivatives, Z_rec_List)  # zuletzt 0
     S += 10*p_loss(Z_derivatives, None)
     S += 1*cv_loss(Z_derivatives, None)
     #S += beta*1000*ss_loss(Z_derivatives,None)
@@ -172,7 +188,7 @@ print('model defined')
 ########################################################
 # Model ohne SDE-Rekonstruktion die latenten Darstellungen lernen lassen
 print('initial training for encoder and decoder to learn a first latent representation')
-SDE_VAE.reconstruct_smoothly = False
+SDE_VAE.apply_reconstructor = False
 SDE_VAE.compile(optimizer='adam', loss=lambda x, arg: arg)
 SDE_VAE.fit(x_train, x_train, epochs=VAE_epochs_starting, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
@@ -184,7 +200,7 @@ SDE_VAE.summary()
 print('initial training to learn SDE governing latent representation')
 with tf.device('/cpu:0'):
     ms_Net.compile(optimizer='adam', loss=SDELoss, metrics=[
-                   ss_loss, lambda x, m: ms_rec_loss(x, None)])
+                   ss_loss, lambda x, m: lr_loss(x, None)])
     _, _, _, z_train_derivatives, _, _ = SDE_VAE.fullcall(x_train)
     z_train_derivatives = tf.constant(z_train_derivatives)
     ms_Net.fit(z_train_derivatives, z_train_derivatives,
@@ -203,7 +219,7 @@ SDE_VAE.summary()
 
 ########################################################
 # Modell so einstellen, dass glatter reconstruiert wird.
-SDE_VAE.reconstruct_smoothly = True
+SDE_VAE.apply_reconstructor = True
 
 
 ########################################################

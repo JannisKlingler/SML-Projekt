@@ -11,32 +11,12 @@ import SDE_Tools
 
 
 
-########################################################
-# Datensatz für Encoder erstellen
-
-def make_training_data(x_train, train_size, frames, M):
-    b = M//2+1
-    a = M-b
-    #print('a,b:',a,b)
-
-    L = []
-    for i in range(train_size):
-        L1 = []
-        for j in range(a,frames-b+1):
-            L2 = list(map(lambda k: x_train[i,j-a+k,:,:,:],range(M)))
-            L1.append(np.concatenate(L2,axis=-1))
-        L.append(L1)
-
-    #Dim: train_size x (frames-M+1) x pictureWidth x pictureHeight x (M*pictureColors)
-    x_train_longlist = np.stack(L,axis=0)
-    return x_train_longlist
-
 
 
 ########################################################
 # Encoder definieren
 
-def make_Clemens_encoder(latent_dim):
+def make_MNIST_encoder(latent_dim):
     encoder_input = tf.keras.layers.Input(shape=(28, 28, 1))
     x = tf.keras.layers.Conv2D(16, (3, 3), padding='same', activation='relu')(encoder_input)
     x = tf.keras.layers.MaxPooling2D((2, 2))(x)
@@ -57,7 +37,7 @@ def make_Clemens_encoder(latent_dim):
 
 
 
-
+#Encoder, der in der Theorie
 class LocalEncoder(tf.keras.Model):
     def __init__(self, latent_dim, M, pictureWidth, pictureHeight, pictureColors, act, complexity=1, variational=False):
         super(LocalEncoder, self).__init__()
@@ -103,7 +83,7 @@ class LocalEncoder(tf.keras.Model):
         #print('Encoder built')
         return a
 
-def make_Clemens_decoder(latent_dim):
+def make_MNIST_decoder(latent_dim):
     decoder_input = tf.keras.layers.Input(shape=(latent_dim,))
     x = tf.keras.layers.Dense(128, activation='relu')(decoder_input)
     x = tf.keras.layers.Dense(4 * 4 * 64, activation='relu')(x)

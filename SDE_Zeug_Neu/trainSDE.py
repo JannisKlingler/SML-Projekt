@@ -25,7 +25,7 @@ frames = 50
 simulated_frames = frames
 T = 50
 #T = 2*pi
-fps = frames//T
+fps = frames/T
 Ntrain = 3000
 Ntest = 100
 
@@ -33,9 +33,9 @@ d = M*latent_dim
 n = nrBrMotions
 batch_size = 50
 complexity = 20
-expected_SDE_complexity = 1
+D_t = 1
 
-data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
+data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
 
 
 ########################################################
@@ -69,39 +69,32 @@ def sigma(x):
 #x_train = np.array(list(map(lambda i : SDE_Tools.ItoDiffusion(2, n, T, frames, simulated_frames, X_0[i], mu, sigma) , range(Ntrain))))
 #x_test = np.array(list(map(lambda i : SDE_Tools.ItoDiffusion(2, n, T, frames, simulated_frames, X_0[i], mu, sigma) , range(Ntest))))
 #x_train = x_train[:Ntrain,:,:-1]
-x_train = np.load(data_path+'TestIfEncoderWorks.npy')
+x_train = np.load(data_path+'TestIfEncoderWorks2.npy')
 x_train = x_train[:Ntrain]
 
 print('x_train shape:', x_train.shape)
 
 ########################################################
 # Trainigsdatensatz umstellen um mu und sigma zu Lernen
+derivatives = SDE_Tools.make_tensorwise_derivatives(M, frames, fps)
 
-'''
-x_train_delta_list = SDE_Tools.make_SDE_training_data(x_train)
-x_train_list = np.array([x_train_value_list, x_train_delta_list])
-print('new train shape:',x_train_list.shape, x_train_value_list.shape)
-x_train_list = np.transpose(x_train_list, [1,0,2])
-print('new train shape:',x_train_list.shape, x_train_value_list.shape)
-#print(x_train_list[0:51,:,:])
-'''
-x_train_derivatives = SDE_Tools.make_derivatives(x_train, M, frames, frames/T)
+x_train_derivatives = derivatives(x_train)
 print('new train shape:', x_train_derivatives.shape)
 
 
 ########################################################
 # Model trainieren
-derivatives = SDE_Tools.make_tensorwise_derivatives(M, frames, fps)
+
 ms = SDE_Tools.mu_sig_Net(M, latent_dim, n, akt_fun, complexity, forceHigherOrder=forceHigherOrder)
 
-p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, T, frames, ms, expected_SDE_complexity)
+p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, T, frames, ms, D_t)
 # , norm=lambda x: tf.math.sqrt(abs(x)))
 cv_loss = SDE_Tools.make_covariance_Loss(
-    latent_dim, T, frames, batch_size, ms, expected_SDE_complexity)
+    latent_dim, T, frames, batch_size, ms, D_t)
 ss_loss = SDE_Tools.make_sigma_size_Loss(latent_dim, ms)
 
-reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(
-    d, latent_dim, n, T, frames, ms, expected_SDE_complexity)
+reconstructor = SDE_Tools.Tensorwise_Reconstructor(
+    latent_dim, n, T, frames, ms, D_t)
 rec_loss = SDE_Tools.make_reconstruction_Loss(
     M, n, T, frames, batch_size, reconstructor, derivatives)
 
@@ -112,9 +105,9 @@ x_train_derivatives = 1*x_train_derivatives
 
 def loss(x_org, ms_rec):
     S = 0
-    S += 2*rec_loss(x_org, None)  # zuletzt 2
+    S += 4*rec_loss(x_org, None)  # zuletzt 2
     S += 10*p_loss(x_org, ms_rec)  # zuletzt 10
-    S += 1.6*cv_loss(x_org, ms_rec)  # zuletzt 0.5
+    S += 0.5*cv_loss(x_org, ms_rec)  # zuletzt 0.5
     #S += 1000*ss_loss(x_org, ms_rec)
     return S
 

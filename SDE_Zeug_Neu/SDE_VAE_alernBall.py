@@ -29,7 +29,7 @@ tf.compat.v1.keras.backend.set_session(session)
 # Hier bitte Pfad (absolut) angeben wo die Datensätze gespeichert werden sollen
 # Ordner muss existieren, da Python auf vielen Systemen keine Ordner erstellen darf
 #Bsp: data_path = 'C:/Users/[Name]/Desktop/Datasets/'
-data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
+data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
 
 latent_dim = 1  # Dimension des latenten Raums (d)
 frames = 50  # Anzahl der Frames im Datensatz (m+1)
@@ -47,7 +47,7 @@ SDE_Net_complexity = 20
 # [SDE_Net_complexity] sollte proportional zur latenten Dimension gewählt werden.
 
 epochs = 10  # Anzahl der Epochen beim Haupt-Training
-VAE_epochs_starting = 5  # Anzahl der Epochen beim vor-Training der En-&Decoder
+VAE_epochs_starting = 3  # Anzahl der Epochen beim vor-Training der En-&Decoder
 # Anzahl der Epochen beim vor-Training der SDE-Netzwerke (geht viel schneller)
 SDE_epochs_starting = 5
 batch_size = 50
@@ -66,7 +66,7 @@ simulated_Time = 3*pi  # Zeit, die beim erstellen des Datensatzes simuliert wird
 fps = Time/frames  # ist in der Theorie gleich 1/(Delta t)
 n = 1  # Anzahl der Brownschen Bewegungen in der SDE
 # Falls die SDEs zu sehr schwanken um gut gelernt zu werden, kann dieser Wert höher gestellt werden.
-expected_SDE_complexity = 1
+D_t = 1
 
 
 # Bitte nicht ändern:
@@ -158,13 +158,6 @@ x_test = np.transpose(np.array([x_test]), (1, 2, 3, 4, 0))
 
 
 ########################################################
-# Datensatz für Encoder erstellen
-
-# Dim: train_size, (frames-M+1) x pictureWidth x pictureHeight x (M*pictureColors)
-#x_train_longlist = AE_Tools.make_training_data(x_train, train_size, frames, M)
-
-
-########################################################
 # Definitionen
 
 #derivatives = SDE_Tools.make_tensorwise_average_derivatives(M, N, frames, fps)
@@ -173,20 +166,20 @@ derivatives = SDE_Tools.make_tensorwise_derivatives(M, frames, fps)
 #encoder = AE_Tools.FramewiseEncoder(latent_dim, pictureWidth, pictureHeight, pictureColors, act_CNN, complexity=CNN_complexity, variational=True)
 #decoder = AE_Tools.FramewiseDecoder(latent_dim, pictureWidth, pictureHeight, pictureColors, act_CNN, complexity=CNN_complexity)
 
-encoder = AE_Tools.make_Clemens_encoder(latent_dim)
-decoder = AE_Tools.make_Clemens_decoder(latent_dim)
+encoder = AE_Tools.make_MNIST_encoder(latent_dim)
+decoder = AE_Tools.make_MNIST_decoder(latent_dim)
 
 ms_Net = SDE_Tools.mu_sig_Net(M, latent_dim, n, act_ms_Net,
                               SDE_Net_complexity, forceHigherOrder=forceHigherOrder)
-reconstructor = SDE_Tools.make_Tensorwise_Reconstructor(
-    latent_dim*pictureColors, latent_dim*pictureColors, n, Time, frames, ms_Net, batch_size, applyBM=reconstructWithBM)
+reconstructor = SDE_Tools.Tensorwise_Reconstructor(
+    latent_dim*pictureColors, n, Time, frames, ms_Net, D_t, applyBM=False)
 
 
 rec_loss = AE_Tools.make_binary_crossentropy_rec_loss(frames)
-ms_rec_loss = SDE_Tools.make_reconstruction_Loss(
+lr_loss = SDE_Tools.make_reconstruction_Loss(
     M, n, Time, frames, batch_size, reconstructor, derivatives)
-p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, batch_size)
-cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, batch_size)
+p_loss = SDE_Tools.make_pointwise_Loss(M, latent_dim, Time, frames, ms_Net, D_t)
+cv_loss = SDE_Tools.make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, D_t)
 ss_loss = SDE_Tools.make_sigma_size_Loss(latent_dim, ms_Net)
 
 MSE = tf.keras.losses.MeanSquaredError()
@@ -194,24 +187,24 @@ MSE = tf.keras.losses.MeanSquaredError()
 
 def SDELoss(Z_derivatives, ms_rec):
     S = 0
-    S += 2*ms_rec_loss(Z_derivatives, None)
+    S += 4*lr_loss(Z_derivatives, None)
     S += 10*p_loss(Z_derivatives, ms_rec)
-    S += 1.6*cv_loss(Z_derivatives, ms_rec)
+    S += 0.5*cv_loss(Z_derivatives, ms_rec)
     # S += 1000*ss_loss(Z_derivatives,ms_rec) #mal ohne probieren
     return S
 
 
-alpha = 1  # zuletzt 1
+alpha = 0.2  # zuletzt 0.2
 
 
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += alpha*6*ms_rec_loss(Z_derivatives, Z_rec_List)  # zuletzt 2
+    S += alpha*5*lr_loss(Z_derivatives, Z_rec_List)  # zuletzt 5
     S += alpha*10*p_loss(Z_derivatives, None)
     #S += 0.01/MSE(Z_rec_List, tf.constant(np.zeros(Z_rec_List.shape),dtype=tf.float32))
     #S += 10*MSE(np.ones(Z_enc_List.shape[0]),tf.map_fn(abs,Z_enc_List)/Z_enc_List.shape[1])
     # S += MSE(np.ones(Z_enc_List.shape[0]),tf.map_fn(K.mean,Z_enc_List)) #Betrag vergessen
-    # S += alpha*0.05*cv_loss(Z_derivatives, None) #zuletzt ohne
+    S += alpha*1*cv_loss(Z_derivatives, None) #zuletzt 1
     #S += beta*100*ss_loss(Z_derivatives,None)
     return S
 
@@ -221,7 +214,7 @@ beta = 1
 
 def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += beta*1*ms_rec_loss(Z_derivatives, Z_rec_List)
+    S += beta*1*lr_loss(Z_derivatives, Z_rec_List)
     S += beta*10*p_loss(Z_derivatives, None)
     S += beta*1*cv_loss(Z_derivatives, None)
     #S += beta*1000*ss_loss(Z_derivatives, None)
@@ -241,7 +234,7 @@ print('model defined')
 ########################################################
 # Model ohne SDE-Rekonstruktion die latenten Darstellungen lernen lassen
 print('initial training for encoder and decoder to learn a first latent representation')
-SDE_VAE.reconstruct_smoothly = False
+SDE_VAE.apply_reconstructor = False
 SDE_VAE.compile(optimizer='adam', loss=lambda x, arg: arg)
 SDE_VAE.fit(x_train, x_train, epochs=VAE_epochs_starting, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
@@ -255,14 +248,19 @@ np.save(data_path+'TestIfEncoderWorks2', Z_enc_List)
 # Die SDE-Rekonstruktion der latenten Darstellungen lernen lassen
 # Dieses training ist merklich schneller auf der haupt-cpu ohne verwendung einer gpu
 print('initial training to learn SDE governing latent representation')
+
+new_ms_Net = SDE_Tools.mu_sig_Net(M, latent_dim, n, act_ms_Net, SDE_Net_complexity, forceHigherOrder=forceHigherOrder)
+new_ms_Net.compile(optimizer='adam', loss=SDELoss, metrics=[
+               ss_loss, lambda x, m: lr_loss(x, None)])
+reconstructor.ms_Net = new_ms_Net
+
 with tf.device('/cpu:0'):
-    ms_Net.compile(optimizer='adam', loss=SDELoss, metrics=[
-                   ss_loss, lambda x, m: ms_rec_loss(x, None)])
     _, _, Z_enc, _, _, _ = SDE_VAE.fullcall(x_train)
-    z_train_derivatives = tf.constant(derivatives(Z_enc), dtype=tf.float32)
-    ms_Net.fit(z_train_derivatives, z_train_derivatives,
+    #z_train_derivatives = tf.constant(derivatives(Z_enc), dtype=tf.float32)
+    z_train_derivatives = tf.constant(derivatives(Z_enc))
+    new_ms_Net.fit(z_train_derivatives, z_train_derivatives,
                epochs=SDE_epochs_starting, batch_size=batch_size, shuffle=False)
-    ms_Net.summary()
+    new_ms_Net.summary()
 
 
 '''
@@ -277,7 +275,8 @@ SDE_VAE.summary()
 
 ########################################################
 # Modell so einstellen, dass glatter reconstruiert wird.
-SDE_VAE.reconstruct_smoothly = True
+SDE_VAE.apply_reconstructor = True
+reconstructor.applyBM = reconstructWithBM
 
 
 ########################################################
