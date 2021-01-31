@@ -158,14 +158,15 @@ def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_deriv
     return S
 
 
-
+'''
+#Falls man am Ende nochmal En-&Decoder zusammen mit dem SDE-Netz trainieren will
 def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
     S += 1*lr_loss(Z_derivatives, Z_rec_List)
     S += 10*p_loss(Z_derivatives, None)
     S += 1*cv_loss(Z_derivatives, None)
     return S
-
+'''
 
 ########################################################
 # SDE_VAE definieren
@@ -185,9 +186,11 @@ SDE_VAE.compile(optimizer='adam', loss=lambda x, arg: arg)
 SDE_VAE.fit(x_train, x_train, epochs=VAE_epochs_starting, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
 
+'''
+# Latente Darstellung zum testen abspeichern
 _,_,Z_enc,_,_,_ = SDE_VAE.fullcall(x_train)
 np.save(data_path+'TestIfEncoderWorks',Z_enc)
-
+'''
 
 ########################################################
 # Die SDE-Rekonstruktion der latenten Darstellungen lernen lassen
@@ -202,11 +205,12 @@ reconstructor.ms_Net = new_ms_Net
 with tf.device('/cpu:0'):
     new_ms_Net.compile(optimizer='adam', loss=SDELoss, metrics=[
                    ss_loss, lambda x, m: lr_loss(x, None)])
-    #_, _, _, z_train_derivatives, _, _ = SDE_VAE.fullcall(x_train)
+    _,_,Z_enc,_,_,_ = SDE_VAE.fullcall(x_train)
     z_train_derivatives = tf.constant(derivatives(Z_enc))
     new_ms_Net.fit(z_train_derivatives, z_train_derivatives,
                epochs=SDE_epochs_starting, batch_size=batch_size, shuffle=False)
     new_ms_Net.summary()
+
 
 '''
 ########################################################

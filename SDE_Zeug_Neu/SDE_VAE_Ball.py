@@ -191,7 +191,6 @@ def SDELoss(Z_derivatives, ms_rec):
     S += 4*lr_loss(Z_derivatives, None)
     S += 10*p_loss(Z_derivatives, ms_rec)
     S += 0.5*cv_loss(Z_derivatives, ms_rec)
-    # S += 1000*ss_loss(Z_derivatives,ms_rec) #mal ohne probieren
     return S
 
 
@@ -200,30 +199,25 @@ alpha = 0.2  # zuletzt 0.2
 
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += alpha*5*lr_loss(Z_derivatives, Z_rec_List)  # zuletzt 5
+    S += alpha*5*lr_loss(Z_derivatives, Z_rec_List)
     S += alpha*10*p_loss(Z_derivatives, None)
-    #S += 0.01/MSE(Z_rec_List, tf.constant(np.zeros(Z_rec_List.shape),dtype=tf.float32))
-    #S += 10*MSE(np.ones(Z_enc_List.shape[0]),tf.map_fn(abs,Z_enc_List)/Z_enc_List.shape[1])
-    # S += MSE(np.ones(Z_enc_List.shape[0]),tf.map_fn(K.mean,Z_enc_List)) #Betrag vergessen
-    S += alpha*1*cv_loss(Z_derivatives, None) #zuletzt 1
-    #S += beta*100*ss_loss(Z_derivatives,None)
+    S += alpha*1*cv_loss(Z_derivatives, None)
     return S
 
-
+'''
+#Falls man am Ende nochmal En-&Decoder zusammen mit dem SDE-Netz trainieren will
 beta = 1
-
-
 def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
     S += beta*1*lr_loss(Z_derivatives, Z_rec_List)
     S += beta*10*p_loss(Z_derivatives, None)
     S += beta*1*cv_loss(Z_derivatives, None)
-    #S += beta*1000*ss_loss(Z_derivatives, None)
     return S
+'''
+
 
 ########################################################
 # SDE_VAE definieren
-
 
 SDE_VAE = SDE_VAE_Tools.SDE_Variational_Autoencoder(
     M, N, encoder, derivatives, reconstructor, decoder, StartingLoss)
@@ -240,10 +234,11 @@ SDE_VAE.compile(optimizer='adam', loss=lambda x, arg: arg)
 SDE_VAE.fit(x_train, x_train, epochs=VAE_epochs_starting, batch_size=batch_size, shuffle=False)
 SDE_VAE.summary()
 
+'''
 # Latente Darstellung zum testen abspeichern
 _, _, Z_enc_List, _, _, _ = SDE_VAE.fullcall(x_train)
 np.save(data_path+'TestIfEncoderWorks2', Z_enc_List)
-
+'''
 
 ########################################################
 # Die SDE-Rekonstruktion der latenten Darstellungen lernen lassen
