@@ -28,6 +28,7 @@ tf.compat.v1.keras.backend.set_session(session)
 #Bsp: data_path = 'C:/Users/[Name]/Desktop/Datasets/'
 data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
 
+
 latent_dim = 15  # Dimension des latenten Raums (d)
 frames = 20  # Anzahl der Frames im Datensatz (m+1)
 M = 2  # Ordnung der SDEs
@@ -60,7 +61,7 @@ fps = Time/frames  # ist in der Theorie gleich 1/(Delta t)
 n = 1  # Anzahl der Brownschen Bewegungen in der SDE
 
 # Falls die SDEs zu sehr schwanken um gut gelernt zu werden, kann dieser Wert höher gestellt werden.
-D_t = 1 #zuletzt 20 ?
+D_t = 1
 
 
 # Bitte nicht ändern:
@@ -69,9 +70,7 @@ pictureHeight = 28
 pictureColors = 1
 
 
-data_path = 'C:/Users/bende/Documents/Uni/Datasets/'
 
-# %%
 ########################################################
 # Datensatz laden oder erstellen
 try:
@@ -143,39 +142,34 @@ def VAELoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivative
 
 def SDELoss(Z_derivatives, ms_rec):
     S = 0
-    S += 4*lr_loss(Z_derivatives, None)  # zuletzt 0
+    S += 4*lr_loss(Z_derivatives, None)
     S += 10*p_loss(Z_derivatives, ms_rec)
     S += 0.5*cv_loss(Z_derivatives, ms_rec)
-    # S += 1000*ss_loss(Z_derivatives,ms_rec) #mal ohne probieren
     return S
 
 
 alpha = 0.5
-
 
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
     S += 5*lr_loss(Z_derivatives, Z_rec_List)
     S += alpha*10*p_loss(Z_derivatives,None)
     S += alpha*0.5*cv_loss(Z_derivatives,None)
-    #S += beta*100*ss_loss(Z_derivatives,None)
     return S
 
-
-#beta = 0.2
 
 
 def FullLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += 1*lr_loss(Z_derivatives, Z_rec_List)  # zuletzt 0
+    S += 1*lr_loss(Z_derivatives, Z_rec_List)
     S += 10*p_loss(Z_derivatives, None)
     S += 1*cv_loss(Z_derivatives, None)
-    #S += beta*1000*ss_loss(Z_derivatives,None)
     return S
 
 
 ########################################################
 # SDE_VAE definieren
+
 SDE_VAE = SDE_VAE_Tools.SDE_Variational_Autoencoder(
     M, 1, encoder, derivatives, reconstructor, decoder, StartingLoss)
 # inp hat dim: None x frames x pictureWidth x pictureHeight x pictureColors
@@ -185,7 +179,7 @@ print('model defined')
 
 ########################################################
 # Model ohne SDE-Rekonstruktion die latenten Darstellungen lernen lassen
-print('initial training for encoder and decoder to learn a first latent representation')
+print('initial training for encoder and decoder to learn a latent representation')
 SDE_VAE.apply_reconstructor = False
 SDE_VAE.compile(optimizer='adam', loss=lambda x, arg: arg)
 SDE_VAE.fit(x_train, x_train, epochs=VAE_epochs_starting, batch_size=batch_size, shuffle=False)
@@ -198,7 +192,7 @@ np.save(data_path+'TestIfEncoderWorks',Z_enc)
 ########################################################
 # Die SDE-Rekonstruktion der latenten Darstellungen lernen lassen
 # Dieses training ist merklich schneller auf der haupt-cpu ohne verwendung einer gpu
-print('initial training to learn SDE governing latent representation')
+print('training to learn SDE governing latent representation')
 
 new_ms_Net = SDE_Tools.mu_sig_Net(M, latent_dim, n, act_ms_Net, SDE_Net_complexity, forceHigherOrder=forceHigherOrder)
 new_ms_Net.compile(optimizer='adam', loss=SDELoss, metrics=[
@@ -217,6 +211,7 @@ with tf.device('/cpu:0'):
 '''
 ########################################################
 # En-&Decoder und SDE-Rekonstruktion zusammen trainieren
+# Optional. Manchmal sehen Rekonstructionen damit besser aus
 print('main training with SDEs and Decoders combined')
 SDE_VAE.custom_loss = FullLoss
 SDE_VAE.compile(optimizer='adam', loss=lambda x, arg: arg)
@@ -244,21 +239,10 @@ np.save(data_path+'Results_SDE_rotMNIST_X_rec_{}frames'.format(frames), X_rec_Li
 ########################################################
 # Ergebnisse darstellen
 
-#x_test = data.create_dataset(dataset_size=100, frames=10, picture_size=28, object_number=3)
-k = 0
-x_test_org = x_train[2:batch_size]
-print('x_test_org:', x_test_org.shape)
-_, _, enc_lat, _, rec_lat, rec_imgs = SDE_VAE.fullcall(x_test_org)
-print('rec_imgs:', rec_imgs.shape)
-#enc_lat = list(map(lambda i: encoder(x_train[i,:,:,:,:])[-1], range(batch_size)))
-#enc_lat = tf.stack(enc_lat, axis=0)
+_, _, enc_lat, _, rec_lat, rec_imgs = SDE_VAE.fullcall(x_test)
 
-#Z_0 = derivatives(enc_lat)[:,0,:,:]
-#rec_lat = reconstructor(Z_0)[:,:,0,:]
-
-print('enc_lat:', enc_lat.shape)
-#rec_lat = reconstructor(enc_lat[:,0,:])
-print('rec_lat:', rec_lat.shape)
+#print('enc_lat:', enc_lat.shape)
+#print('rec_lat:', rec_lat.shape)
 
 fig, axs = plt.subplots(9, 10)
 for i in range(4):

@@ -43,7 +43,6 @@ class SDE_Variational_Autoencoder(tf.keras.Model):
         # Z_enc_log_var_List hat dim: batch_size x frames x latent_dim
 
         Z_derivatives = self.derivatives(Z_enc_List)
-        print('Z_derivatives:',Z_derivatives.shape)
         # Z_derivatives hat dim: batch_size x frames-(M-1)*N x M x latent_dim
         Z_derivatives_0 = Z_derivatives[:, 0, :, :]
         # Z_derivatives_0 hat dim: batch_size x M x latent_dim

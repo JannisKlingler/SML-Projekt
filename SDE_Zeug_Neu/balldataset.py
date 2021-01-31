@@ -11,9 +11,10 @@ from math import pi, log, sin, cos, exp
 # %%
 import SDE_Tools
 
+#Ist jetzt überflüssig. Datensatz wird in SDE_VAE_Ball erstellt
 
-Ntrain = 10000 # 16 GB Arbeitsspeicher funktioniert, aber ALLE Programme davor schließen!
-Ntest = 10000
+Ntrain = 3000
+Ntest = 1000
 frames = 50
 simulated_frames = 200
 T = 50

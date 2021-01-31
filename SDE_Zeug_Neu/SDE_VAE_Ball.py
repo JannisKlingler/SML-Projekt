@@ -234,7 +234,7 @@ print('model defined')
 
 ########################################################
 # Model ohne SDE-Rekonstruktion die latenten Darstellungen lernen lassen
-print('initial training for encoder and decoder to learn a first latent representation')
+print('initial training for encoder and decoder to learn a latent representation')
 SDE_VAE.apply_reconstructor = False
 SDE_VAE.compile(optimizer='adam', loss=lambda x, arg: arg)
 SDE_VAE.fit(x_train, x_train, epochs=VAE_epochs_starting, batch_size=batch_size, shuffle=False)
@@ -248,7 +248,7 @@ np.save(data_path+'TestIfEncoderWorks2', Z_enc_List)
 ########################################################
 # Die SDE-Rekonstruktion der latenten Darstellungen lernen lassen
 # Dieses training ist merklich schneller auf der haupt-cpu ohne verwendung einer gpu
-print('initial training to learn SDE governing latent representation')
+print('training to learn SDE governing latent representation')
 
 new_ms_Net = SDE_Tools.mu_sig_Net(M, latent_dim, n, act_ms_Net, SDE_Net_complexity, forceHigherOrder=forceHigherOrder)
 new_ms_Net.compile(optimizer='adam', loss=SDELoss, metrics=[
@@ -257,7 +257,6 @@ reconstructor.ms_Net = new_ms_Net
 
 with tf.device('/cpu:0'):
     _, _, Z_enc, _, _, _ = SDE_VAE.fullcall(x_train)
-    #z_train_derivatives = tf.constant(derivatives(Z_enc), dtype=tf.float32)
     z_train_derivatives = tf.constant(derivatives(Z_enc))
     new_ms_Net.fit(z_train_derivatives, z_train_derivatives,
                epochs=SDE_epochs_starting, batch_size=batch_size, shuffle=False)
@@ -267,7 +266,9 @@ with tf.device('/cpu:0'):
 '''
 ########################################################
 # En-&Decoder und SDE-Rekonstruktion zusammen trainieren
+# Optional. Machmal sind Reconstructionen dann schöner.
 print('main training with SDEs and Decoders combined')
+
 SDE_VAE.custom_loss = FullLoss
 SDE_VAE.compile(optimizer='adam', loss=lambda x, arg: arg)
 SDE_VAE.fit(x_train, x_train, epochs=epochs, batch_size=batch_size, shuffle=False)
@@ -295,21 +296,10 @@ np.save(data_path+'Results_SDE_Ball_X_rec_{}frames'.format(frames), X_rec_List)
 ########################################################
 # Ergebnisse darstellen
 
-#x_test = data.create_dataset(dataset_size=100, frames=10, picture_size=28, object_number=3)
-k = 0
-print('x_test:', x_test.shape)
 _, _, enc_lat, _, rec_lat, rec_imgs = SDE_VAE.fullcall(x_test)
-print('rec_imgs:', rec_imgs.shape)
-#enc_lat = list(map(lambda i: encoder(x_train[i,:,:,:,:])[-1], range(batch_size)))
-#enc_lat = tf.stack(enc_lat, axis=0)
 
-#Z_0 = derivatives(enc_lat)[:,0,:,:]
-#rec_lat = reconstructor(Z_0)[:,:,0,:]
-#rec_lat = x_test_path
-
-print('enc_lat:', enc_lat.shape)
-#rec_lat = reconstructor(enc_lat[:,0,:])
-print('rec_lat:', rec_lat.shape)
+#print('enc_lat:', enc_lat.shape)
+#print('rec_lat:', rec_lat.shape)
 
 fig, axs = plt.subplots(9, 10)
 for i in range(4):
