@@ -9,7 +9,7 @@ tfd = tfp.distributions
 
 # Needed for gpu support on some machines
 config = tf.compat.v1.ConfigProto(
-    gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.8))
+    gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.9))
 config.gpu_options.allow_growth = True
 session = tf.compat.v1.Session(config=config)
 tf.compat.v1.keras.backend.set_session(session)
@@ -27,11 +27,17 @@ act = 'relu'  # Activation function 'tanh' is used in odenet.
 
 ode_integration = 'DormandPrince'  # options: 'DormandPrince' , 'trivialsum'
 # we suggest 'trivialsum' as it is very fast and yields good results.
+# It is the alternative method described in our document. If 'DormandPrince'
+# is chosen it might seem like the Loss diverges. This is because gamma is gradually
+# increased. But the resultsare good and they will be printed each epoch for evaluation.
 eval_interval = 20  # Time between evaluation on test batch during training.
+
+# Datapath to the datasets
 data_path = 'C:/Users/Admin/Desktop/Python/Datasets/'
 job = 'bouncingBalls'  # Dataset for training. Options: 'rotatingMNIST' , 'bouncingBalls'
 
 # %%
+# Loading Datasets and creating them if necessary. It will take a while to create the Datasets.
 try:
     x_train = np.load(data_path + job + '_train.npy')
     x_test = np.load(data_path + job + '_test.npy')
@@ -61,6 +67,8 @@ train_dataset = (tf.data.Dataset.from_tensor_slices(x_train)
 test_dataset = (tf.data.Dataset.from_tensor_slices(x_test)
                 .shuffle(test_size).batch(batch_size))  # (batch_size, 28, 28, frames)
 
+# Model
+
 
 class ODE2VAE(tf.keras.Model):
     def __init__(self, latent_dim, act, armortized_len):
@@ -69,6 +77,7 @@ class ODE2VAE(tf.keras.Model):
         self.act = act
         self.armortized_len = armortized_len
 
+        # Positionencoder
         self.position_encoder = tf.keras.Sequential([
             tf.keras.layers.Reshape((28, 28, 1)),
             tf.keras.layers.InputLayer((28, 28, 1)),
@@ -81,6 +90,7 @@ class ODE2VAE(tf.keras.Model):
             tf.keras.layers.Dense(256, activation=act),
             tf.keras.layers.Dense(latent_dim + latent_dim)])
 
+        # Velocityencoder
         self.velocity_encoder = tf.keras.Sequential([
             tf.keras.layers.InputLayer((28, 28, armortized_len)),
             tf.keras.layers.Conv2D(32, (3, 3), padding="same", activation=act),
@@ -92,6 +102,7 @@ class ODE2VAE(tf.keras.Model):
             tf.keras.layers.Dense(256, activation=act),
             tf.keras.layers.Dense(latent_dim + latent_dim)])
 
+        # ODE-Net
         self.differential_equation = tf.keras.Sequential([
             tf.keras.layers.InputLayer((2, latent_dim)),
             tf.keras.layers.Flatten(),
@@ -99,6 +110,7 @@ class ODE2VAE(tf.keras.Model):
             tf.keras.layers.Dense(4 * latent_dim, activation='tanh'),
             tf.keras.layers.Dense(latent_dim)])
 
+        # Decoder
         self.decoder = tf.keras.Sequential([
             tf.keras.layers.InputLayer((latent_dim,)),
             tf.keras.layers.Dense(256, activation=act),
@@ -110,13 +122,17 @@ class ODE2VAE(tf.keras.Model):
             tf.keras.layers.UpSampling2D(size=(2, 2)),
             tf.keras.layers.Conv2DTranspose(1, (3, 3), padding="same", activation='sigmoid')])
 
-    def encode(self, x, i):
+    # Encodes a databatch   Input: (batch_size, 28, 28, frames), time
+    #                       Output:
+    def encode(self, x, t):
         pos_mean, pos_logsig = tf.split(self.position_encoder(
-            x[:, :, :, i]), num_or_size_splits=2, axis=1)
+            x[:, :, :, t]), num_or_size_splits=2, axis=1)
         vel_mean, vel_logsig = tf.split(self.velocity_encoder(
-            x[:, :, :, i:i + armortized_len]), num_or_size_splits=2, axis=1)
+            x[:, :, :, t:i + armortized_len]), num_or_size_splits=2, axis=1)
         return tf.stack([pos_mean, vel_mean, pos_logsig, vel_logsig], axis=1)
 
+    # Reparametrization Trick   Input:
+    #                           Output:
     def reparameterize(self, x_encoded):
         pos_eps = tf.random.normal(shape=(batch_size, latent_dim))
         vel_eps = tf.random.normal(shape=(batch_size, latent_dim))
@@ -124,8 +140,9 @@ class ODE2VAE(tf.keras.Model):
         vel = vel_eps * tf.exp(x_encoded[:, 3]) + x_encoded[:, 1]
         return tf.stack([pos, vel], axis=1)
 
+    # Defines the diiferential equation for our ODEsolver.
+    # Input is our latent state z at time t. Output is the derivative of z
     def ode_system(self, t, z, epsilon):
-
         if ode_integration == 'trivialsum':
             d_vel_dt = self.differential_equation(z)
             d_pos_dt = z[:, 1] + d_vel_dt
@@ -141,6 +158,13 @@ class ODE2VAE(tf.keras.Model):
             trace = tf.reduce_sum(epsilon * tape.gradient(g, v_t), axis=1)
             return tf.stack([d_pos_dt, d_vel_dt], axis=1), - trace
 
+    # Creates the latent trajectory from z_0 with ODE integration
+    # Input: latent state at time t=0:
+    #        logpdf of z_0:
+    #        Chosen type of ODE integration
+
+    # Output: latent trajectroy:
+    #         density trajectory:
     def latent_trajectory(self, z_t, log_qz_t, ode_integration):
         latent_states_ode = [z_t]
         log_qz_ode = [log_qz_t]
@@ -161,6 +185,9 @@ class ODE2VAE(tf.keras.Model):
 
         return tf.stack(latent_states_ode), tf.stack(log_qz_ode)
 
+    # Reconstructs an imagebatch from given position state.
+    # Input: Position State
+    # Output: Reconstruction
     def decode(self, pos):
         x_rec = self.decoder(pos)
         return x_rec[:, :, :, 0]
@@ -169,9 +196,11 @@ class ODE2VAE(tf.keras.Model):
 model = ODE2VAE(latent_dim, act, armortized_len)
 optimizer = tf.keras.optimizers.Adam()
 
+# Lossfunction for databatch.
+
 
 def compute_loss(model, x, ode_integration, gamma):
-
+    # Simple reconstruction loss for alternative model
     if ode_integration == 'trivialsum':
         x_encoded = model.encode(x, 0)
         z_0 = model.reparameterize(x_encoded)
@@ -179,6 +208,7 @@ def compute_loss(model, x, ode_integration, gamma):
         x_rec = tf.stack([model.decode(latent_states_ode[i, :, 0]) for i in range(frames)], axis=3)
         return tf.reduce_sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec))
 
+    #
     elif ode_integration == 'DormandPrince':
         x_encoded = tf.stack([model.encode(x, i) for i in range(frames - armortized_len + 1)])
         latent_states_enc = tf.stack([model.reparameterize(x_encoded[i])
@@ -272,7 +302,6 @@ evaluate_during_training(
     model, test_sample, ode_integration, time_history, 0, batches-1)
 
 
-@ tf.function
 def train_step(model, x, optimizer, ode_integration):
     gamma = (epoch - 1) / epochs + batch / (batches * epochs)
     with tf.GradientTape() as tape:
