@@ -120,8 +120,12 @@
 	Anpassungen sinnvoll.\\
 	Ein erster naiver Ansatz hierfür ist es, die zeitliche Komponente in den Daten zu
 	vernachlässigen und die gesamte \emph{time series} dem VAE zusammengefasst als einen Datenvektor zu übergeben. Wenn der Trainingsdatensatz unbeschädigt ist, wird der beschädigten \emph{time series} die latente Darstellung zugewiesen, die einer unbeschädigten \emph{time series} am nächsten kommt. Vom Decoder wird die \emph{time series} nun vollständig rekonstruiert, da ihm beschädigte Daten nach dem Trainingsprozess unbekannt sind.\\
+	Da die Darstellung der beschädigten Sequenz im latenten Raum jedoch relativ weit entfernt von der Darstellung der 
+	unbeschädigten Sequenz ist, sind hier die Rekonstruktionen entsprechend abweichend. Deshalb bietet es sich an das Modell 
+	auf den beschädigten Daten zu trainieren und dann mithilfe der Lossfunktion den Decoder auf die unbeschädigten Daten 
+	anzupassen. \\
 	Ein weiterer Ansatz ergibt sich, wenn man die zeitlichen Zusammenhänge der \emph{time series}
-	im Latenten Raum linear interpoliert. Hier bilden die einzelnen Frames der \emph{time series} unseren Trainingsdatensatz. Durch lineare Interpolation lassen sich die Übergänge nun auch in stetiger Zeit modellieren. \\ \\
+	im Latenten Raum linear interpoliert. Hier bilden die einzelnen Frames der \emph{time series} unseren Trainingsdatensatz. Durch lineare Interpolation lassen sich die Übergänge nun auch in stetiger Zeit modellieren. \\
 	Wie wir sehen werden, können beide Ansätze jedoch auf etwas komplexeren Datensätzen keine zufriedenstellende Ergebnisse mehr liefern.
 	Eine Möglichkeit diese komplexen Zusammenhängen zwischen den Zeitschritten in \emph{time series} besser zu erlernen bietet der \emph{Second Order ODE-Variational Auto-Encoder} (kurz: ODE$^2$VAE). Die zeitlichen Abhängigkeiten unter den Datenpunkten werden hier mit Differentialgleichungen zweiter Ordnung modelliert, welche im Trainingsprozess erlernt werden. Schon nur aus drei Inputbildern kann die gesamte \emph{time series} in stetiger Zeit rekonstruiert werden.\\ \\
 	%\emph{time series} noch überall klein schreiben
@@ -567,7 +571,7 @@
 	 $f(s(t,\cdot))$ ein guter Schätzer für $\tx(t,\cdot)$ sein. Die Anfangswerte $s(0,\cdot)$ und $v(0,\cdot)$ werden durch jeweils einen Encoder bestimmt, die als Input $x_0$, beziehungsweise mindestens drei anfangsframes für $v(0,\cdot)$, erhalten.\\
 	Die Verlustfunktion besteht aus Reconstruction-Loss, Terme um Overfitting von $\bbf$ zu verhindern, sowie Terme um $(\tz(t_k,\cdot))_*\bP$ für jedes $k \leq m$ einer Normalverteilung auf $\R^d$ näher zu bringen.\\
 	Der ODE$^2$VAE liefert gute Ergebnisse beim Beschreiben von einfachen Bewegungsabläufen, deren Informationsgehalt nicht mit der Zeit zunimmt. Aber gerade bei chaotischen Systemen ist die Vorschrift, dass sämtliche Information schon zu Beginn (in den ersten drei Frames) vorhanden sein muss eher dem Lernen abträglich.\\
-	Besonders ist in einem etwas chaotischerem Setting das generieren von glaubhaften Time-Series $x_0,...,x_m$ nicht möglich, da spätere $x_k, x_{k+1}$ immer deterministisch von einer gemeinsamen Zufallsvariable abhängen.\\
+	Besonders ist in einem etwas chaotischerem Setting das generieren von glaubhaften \emph{time series} $x_0,...,x_m$ nicht möglich, da spätere $x_k, x_{k+1}$ immer deterministisch von einer gemeinsamen Zufallsvariable abhängen.\\
 	\\
 	\textbf{Idee des $M$-th Order SDE-VAE:}\\
 	Wir beschäftigen uns wieder mit Zufallsvariablen $x_0,...,x_m : \Omega \rightarrow \R^D$, bei denen angenommen wird, dass ein stetiger Prozess $\tx : [0,\tau] \times \Omega \rightarrow \R^D$ existiert, sodass $x_k = \tx_{t_k}$ für $0=t_0<...<t_m=\tau$. Wie schon beim ODE$^2$VAE suchen wir einen latenten Prozess $\tz: [0,\tau] \times \Omega \rightarrow \R^d$,
@@ -922,7 +926,7 @@
 		\includegraphics[scale=0.35]{SDE_Ball_rec}
 	\end{figure}
 	\\
-	Auf dem Bild sind originale Frames über ihren Rekonstruktionen zu sehen. Links sieht man dabei die ersten 5 und rechts die letzten 5 Frames der Time-Series.\\
+	Auf dem Bild sind originale Frames über ihren Rekonstruktionen zu sehen. Links sieht man dabei die ersten 5 und rechts die letzten 5 Frames der \emph{time series}.\\
 	Da man die Bewegung des Balls nicht sehr gut erkennen kann, zeigen wir stattdessen die latente Darstellung gegenüber den tatsächlichen Positionen des Balls.\\
 	\begin{figure}[!htbp]
 		\centering
@@ -936,7 +940,7 @@
 		\includegraphics[scale=0.25]{SDE_Ball_smooth_paths}
 	\end{figure}
 	\\
-	Wir beobachten hier eine erstaunlich genaue Approximation der SDE. Vermutlich hätten wir weniger als 3000 Time-Series zum Trainieren verwenden können. Die Kurven sehen hier nicht ganz wie Sinuskurven aus, da wir die ODE einer Sinuskurve diskret auf 50 Stellen approximieren. Wenn wir mehr Frames (also mehr Approximations-Stellen pro Zeiteinheit) hätten, sähen die Kurven eher wie Sinuskurven aus.\\
+	Wir beobachten hier eine erstaunlich genaue Approximation der SDE. Vermutlich hätten wir weniger als 3000 \emph{time series} zum Trainieren verwenden können. Die Kurven sehen hier nicht ganz wie Sinuskurven aus, da wir die ODE einer Sinuskurve diskret auf 50 Stellen approximieren. Wenn wir mehr Frames (also mehr Approximations-Stellen pro Zeiteinheit) hätten, sähen die Kurven eher wie Sinuskurven aus.\\
 	\\
 	Für die Verlustfunktion haben wir festgestellt, dass die Verlust-Gewichtung
 	\begin{align*}
@@ -951,7 +955,7 @@
 		\includegraphics[scale=0.4]{SDE_rotMNIST_rec}
 	\end{figure}
 	\\
-	Hier sieht man abwechselnd die originalen Time-Series und darunter die Rekonstruktion nach glatter rekonstruierten latenten Darstellungen.\\
+	Hier sieht man abwechselnd die originalen \emph{time series} und darunter die Rekonstruktion nach glatter rekonstruierten latenten Darstellungen.\\
 	Das Modell scheint also auch seine Aufgabe als Verallgemeinerung des ODE$^2$VAE zu erfüllen. Wir können auch die glattere Rekonstruktion der latenten Darstellungen betrachten.
 	\newpage
 	\begin{figure}[!htbp]
@@ -959,7 +963,7 @@
 		\includegraphics[scale=0.4]{SDE_rotMNIST_latent_rec}
 	\end{figure}
 	\noindent
-	Hier sieht man oben die encodierten 15 latenten Dimensionen und darunter ihre glatten Rekonstruktionen nach der gelernten SDE. Ein Plot steht dabei für genau eine Time-Series.\\
+	Hier sieht man oben die encodierten 15 latenten Dimensionen und darunter ihre glatten Rekonstruktionen nach der gelernten SDE. Ein Plot steht dabei für genau eine \emph{time series}.\\
 	Da man mit so vielen geplotteten Lininen schlecht die Glättung sehen kann, haben wir hier zufällig drei der Dimensionen ausgewählt.
 	\begin{figure}[!htbp]
 		\centering
@@ -1166,7 +1170,7 @@
 		\end{center}
 	\end{table}
 	\newpage
-	Die Modellstruktur des SDE-VAE für den Datensatz SDE Ball.
+	Die Modellstruktur des SDE-VAE für die Datensätze SDE-Ball und rotatingMNIST.
 	\begin{table}[htb!]
 		\small
 		\begin{center}
