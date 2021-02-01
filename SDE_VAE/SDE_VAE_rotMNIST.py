@@ -44,10 +44,10 @@ SDE_Net_complexity = 8*latent_dim
 # [SDE_Net_complexity] sollte proportional zur latenten Dimension gewählt werden.
 
 VAE_epochs_starting = 5  # Anzahl der Epochen beim vor-Training der En-&Decoder
-SDE_epochs_starting = 20 # Anzahl der Epochen beim Training der SDE-Netzwerke (geht viel schneller)
+SDE_epochs_starting = 10 # Anzahl der Epochen beim Training der SDE-Netzwerke (geht viel schneller)
 #Combined_epochs = 10  # Anzahl der Epochen beim Training zusammen [Optional]
 batch_size = 100
-train_size = 5000  # <=60000
+train_size = 60000  # <=60000
 test_size = 100  # <=10000
 act_CNN = 'relu'  # Aktivierungsfunktion für En-&Decoder
 act_ms_Net = 'tanh'  # Aktivierungsfunktion für SDE-Netzwerke
@@ -83,9 +83,9 @@ except:
         b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_train))
     x_test_rot = list(map(lambda b: list(map(lambda i: np.where(sp.ndimage.rotate(
         b, (i+1) * 360/frames, reshape=False) > 127.5, 1.0, 0.0).astype('float32'), range(frames))), x_test))
-    for j in range(len(x_test_rot)):
-        for i in np.random.choice(range(3, 10), 3, replace=False):
-            x_test_rot[j][i] = np.zeros((28, 28))
+    #for j in range(len(x_test_rot)):
+    #    for i in np.random.choice(range(3, 10), 3, replace=False):
+    #        x_test_rot[j][i] = np.zeros((28, 28))
     x_train = np.transpose(np.array(x_train_rot), [0, 2, 3, 1])
     x_test = np.transpose(np.array(x_test_rot), [0, 2, 3, 1])
     try:
@@ -141,17 +141,17 @@ def VAELoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivative
 
 def SDELoss(Z_derivatives, ms_rec):
     S = 0
-    S += 4*lr_loss(Z_derivatives, None)
+    S += 5*lr_loss(Z_derivatives, None) #zuletzt 10
     S += 10*p_loss(Z_derivatives, ms_rec)
     S += 0.5*cv_loss(Z_derivatives, ms_rec)
     return S
 
 
-alpha = 0.5
+alpha = 0.5 #zuletzt 0.5
 
 def StartingLoss(X_org, Z_enc_mean_List, Z_enc_log_var_List, Z_enc_List, Z_derivatives, Z_rec_List, X_rec_List):
     S = 20*rec_loss(X_org, X_rec_List)
-    S += alpha*10*lr_loss(Z_derivatives, Z_rec_List)
+    S += alpha*5*lr_loss(Z_derivatives, Z_rec_List) #zuletzt 10
     S += alpha*10*p_loss(Z_derivatives,None)
     S += alpha*0.5*cv_loss(Z_derivatives,None)
     return S
