@@ -25,7 +25,7 @@ frames = 10  # Number of images in every datapoint. Choose accordingly to datase
 armortized_len = 4  # Sequence size seen by velocity encoder network. Needs to be ≥3
 act = 'relu'  # Activation function 'tanh' is used in odenet.
 
-ode_integration = 'DormandPrince'  # options: 'DormandPrince' , 'trivialsum'
+ode_integration = 'trivialsum'  # options: 'DormandPrince' , 'trivialsum'
 # we suggest 'trivialsum' as it is very fast and yields good results.
 # It is the alternative method described in our document. If 'DormandPrince'
 # is chosen it might seem like the Loss diverges. This is because gamma is gradually
@@ -127,7 +127,7 @@ class ODE2VAE(tf.keras.Model):
         pos_mean, pos_logsig = tf.split(self.position_encoder(
             x[:, :, :, t]), num_or_size_splits=2, axis=1)
         vel_mean, vel_logsig = tf.split(self.velocity_encoder(
-            x[:, :, :, t:i + armortized_len]), num_or_size_splits=2, axis=1)
+            x[:, :, :, t:t + armortized_len]), num_or_size_splits=2, axis=1)
         return tf.stack([pos_mean, vel_mean, pos_logsig, vel_logsig], axis=1)
 
     # Reparametrization Trick
