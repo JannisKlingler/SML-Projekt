@@ -14,8 +14,8 @@ config.gpu_options.allow_growth = True
 session = tf.compat.v1.Session(config=config)
 tf.compat.v1.keras.backend.set_session(session)
 
-# %% hyperparameter
-epochs = 20
+# %% Hyperparameter
+epochs = 20  # Trainepochs
 latent_dim = 25  # Dimensionality for latent variables. 20 works fine.
 batch_size = 100  # ≥100 as suggested by Kingma in Autoencoding Variational Bayes.
 train_size = 60000  # Data points in train set. Choose accordingly to dataset size.
@@ -59,13 +59,13 @@ except:
     np.save(data_path + job + '_test', x_test)
     print('Dataset generated')
 
-x_train = x_train[:train_size]  # (train_size, 28, 28, frames)
-x_test = x_test[:test_size]  # (train_size, 28, 28, frames)
+x_train = x_train[:train_size]
+x_test = x_test[:test_size]
 
 train_dataset = (tf.data.Dataset.from_tensor_slices(x_train)
-                 .shuffle(train_size).batch(batch_size))  # (batch_size, 28, 28, frames)
+                 .shuffle(train_size).batch(batch_size))
 test_dataset = (tf.data.Dataset.from_tensor_slices(x_test)
-                .shuffle(test_size).batch(batch_size))  # (batch_size, 28, 28, frames)
+                .shuffle(test_size).batch(batch_size))
 
 # Model
 
@@ -122,8 +122,7 @@ class ODE2VAE(tf.keras.Model):
             tf.keras.layers.UpSampling2D(size=(2, 2)),
             tf.keras.layers.Conv2DTranspose(1, (3, 3), padding="same", activation='sigmoid')])
 
-    # Encodes a databatch   Input: (batch_size, 28, 28, frames), time
-    #                       Output:
+    # Encodes a databatch
     def encode(self, x, t):
         pos_mean, pos_logsig = tf.split(self.position_encoder(
             x[:, :, :, t]), num_or_size_splits=2, axis=1)
@@ -131,8 +130,7 @@ class ODE2VAE(tf.keras.Model):
             x[:, :, :, t:i + armortized_len]), num_or_size_splits=2, axis=1)
         return tf.stack([pos_mean, vel_mean, pos_logsig, vel_logsig], axis=1)
 
-    # Reparametrization Trick   Input:
-    #                           Output:
+    # Reparametrization Trick
     def reparameterize(self, x_encoded):
         pos_eps = tf.random.normal(shape=(batch_size, latent_dim))
         vel_eps = tf.random.normal(shape=(batch_size, latent_dim))
@@ -159,12 +157,12 @@ class ODE2VAE(tf.keras.Model):
             return tf.stack([d_pos_dt, d_vel_dt], axis=1), - trace
 
     # Creates the latent trajectory from z_0 with ODE integration
-    # Input: latent state at time t=0:
-    #        logpdf of z_0:
+    # Input: latent state at time t=0
+    #        logpdf of z_0
     #        Chosen type of ODE integration
 
-    # Output: latent trajectroy:
-    #         density trajectory:
+    # Output: latent trajectroy
+    #         density trajectory
     def latent_trajectory(self, z_t, log_qz_t, ode_integration):
         latent_states_ode = [z_t]
         log_qz_ode = [log_qz_t]
@@ -208,7 +206,7 @@ def compute_loss(model, x, ode_integration, gamma):
         x_rec = tf.stack([model.decode(latent_states_ode[i, :, 0]) for i in range(frames)], axis=3)
         return tf.reduce_sum(frames * tf.keras.losses.binary_crossentropy(x, x_rec))
 
-    #
+    # Lossfunction as defined in our document
     elif ode_integration == 'DormandPrince':
         x_encoded = tf.stack([model.encode(x, i) for i in range(frames - armortized_len + 1)])
         latent_states_enc = tf.stack([model.reparameterize(x_encoded[i])
@@ -240,6 +238,8 @@ def compute_loss(model, x, ode_integration, gamma):
                                                  KL_qz_ode_qz_enc - KL_qz_ode_pz_normal)
 
         return - ELBO
+
+# Function that computes metrics and ETA during training and reconstructs images after each epoch
 
 
 def evaluate_during_training(model, test_sample, ode_integration, time_history, progress_ep, progress_bat):
@@ -300,6 +300,8 @@ for test_batch in test_dataset.take(1):
 time_history = np.zeros((epochs, batches))
 evaluate_during_training(
     model, test_sample, ode_integration, time_history, 0, batches-1)
+
+# Training
 
 
 def train_step(model, x, optimizer, ode_integration):
