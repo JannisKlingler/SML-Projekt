@@ -941,9 +941,29 @@
 	\begin{align*}
 	& 20 \, L_r + 5 \, L_{lr} + 10 \, L_{lp} + 1 \, L_{lcv}
 	\end{align*}
-	(für Notation vergleiche Seite 26) recht gut funktioniert. 
-	
-	
+	(für Notation vergleiche Seite 26) recht gut funktioniert.\\
+	\\
+	\\
+	Bei der Anwendung auf den rotating-MNIST-Datensatz erhalten wir mit $d=15$ und $M=2$ nach 5 Epochen gemeinsamen Trainings gefolgt von 10 Epochen Training für das SDE-Netzwerk die folgenden Rekonstruktionen.
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.4]{SDE_rotMNIST_rec}
+	\end{figure}
+	\\
+	Hier sieht man abwechselnd die originalen Time-Series und darunter die Rekonstruktion nach glatter rekonstruierten latenten Darstellungen.\\
+	Das Modell scheint also auch seine Aufgabe als Verallgemeinerung des ODE$^2$VAE zu erfüllen. Wir können auch die glattere Rekonstruktion der latenten Darstellungen betrachten.
+	\newpage
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.4]{SDE_rotMNIST_latent_rec}
+	\end{figure}
+	\noindent
+	Hier sieht man oben die encodierten 15 latenten Dimensionen und darunter ihre glatten Rekonstruktionen nach der gelernten SDE. Ein Plot steht dabei für genau eine Time-Series.\\
+	Da man mit so vielen geplotteten Lininen schlecht die Glättung sehen kann, haben wir hier zufällig drei der Dimensionen ausgewählt.
+	\begin{figure}[!htbp]
+		\centering
+		\includegraphics[scale=0.4]{SDE_rotMNIST_latent_three_rec}
+	\end{figure}
 	
 	
 	
