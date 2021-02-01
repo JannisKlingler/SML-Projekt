@@ -673,19 +673,19 @@
 	: & & : \\
 	\tz^{(M-1,1)}(t,\omega) & .. & \tz^{(M-1,d)}(t,\omega)
 	\end{pmatrix} \in \R^{M \times d} \ ,$$
-	der die Lösung eine noch unbekannten SDE ist. Um die SDE zu lernen, definieren wir $\bmu : \R^{M \times d} \rightarrow \R^{m \times d}$ und $\bsig: \R^{M \times d} \rightarrow \R^{m \times d \times n}$ als Neuronale Netzwerke. Um diese Netzwerke trainieren zu können, benötigen wir auch für $0<l<M$ empirische Daten $(z_1^{(l),p},...,z_m^{(l),p})_{p \in \N}$. Diese könnten durch weitere Encoder entstehen, wie es bereits im 2-ODE-VAE für den Startwert $v(0,\cdot)$ gemacht wird. Falls $M$ eher klein ist, oder von einer geringen 'Unsicherheit' $\bsig$ ausgegangen werden kann, kann man die $(z_1^{(l),p},...,z_m^{(l),p})_{p \in \N}$ auch als empirische Ableitungen $z_k^{(l),p} := \frac{1}{\Delta t} \, (z_{k+1}^{(l-1),p} - z_k^{(l-1),p}) \in \R^d$ definieren. Die Vorstellung als Annäherung einer Ableitung ist hier eigentlich falsch, da Lösungen von SDEs mit positivem $\bsig$ nirgends differenzierbar sind, aber wie wir schon bei der Theorie zum Lernen von SDEs gesehen hatten, ist $\E[\frac{1}{\Delta t} \, (z_{k+1}^{(l-1),p} - z_k^{(l-1),p}) \mid z_k^{(l-1),p}] \approx \bmu(z_k^{(l-1),p})$, also eignen die $z_k^{(l),p}$ sich zumindest bei großen Datensätzen um SDEs höherer Ordnung zu lernen.
+	der die Lösung einer noch unbekannten SDE ist. Um die SDE zu lernen, definieren wir $\bmu : \R^{M \times d} \rightarrow \R^{m \times d}$ und $\bsig: \R^{M \times d} \rightarrow \R^{m \times d \times n}$ als Neuronale Netzwerke. Um diese Netzwerke trainieren zu können, benötigen wir auch für $0<l<M$ empirische Daten $(z_1^{(l),p},...,z_m^{(l),p})_{p \in \N}$. Diese könnten durch weitere Encoder entstehen, wie es bereits im ODE$^2$VAE für den Startwert $v(0,\cdot)$ gemacht wird. Falls $M$ eher klein ist, oder von einer geringen 'Unsicherheit' $\bsig$ ausgegangen werden kann, kann man die $(z_1^{(l),p},...,z_m^{(l),p})_{p \in \N}$ auch als empirische Ableitungen $z_k^{(l),p} := \frac{1}{\Delta t} \, (z_{k+1}^{(l-1),p} - z_k^{(l-1),p}) \in \R^d$ definieren. Die Vorstellung als Annäherung einer Ableitung ist hier eigentlich falsch, da Lösungen von SDEs mit positivem $\bsig$ nirgends differenzierbar sind, aber wie wir schon bei der Theorie zum Lernen von SDEs gesehen hatten, ist $\E[\frac{1}{\Delta t} \, (z_{k+1}^{(l-1),p} - z_k^{(l-1),p}) \mid z_k^{(l-1),p}] \approx \bmu(z_k^{(l-1),p})$, also eignen sich die $z_k^{(l),p}$ zumindest bei großen Datensätzen um SDEs höherer Ordnung zu lernen.
 	
 	\newpage
 	\noindent
 	
-	Für unser Modell definieren wir und nun einen 'Reconstructor' $R_{\bmu,\bsig} : \R^{M \times d} \rightarrow \prod\limits_{k=0}^m \R^{M \times d}$, der zu gegebenen Anfangswerten $(z^{0}_0,...,z^{M-1}_0) = Z_0$ mit Hilfe der Funktionen $\bmu, \bsig$ das Euler-Maruyama-Verfahren anwendet um $Z_{m,t_1},...,Z_{m,t_m} \in \R^{M \times d}$ (Notation aus Theorie zum Lernen von SDEs) nacheinander zu Konstruieren.\\
+	Für unser Modell definieren wir nun einen 'Reconstructor' $R_{\bmu,\bsig} : \R^{M \times d} \rightarrow \prod\limits_{k=0}^m \R^{M \times d}$, der zu gegebenen Anfangswerten $(z^{0}_0,...,z^{M-1}_0) = Z_0$ mit Hilfe der Funktionen $\bmu, \bsig$ das Euler-Maruyama-Verfahren anwendet um $Z_{m,t_1},...,Z_{m,t_m} \in \R^{M \times d}$ (Notation aus Theorie zum Lernen von SDEs) nacheinander zu Konstruieren.\\
 	Wir verwenden dabei zur Rekonstruktion besonders $R_{\bmu,0}$, da für $\bsig = 0$ das Euler-Maruyama-Verfahren mit dem Euler-Verfahren übereinstimmt und wir damit $z_{1,rec}^{(l),p},...,z_{m,rec}^{(l),p} := Z_{m,t_1},...,Z_{m,t_m}$ glatter als die eingegebenen $z_1^{(l),p},...,z_m^{(l),p}$ rekonstruieren können.\\
 	\\
 	Wir definieren die folgenden Verlustfunktionen:
 	\begin{itemize}
 		\item Reconstruction-Loss:
 		\begin{align*}
-		& L_r := H\big((x_0,...,x_m)_*\bP, (f(z_0^{(0)}),...,f(z_m^{(0)})_*\bP)\big)
+		& L_r := H\big((f(z_0^{(0)}),...,f(z_m^{(0)})_*\bP), (x_0,...,x_m)_*\bP\big)
 		\end{align*}
 		Dabei steht $H$ für die Binäre Kreuzentropie zwischen den Verteilungen.
 		
@@ -949,7 +949,7 @@
 	(für Notation vergleiche Seite 26) recht gut funktioniert.\\
 	\\
 	\\
-	Bei der Anwendung auf den rotating-MNIST-Datensatz erhalten wir mit $d=15$ und $M=2$ nach 5 Epochen gemeinsamen Trainings gefolgt von 10 Epochen Training für das SDE-Netzwerk die folgenden Rekonstruktionen.
+	Bei der Anwendung auf den rotating-MNIST-Datensatz mit 20 Frames erhalten wir mit $d=15$ und $M=2$ nach 5 Epochen gemeinsamen Trainings gefolgt von 10 Epochen Training für das SDE-Netzwerk die folgenden Rekonstruktionen.
 	\begin{figure}[!htbp]
 		\centering
 		\includegraphics[scale=0.4]{SDE_rotMNIST_rec}
