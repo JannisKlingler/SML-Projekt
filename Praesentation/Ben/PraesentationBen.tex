@@ -3,35 +3,70 @@
 \author[Ben Deitmar]{Nix}
 
 
-\beamertemplatenavigationsymbolsempty{}
-
 \logo{\includegraphics[height=1cm]{Bilder/logo}}
 
 
-
-\section{Sektion-Überschrift}
+\section{SDE$^M$VAE}
 
 \begin{frame}
-	\frametitle{Frame-Überschrift}
-	Inhalt
+	\frametitle{Erste Verallgemeinerung: ODE M-ter Ordnung}
+	Bisherige ODE:
+	\begin{align*}
+	\nabla s(\cdot,\omega) &= v(\cdot,\omega) \in \R^d\\
+	\nabla v(\cdot,\omega) &= \bold{f}\big(s(\cdot,\omega),v(\cdot,\omega)\big) \in \R^d
+	\end{align*}
+	Verallgemeinerung für $M=3$:
+	\begin{align*}
+	\nabla s(\cdot,\omega) &= \bold{f}_1\big(s(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)\\
+	\nabla v(\cdot,\omega) &= \bold{f}_2\big(s(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)\\
+	\nabla w(\cdot,\omega) &= \bold{f}_3\big(s(\cdot,\omega),v(\cdot,\omega),w(\cdot,\omega)\big)
+	\end{align*}
+	Schreibe $\bm{\mu} = \bold{f} : \R^{M \times d} \rightarrow \R^{M \times d}$ und $z = (s,v,w)^T \in \R^{M \times d}$.
 \end{frame}
 
 
 \begin{frame}
-	\frametitle{Frame-Überschrift}
-	Inhalt
+	\frametitle{Zweite Verallgemeinerung: SDE}
+	Bisherige ODE: \ \ $\forall k < M, \forall i \leq d :$
+	\begin{align*}
+	 & d z^{(k,i)}(t) = \bm{\mu}^{k,i}(z(t)) \, dt
+	\end{align*}
+	Verallgemeinerung für $\bm{\sigma} : \R^{M \times d} \rightarrow \R^{M \times d \times n}$:
+	\begin{align*}
+	& d z^{(k,i)}(t) = \bm{\mu}^{k,i}(z(t)) \, dt + \sum\limits_{j=1}^n \bm{\sigma}^{k,i,j}\big(z^{(0)}(t),...,z^{(M-1)}(t)\big) \, dW^j_t
+	\end{align*}
+	\rotatebox[origin=c]{180}{$\Lsh$} $(M \, d)$-dimensionale SDE mit Brownschen Bewegungen (BBs) $W^1,...,W^n$.
 \end{frame}
 
 
 \begin{frame}
-	\frametitle{Frame-Überschrift}
-	Inhalt
+	\frametitle{BB als Random Walk}
+	\begin{itemize}
+		\item Satz von Donsker:\\
+		Seien $Y_1,Y_2,...$ uiv. mit $\E[Y_i]=0$ und $\sigma^2 := \E[Y_i^2] < \infty$.\\
+		Definiere den Prozess
+		\begin{align*}
+		& W_{m,t} := \frac{1}{\sqrt{m}} \left( \sum\limits_{i=1}^{\lfloor mt \rfloor} Y_i + (mt - \lfloor mt \rfloor) Y_{\lfloor mt \rfloor +1}\right) \in C^0([0,\tau]) \ .
+		\end{align*}
+		Dann gilt $W_{m,\cdot} \xrightarrow{m \rightarrow \infty}_{\mathcal{L}} W$ (BB) in $C^0([0,\tau])$.
+		
+		\item Anschaulich:\\
+		\includegraphics[scale=0.25]{Ben/DonskerBilder.png}
+	\end{itemize}
+	
 \end{frame}
 
 
 \begin{frame}
-	\frametitle{Frame-Überschrift}
-	Inhalt
+	\frametitle{SDE als ODE mit Random Walk}
+	1-dim. SDE:
+	\begin{align*}
+	& dX_t = \bold{\mu}^i(t,X_t) \, dt + \sum\limits_{j=1}^n \bold{\sigma}^{i,j}(t,X_t) \, dW^j
+	\end{align*}
+	
+	
+	
+	
 \end{frame}
 
 
