@@ -13,7 +13,7 @@
 \usepackage{mdframed}
 \usepackage{amsrefs}
 \usepackage{bm}
-\usepackage[hang,bf]{caption}
+\usepackage[center]{caption}
 
 \usepackage{float}
 
@@ -22,13 +22,16 @@
 \usecolortheme{dolphin}
 
 %Bildunterschrift
-%\renewcommand{\figurename}{Abb. }
 \addto\captionsngerman{%
 	\renewcommand{\figurename}{Abb.}%
 	\renewcommand{\tablename}{Tab.}%
 }
 
 % einige Abkuerzungen
+\newcommand{\qenc}{q_{\boldsymbol\phi}(\mathbf{z}|\mathbf{x}_i)}
+\newcommand{\qencd}{q_{\phi}(z|x_i}
+\newcommand{\penc}{p_{\boldsymbol\theta}(\mathbf{z}|\mathbf{x}_i)}
+\newcommand{\pdec}{p_{\boldsymbol\theta}(\mathbf{x}_i|\mathbf{z})}
 \newcommand{\C}{\mathbb{C}} % komplexe
 \newcommand{\K}{\mathbb{K}} % komplexe
 \newcommand{\R}{\mathbb{R}} % reelle
@@ -38,6 +41,20 @@
 \newcommand{\E}{\mathbb{E}} % Erwartungswert
 \newcommand{\F}{\mathcal{F}} 
 \newcommand{\G}{\mathcal{G}} 
+
+
+\newcommand{\tx}{\widetilde{x}}
+\newcommand{\tz}{\widetilde{z}}
+\newcommand{\tZ}{\widetilde{Z}}
+\newcommand{\tX}{\widetilde{X}}
+\newcommand{\tmu}{\widetilde{\mu}}
+\newcommand{\tsig}{\widetilde{\sigma}}
+\newcommand{\bP}{\mathbb{P}}
+\newcommand{\bbf}{\bold{f}}
+\newcommand{\bmu}{\bm{\mu}}
+\newcommand{\bsig}{\bm{\sigma}}
+\newcommand{\z}{\mathbf{z}}
+\newcommand{\x}{\mathbf{x}_i}
 
 \makeatletter
 \newcommand{\vast}{\bBigg@{3}}
