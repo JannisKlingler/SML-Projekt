@@ -2,7 +2,7 @@
 \documentclass{beamer}
 
 \usepackage[utf8]{inputenc}
-\usepackage[english]{babel} % use ngerman here for german text
+\usepackage[ngerman]{babel} % use ngerman here for german text
 \usepackage[T1]{fontenc}
 \usepackage{mathtools}
 \usepackage{amssymb}
@@ -12,6 +12,8 @@
 \usepackage{hyperref}
 \usepackage{mdframed}
 \usepackage{amsrefs}
+\usepackage{bm}
+\usepackage[hang,bf]{caption}
 
 \usepackage{float}
 
@@ -19,6 +21,12 @@
 \usetheme{CambridgeUS}
 \usecolortheme{dolphin}
 
+%Bildunterschrift
+%\renewcommand{\figurename}{Abb. }
+\addto\captionsngerman{%
+	\renewcommand{\figurename}{Abb.}%
+	\renewcommand{\tablename}{Tab.}%
+}
 
 % einige Abkuerzungen
 \newcommand{\C}{\mathbb{C}} % komplexe
