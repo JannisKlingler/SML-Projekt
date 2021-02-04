@@ -5,7 +5,7 @@ import numpy as np
 
 Tau = 1
 
-
+'''
 # 1 x 4
 m_seq = (2**3,2**5,2**7,2**9)
 Y = np.random.normal(0,1,max(m_seq))
@@ -19,6 +19,20 @@ for i in range(len(m_seq)):
     axs[i].plot(xl, W)
     axs[i].axis([0, Tau, -2, 2])
     axs[i].set_title('m={}'.format(m))
+'''
+
+# 1 x 1
+m = 1000
+Y = np.random.normal(0,1,m)
+Y = [0]+list(Y)
+
+fig,axs = plt.subplots(1,1)
+xl = np.linspace(0,Tau,m)
+W = np.cumsum(Y[:m])/sqrt(m)
+axs.plot(xl, W)
+axs.axis([0, Tau, -2, 2])
+#axs[i].set_title('m={}'.format(m))
+axs.axis('off')
 
 
 

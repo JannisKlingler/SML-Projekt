@@ -188,9 +188,9 @@ MSE = tf.keras.losses.MeanSquaredError()
 
 def SDELoss(Z_derivatives, ms_rec):
     S = 0
-    S += 4*lr_loss(Z_derivatives, None)
+    S += 5*lr_loss(Z_derivatives, None)
     S += 10*p_loss(Z_derivatives, ms_rec)
-    S += 0.5*cv_loss(Z_derivatives, ms_rec)
+    S += 1*cv_loss(Z_derivatives, ms_rec) #zuletzt 1
     return S
 
 
@@ -287,6 +287,9 @@ np.save(data_path+'Results_SDE_Ball_Z_enc_{}frames'.format(frames), Z_enc_List)
 np.save(data_path+'Results_SDE_Ball_Z_rec_{}frames'.format(frames), Z_rec_List)
 np.save(data_path+'Results_SDE_Ball_X_rec_{}frames'.format(frames), X_rec_List)
 
+reconstructor.applyBM = True
+_,_,_,_,Z_rec_BM,_ = SDE_VAE.fullcall(x_test)
+np.save(data_path+'Results_SDE_Ball_Z_recBM_{}frames'.format(frames), Z_rec_BM)
 
 ########################################################
 # Ergebnisse darstellen

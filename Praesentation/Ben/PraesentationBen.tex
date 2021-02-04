@@ -59,32 +59,65 @@
 
 \begin{frame}
 	\frametitle{SDE als ODE mit Random Walk}
-	1-dim. SDE:
+	\begin{itemize}
+		\item eindimensionale SDE:
+		\begin{align*}
+		& dX_t = \bm{\mu}(t,X_t) \, dt + \sum\limits_{j=1}^n \bm{\sigma}^{j}(t,X_t) \, dW^j
+		\end{align*}
+		\item Ito-Diffusion (nicht Zeit-abhängig):
+		\begin{align*}
+		& dX_t = \bm{\mu}(X_t) \, dt + \sum\limits_{j=1}^n \bm{\sigma}^{j}(X_t) \, dW^j
+		\end{align*}
+		\item Euler-Maruyama-Verfahren um Lösung $X$ zu approximieren:
+		\begin{align*}
+		& X_{m,t_k} := X_{m,t_{k-1}} + \Delta t^m \bm{\mu}(X_{m,t_{k-1}}) + \sqrt{\Delta t^m} \sum\limits_{j=1}^n \bm{\sigma^j}(X_{m,t_{k-1}})
+		\end{align*}
+		Für $0=t_0<...<t_m=\tau$ mit $t_k = k \frac{\tau}{m}$ und $\Delta t^m = \frac{\tau}{m}$.
+	\end{itemize}
+	
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Lernen von $\bm{\mu}(0)$ und $\bm{\sigma}(0)$}
+	\includegraphics[scale=0.3]{Bilder/SDE_Erklaerung.png}
+	
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{SDE-VAE Modell für $M=1$}
+	\includegraphics[scale=0.3]{Bilder/SDEVAEGrafik.png}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Ergebnisse}
+	Einfaches Beispiel (mit $X_0 = (0,1)$)
 	\begin{align*}
-	& dX_t = \bold{\mu}^i(t,X_t) \, dt + \sum\limits_{j=1}^n \bold{\sigma}^{i,j}(t,X_t) \, dW^j
+	& dX^1_t = X^2_t \, dt + 0,2 \, dW^1_t\\
+	& dX^2_t = -X^1_t \, dt + 0,1 \, dW^1_t
 	\end{align*}
-	
-	
-	
+	\begin{itemize}
+		\item Lösungen für $X^1$:\\
+		\includegraphics[scale=0.28]{Bilder/SDE_Loesungen.png}
+		
+		\item Rekonstruktionen nach gelernten $\bm{\mu}$ und $\bm{\sigma}$:\\
+		%\includegraphics[scale=0.28]{Bilder/SDE_Rec.png}
+		TODO
+	\end{itemize}
 	
 \end{frame}
 
 
 \begin{frame}
-	\frametitle{Frame-Überschrift}
-	Inhalt
+	\frametitle{Ergebnisse}
+	\includegraphics[scale=0.4]{Bilder/SDE_rotMNIST_rec}
 \end{frame}
 
-
 \begin{frame}
-	\frametitle{Frame-Überschrift}
-	Inhalt
-\end{frame}
-
-
-\begin{frame}
-	\frametitle{Frame-Überschrift}
-	Inhalt
+	\frametitle{Ergebnisse}
+	\includegraphics[scale=0.3]{Bilder/SDE_rotMNIST_latent_three_rec}
 \end{frame}
 
 

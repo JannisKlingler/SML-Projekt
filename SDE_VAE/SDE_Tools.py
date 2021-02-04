@@ -88,9 +88,14 @@ class Tensorwise_Reconstructor():
             mu = mu_sig[:,:,:,0]
             # mu hat dim: None x M x latent_dim
             if self.applyBM:
-                Y = np.random.normal(X_0_List.shape+[self.n])
                 sig = mu_sig[:,:,:,0:]
+
+                #ACHTUNG Mogeln zum testen:
+                #randomPart = tf.constant(np.random.normal(0,0.15,size=sig.shape),dtype=tf.float32)
+
+                Y = tf.constant(np.random.normal(0,1,size=sig.shape),dtype=tf.float32)
                 randomPart = tf.keras.layers.Multiply()([sig, Y])
+
                 randomPart = K.sum(randomPart, axis=[3])
                 nextValue = X_sim[-1] + mu*self.D_t + sqrt(self.D_t)*randomPart
             else:
@@ -128,6 +133,7 @@ class mu_sig_Net(tf.keras.Model):
             self.mu_layerList.append(tf.keras.layers.Flatten())
             self.mu_layerList.append(tf.keras.layers.Dense(complexity*M, activation=akt_fun))
             self.mu_layerList.append(tf.keras.layers.Dense(complexity*M, activation=akt_fun))
+            #self.mu_layerList.append(tf.keras.layers.Dense(complexity*M, activation=akt_fun)) #zuletzt ohne
             self.mu_layerList.append(tf.keras.layers.Dense(M*latent_dim, activation=akt_fun))
             self.mu_layerList.append(tf.keras.layers.Reshape((M, latent_dim)))
 
@@ -135,6 +141,7 @@ class mu_sig_Net(tf.keras.Model):
         self.sig_layerList.append(tf.keras.layers.Flatten())
         self.sig_layerList.append(tf.keras.layers.Dense(complexity*M*n, activation=akt_fun))
         self.sig_layerList.append(tf.keras.layers.Dense(complexity*M*n, activation=akt_fun))
+        #self.sig_layerList.append(tf.keras.layers.Dense(complexity*M*n, activation=akt_fun)) #zuletzt ohne
         self.sig_layerList.append(tf.keras.layers.Dense(M*latent_dim*n, activation=akt_fun))
         self.sig_layerList.append(tf.keras.layers.Reshape((M, latent_dim, n)))
 
@@ -180,6 +187,7 @@ class mu_sig_Net(tf.keras.Model):
 # Verlustfunktionen zum lernen der SDE
 
 MAE = tf.keras.losses.MeanAbsoluteError()
+MSE = tf.keras.losses.MeanSquaredError()
 
 def make_reconstruction_Loss(M, n, Time, frames, batch_size, T_reconstructor, derivatives, norm=abs):
     def reconstruction_loss(Z_derivatives, Z_rec):
@@ -247,7 +255,8 @@ def make_covariance_Loss(latent_dim, Time, frames, batch_size, ms_Net, D_t, norm
         theoretical_covar = K.sum(sum_sig, axis=1)*D_t
         # theoretical_covar hat dim: batch_size x frames[lokal] x latent_dim x latent_dim
 
-        return MAE(covar, theoretical_covar)
+        return MAE(covar, theoretical_covar) #zuletzt
+        #return MSE(covar, theoretical_covar)
 
     return covariance_loss
 
@@ -260,7 +269,7 @@ def make_sigma_size_Loss(latent_dim, ms_Net, norm=abs):
         if ms_rec is None:
             ms_rec = ms_Net(Z_org)
         # ms_rec hat dim: batch_size x frames-M+1 x M x latent_dim x 1+n
-        
+
         sig = ms_rec[:, :, 0, :, 1:]
         sig_size = tf.map_fn(norm, sig)
         sig_size = K.mean(sig_size)/latent_dim
