@@ -69,14 +69,34 @@ for i in range(3):
 '''
 
 '''
+b = 10
 xl = np.linspace(0,frames,frames)
-fig, axs = plt.subplots(1, 4)
-axs[0].plot(xl, Z_org_smooth[:frames,0])
-axs[0].set_title('ohne Unsicherheit')
-for i in range(3):
-    axs[i+1].plot(xl, -Z_enc[i,:frames])
-    axs[i+1].set_title('Ziehung mit Unsicherheit')
+fig, axs = plt.subplots(3, b)
+#axs[0,0].plot(xl, Z_org_smooth[:frames,0])
+#axs[0,0].set_title('Bewegung ohne Unsicherheit')
+#axs[1,0].plot(xl, -Z_rec[1,:frames,0])
+#axs[1,0].set_title('Rekonstruktion ohne Unsicherheit')
+a=0
+for i in range(a,a+b):
+    axs[0,a-i].plot(xl, -Z_enc[i,:frames])
+    axs[0,a-i].set_title('Bewegung')
+    axs[1,a-i].plot(xl, -Z_rec[i,:frames,0])
+    axs[1,a-i].set_title('Rekonstruktion ohne Unsicherheit')
+    axs[2,a-i].plot(xl, -Z_recBM[i,:frames,0])
+    axs[2,a-i].set_title('Rekonstruktion mit Unsicherheit')
 '''
+
+xl = np.linspace(0,frames,frames)
+fig, axs = plt.subplots(3, 6)
+i=0
+for j in [0,1,4,5,7,9]:
+    axs[0,i].plot(xl, Z_enc[j,:frames])
+    axs[0,i].set_title('Bewegung')
+    axs[1,i].plot(xl, Z_rec[j,:frames,0])
+    axs[1,i].set_title('Rek. ohne Unsicherheit')
+    axs[2,i].plot(xl, Z_recBM[j,:frames,0])
+    axs[2,i].set_title('Rek. mit Unsicherheit')
+    i += 1
 
 '''
 xl = np.linspace(0,frames,frames)
@@ -89,12 +109,13 @@ for i in range(3):
 '''
 
 
+'''
 fig, axs = plt.subplots(1, 1)
 xl = np.linspace(0,3*pi,frames)
 axs.plot(xl, Z_rec[0,:,0],linewidth=3)
 axs.axis([0, 3*pi, -1.5, 1.5])
 #axs[i].set_title('m={}'.format(m))
 axs.axis('off')
-
+'''
 
 plt.show()

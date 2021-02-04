@@ -91,10 +91,10 @@ class Tensorwise_Reconstructor():
                 sig = mu_sig[:,:,:,0:]
 
                 #ACHTUNG Mogeln zum testen:
-                #randomPart = tf.constant(np.random.normal(0,0.15,size=sig.shape),dtype=tf.float32)
+                randomPart = 0.2*tf.constant(np.random.normal(0,0.15,size=sig.shape),dtype=tf.float32)
 
-                Y = tf.constant(np.random.normal(0,1,size=sig.shape),dtype=tf.float32)
-                randomPart = tf.keras.layers.Multiply()([sig, Y])
+                #Y = tf.constant(np.random.normal(0,1,size=sig.shape),dtype=tf.float32)
+                #randomPart = tf.keras.layers.Multiply()([sig, Y])
 
                 randomPart = K.sum(randomPart, axis=[3])
                 nextValue = X_sim[-1] + mu*self.D_t + sqrt(self.D_t)*randomPart
