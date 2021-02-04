@@ -21,8 +21,53 @@
 
 \begin{frame}
 	\frametitle{Modellannahmen}
-	Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N} \subset \R^{D\times N}$\\
-	Datenpunkte $\x\sim p(\x)$ (u.i.v. Realisierungen einer hochdimensionalen ZV)
+	Gegeben:
+	\begin{itemize}
+		\item Datensatz $\textbf{X} = \lbrace\x \rbrace_{i=1}^{N} \subset \R^{D\times N}$
+		\item Datenpunkte $\x\sim p(\x)$ (u.i.v. Realisierungen einer hochdimensionalen Zufallsvariable)
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Latente Variablen Modell}
+	Suchen:
+	\begin{itemize}
+		\item Verteilung der Datenpunkte $\x$
+		\item Eine niedrigdimensionale Darstellung der Daten, die den Prozess, der die Daten erzeugt, möglichst gut modelliert
+		\item Führen dazu \emph{Latente Variablen} $\z$ die auf dem \emph{latenten Raum} $\mathcal{Z} = \R^d$ mit $d\ll D$ definiert sind ein
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Latente Variablen Modell}
+	Das \emph{Latente Variablen Modell} besteht nun aus den Verteilungen:
+	\begin{itemize}
+		\item Verteilung der Daten $p(\x)$
+		\item Posteriorverteilung $p(\z|\x)$
+		\item Priorverteilung $p(\z)$
+		\item Generatives Modell $p(\x|\z)$
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Latente Variablen Modell}
+	Sind interessiert an der Verteilung
+	\[p(\x)= \int_{\z} p(\x,\z) \mathrm{d}\textbf{z} = \int_{\z} p(\x|\z)p(\z) \mathrm{d}\z.\]
+	\textbf{Problem:} Dieses Integral kann aufgrund der hohen Dimension des Raumes $\mathcal{X}$ und der Komplexität des Modells 
+	nicht berechnet und auch nicht sinnvoll approximiert werden. \\ \ 
+	\\
+	Mit dem Satz von Bayes gilt dies auch für die Verteilung
+	\[p(\z|\x)= \frac{p(\x|\z)p(\z)}{p(\x)}.\]
+\end{frame}
+
+\begin{frame}
+	\frametitle{Latente Variablen Modell}
+		\begin{itemize}
+		\item Fassen nun die Verteilungen $p(\x|\z),\ p(\z|\x),\ p(\z)$ und $p(\x)$ wir als durch ${\boldsymbol\theta}$ parametrisierte Familien auf 
+		\item Für die optimalen Parameter $\boldsymbol\theta^{*}$ soll die Verteilung  $p_{\boldsymbol\theta^{*}}(\x)$ die wahre Verteilung $p(\x)$ 	möglichst gut approximieren
+		\item Führen wegen der Unberechenbarkeit von $p_{\boldsymbol\theta}(\z|\x)$ das Inferenzmodell $q_{\boldsymbol\phi}(\z|\x)$ ein und suchen die Parameter $\boldsymbol\phi^{*}$ für die $q_{\boldsymbol\phi^{*}}(\z|\x) \approx p_{\boldsymbol\theta}(\z|\x)$ gilt 
+		\item In einem Variational Autoencoder werden die Verteilungen $q_{\boldsymbol\phi}(\z|x)$ und $p_{\boldsymbol\theta}(\x|\z)$ durch neuronale Netze dargestellt und approximiert
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
