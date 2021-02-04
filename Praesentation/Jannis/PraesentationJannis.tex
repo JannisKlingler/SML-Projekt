@@ -34,7 +34,7 @@
 	\begin{itemize}
 		\item Verteilung der Datenpunkte $\x$
 		\item Eine niedrigdimensionale Darstellung der Daten, die den Prozess, der die Daten erzeugt, möglichst gut modelliert
-		\item Führen dazu \emph{Latente Variablen} $\z$ die auf dem \emph{latenten Raum} $\mathcal{Z} = \R^d$ mit $d\ll D$ definiert sind ein
+		\item Führen dazu \emph{Latente Variablen} $\z$, die auf dem \emph{latenten Raum} $\mathcal{Z} = \R^d$ mit $d\ll D$ definiert sind, ein
 	\end{itemize}
 \end{frame}
 
@@ -61,12 +61,11 @@
 \end{frame}
 
 \begin{frame}
-	\frametitle{Latente Variablen Modell}
+	\frametitle{Implementierung}
 		\begin{itemize}
-		\item Fassen nun die Verteilungen $p(\x|\z),\ p(\z|\x),\ p(\z)$ und $p(\x)$ wir als durch ${\boldsymbol\theta}$ parametrisierte Familien auf 
-		\item Für die optimalen Parameter $\boldsymbol\theta^{*}$ soll die Verteilung  $p_{\boldsymbol\theta^{*}}(\x)$ die wahre Verteilung $p(\x)$ 	möglichst gut approximieren
-		\item Führen wegen der Unberechenbarkeit von $p_{\boldsymbol\theta}(\z|\x)$ das Inferenzmodell $q_{\boldsymbol\phi}(\z|\x)$ ein und suchen die Parameter $\boldsymbol\phi^{*}$ für die $q_{\boldsymbol\phi^{*}}(\z|\x) \approx p_{\boldsymbol\theta}(\z|\x)$ gilt 
+		\item Führen nun das Inferenzmodell $q_{\boldsymbol\phi}(\z|\x)$ ein und suchen die Parameter $\boldsymbol\phi^{*}$ für die $q_{\boldsymbol\phi^{*}}(\z|\x) \approx p_{\boldsymbol\theta}(\z|\x)$ gilt 
 		\item In einem Variational Autoencoder werden die Verteilungen $q_{\boldsymbol\phi}(\z|x)$ und $p_{\boldsymbol\theta}(\x|\z)$ durch neuronale Netze dargestellt und approximiert
+		\item Können dann die Verteilung von $p(\z)$ festlegen (häufig $\mathcal{N}(0,\textbf{I})$)
 	\end{itemize}
 \end{frame}
 
