@@ -708,7 +708,12 @@
 		
 		
 	\end{itemize}
-	Während des Trainings werden diese Verlustfunktionen, die eigentlich von den Zufallsvariablen $(x_0,...,x_m)$ abhängen, Batch-weise als Mittelwert über die gegebenen Daten $(x_1^p,...,x_m^p)_{p \in \N}\, uiv. \sim (x_1,...,x_m)_*\bP$ approximiert. Die Gewichtung der Verlustfunktionen muss vom Datensatz abhängig gewählt werden. 
+	Während des Trainings werden diese Verlustfunktionen, die eigentlich von den Zufallsvariablen $(x_0,...,x_m)$ abhängen, Batch-weise als Mittelwert über die gegebenen Daten $(x_1^p,...,x_m^p)_{p \in \N}\, uiv. \sim (x_1,...,x_m)_*\bP$ approximiert. Die Gewichtung der Verlustfunktionen muss vom Datensatz abhängig gewählt werden.
+	
+	\newpage
+	\includegraphics[scale=0.4]{SDEVAEGrafik}\\
+	Hier sieht man eine vereinfachte Darstellung des Modells für $M=1$. Beim Training werden $z_i$ direkt als $\tilde{z}_i$ verwendet, wobei der mittlere Block immer noch Einfluss auf die Verlustfunktion hat, damit $z_0,z_1,...$ die Form einer SDE annehmen und diese Gelernt wird.\\
+	Für $M>1$ müssen zusätzliche Encoder eingefügt werden, die immer $2$ oder mehr aufeinanderfolgende Bilder erhalten.
 	
 	
 	
