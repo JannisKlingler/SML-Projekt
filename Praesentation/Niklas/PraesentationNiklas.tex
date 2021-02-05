@@ -13,7 +13,12 @@
 
 \begin{frame}
     \frametitle{ODE$^{2}$VAE}
-    Paper: \emph{ODE$^{\ 2}$VAE: Deep generative second order ODEs with Bayesian neural networks} von Ç. Yıldız, M. Heinonen und H. Lähdesmäki.
+    Wir wollen als nächstes \emph{time series} mit einen \emph{ODE$^{2}$VAE} modellieren\\ 
+    \text{ }\\
+    \text{ }
+    \begin{itemize}
+    	\item[ ] \emph{ODE$^{\ 2}$VAE: Deep generative second order ODEs with Bayesian neural networks} von Ç. Yıldız, M. Heinonen und H. Lähdesmäki
+    \end{itemize}	
 \end{frame}
 
 
@@ -22,20 +27,20 @@
 \begin{frame}
 	\frametitle{Idee}
 	\begin{itemize}
-	\item Bewegungen (z.B. rot.MNIST) lassen sich nicht gut mit einem Standard-VAE modellieren\\
-	\item neuer Ansatz: Zeitliche Abhängigkeit der Daten berücksichtigen und die Bewegung durch Differentialgleichungen zweiter Ordnung (ODE$^{2}$) erlernen 
-	\item Vorteile: Wir können so zu beliebigen Zeitpunkten abfragen und auch Prognosen für die Zukunft generieren
+	\item Bewegungen (z.B. Fadenpendel) lassen sich nicht gut mit einem Standard-VAE modellieren\\
+	\item \textbf{neuer Ansatz:} Zeitliche Abhängigkeit der Daten berücksichtigen und die Bewegung durch Differentialgleichungen zweiter Ordnung (ODE$^{2}$) modellieren 
+	\item \textbf{Vorteile:} Wir können so zu beliebigen Zeitpunkten abfragen und auch Prognosen für die Zukunft generieren
 	\end{itemize}
 \end{frame}
 
 
 
 \begin{frame}
-    \frametitle{Modell}
+    \frametitle{Notation}
     \begin{itemize}
-    	\item Datensatz $\mathbf{x}_{0:T}=(\mathbf x_{0}, \mathbf x_{1}, \ldots,\mathbf x_{T})\in \mathbb{R}^{D\times T}$ zu beobachtete Zeitpunkten $t_{0}, t_{1},\ldots,t_{T}$\\
-    	\item Annahme: Zeitliche Änderung kann stetig durch eine ODE$^{2}$ beschrieben werden\\
-    	\item Zugehörigen latenten Zustände sind $\mathbf z_{0:T}=(\mathbf z_{0}, \mathbf z_{1}, \ldots, \mathbf z_{T})\in \mathbb{R}^{d\times T}$\\ 
+    	\item Eine \emph{time series} $\mathbf{x}_{0:T}=(\mathbf x_{0}, \mathbf x_{1}, \ldots,\mathbf x_{T})\in \mathbb{R}^{D\times T}$ zu beobachteten Zeitpunkten $t_{0}, t_{1},\ldots,t_{T}$\\
+    	\item \textbf{Annahme:} Zeitliche Änderung der latenten Darstellung kann stetig durch eine ODE$^{2}$ beschrieben werden\\
+    	\item Zugehörigen latenten Zustände zu den beobachteten Zeitpunkten sind $\mathbf z_{0:T}=(\mathbf z_{0}, \mathbf z_{1}, \ldots, \mathbf z_{T})\in \mathbb{R}^{d\times T}$\\ 
     	\item Latente Zustände werden in Positions- und Geschwindigkeitskomponente aufgeteilt $\mathbf z_{t}=(\mathbf s_{t}, \mathbf v_{t})$
     \end{itemize}
 \end{frame}
@@ -44,23 +49,27 @@
 
 
 \begin{frame}
-\frametitle{Modell}
+\frametitle{Notation}
     \begin{itemize}
-    	\item Die ODE$^{2}$ lässt sich als ein System zweier ODE$^{1}$ schreiben\\
-    	\item $f_{\boldsymbol{\psi}}$ ist dabei ein NN, welches die Beschleunigungskurve erlernt
+    	\item Die ODE$^{2}$ lässt sich als ein System zweier ODE$^{1}$ schreiben
+    \end{itemize}	
+    {\footnotesize\begin{align*}
+	    \dfrac{\partial^2 \mathbf{z}(t)}{\partial^2 t}=f_{\boldsymbol{\psi}}\left(\mathbf{z}(t), \tfrac{\partial \mathbf{z}(t)}{\partial t}, t\right)%, \\
+	    %&\begin{cases*}
+	    %\tfrac{\partial \mathbf{s}(t)}{\partial t}=\mathbf v(t) \\
+	    %\tfrac{\partial \mathbf{v}(t)}{\partial t}=f_{\boldsymbol{\psi}}(\mathbf s(t), \mathbf v(t), t) \\
+	    %\end{cases*}
+	\end{align*}}
+    \begin{itemize}
+    	\item $f_{\boldsymbol{\psi}}$ ist dabei ein NN, welches das Beschleunigunsfeld erlernt
     	\item Lösen des Anfangswertproblems in $\mathbf{z}_{0}=(\mathbf{s}_{0}, \mathbf{v}_{0})$ liefert zu beliebigen Zeitpunkten $T$ eine Lösung
 	\end{itemize}
     {\footnotesize\begin{align*}
-    \dfrac{\partial^2 \mathbf{z}(t)}{\partial^2 t}&=f_{\boldsymbol{\psi}}\left(\mathbf{z}(t), \tfrac{\partial \mathbf{z}(t)}{\partial t}, t\right), \\
-    \begin{cases*}
-    \tfrac{\partial \mathbf{s}(t)}{\partial t}=\mathbf v(t) \\
-    \tfrac{\partial \mathbf{v}(t)}{\partial t}=f_{\boldsymbol{\psi}}(\mathbf s(t), \mathbf v(t), t) \\
-    \end{cases*},
     \left(\begin{array}{cc}
     \mathbf s_{T} \\
     \mathbf v_{T}
     \end{array}\right)
-    &=
+    =
     \left(\begin{array}{cc}
     \mathbf s_{0} \\
     \mathbf v_{0}
@@ -82,10 +91,10 @@
 \frametitle{Modell}
 Das Modell besteht aus den folgenden Komponenten:
 \begin{itemize}
-	\item Einer Standardnormalverteilung $\mathcal{N}(\mathbf{0},\mathbf{I})$ für die latenten Werte
-	\item Einem \emph{Position-Encoder} welcher mit $\mathbf{x}_{0}$ die erste latente Ausgangsposition $\mathbf{s}_{0}$ encodiert und einem \emph{Velocity-Encoder} welcher mit den ersten $m\geq2$ Werten $\mathbf{x}_{m}$ die latente Ausgangsgeschwindigkeit encodiert\\
-    \item Einem \emph{ODE-Netzwerk}\footnote{im Paper wird ein Bays-Net vorgestellt, wir bleiben bei einem NN} um welches zu einem Anfangswert eine Kurve im latenten Raum bestimmt\\
-    \item Einem Decoder, welcher die aus der Kurve resultierenden latenten Positionen decodiert
+	\item Als \textbf{Prior} für die latente Ausgangsposition $p(\mathbf{s}_{0})$ und die latente Ausgangsgeschwindigkeit $p(\mathbf{v}_{0})$ wird eine Standardnormalverteilung gewählt
+	\item Einem \textbf{Position-Encoder} welcher mit $\mathbf{x}_{0}$ die erste latente Ausgangsposition $\mathbf{s}_{0}$ encodiert und einem \textbf{Velocity-Encoder} welcher mit den ersten $m\geq2$ Werten $\mathbf{x}_{m}$ die latente Ausgangsgeschwindigkeit encodiert\\
+    \item Einem \textbf{ODE-Netzwerk} welches zu einem Anfangswert eine Kurve im latenten Raum bestimmt\\
+    \item Einem \textbf{Decoder}, welcher die aus der Kurve resultierenden latenten Positionen decodiert
 \end{itemize}
 \end{frame}
 
@@ -105,19 +114,125 @@ Das Modell besteht aus den folgenden Komponenten:
 
 \begin{frame}
     \frametitle{Training}
-    Als Trainingskriterium verwenden wir die negative ELBO \footnote{Für Details siehe schriftliche Ausarbeitung und Code auf GitHub %wir verwenden eine eicht abgewandelte aber ähnliche Version der Lossfunktion}
-    }	
+    Als Trainingskriterium verwenden wir erneut die \textbf{ELBO} 	
     	{\footnotesize\begin{align*}
-    \log\big(p_{\boldsymbol{\theta}}(\mathbf{x}_{0:T})\big)&\ge \E_{\mathbf{z}_{0:T}\sim q_{\boldsymbol\phi,\boldsymbol\psi}}
-    \left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{0:T}|\mathbf{z}_{0:T}\right)\big)\right] - D_{KL}\big[q_{\boldsymbol\phi,\boldsymbol\psi}(\mathbf{z}_{0:T}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{0:T})\big]\\
-    &=\underbrace{\E_{\mathbf{z}_{0}\sim q_{\text{enc }\boldsymbol\phi}}
-    	\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{0}|\mathbf{z}_{0}\right)\big)\right] - D_{KL}\big[q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta}(\mathbf{z}_{0})\big]}_{\text{Vanilla-VAE ELBO}}\\ &+ \underbrace{\sum_{t=1}^T \E_{\mathbf{z}_{t}\sim q_{\text{ode }\boldsymbol\psi}}
-    	\left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\big)\right] - D_{KL}\big[q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t})\big]}_{\text{dynamic loss}}
+            \log\big(p_{\boldsymbol{\theta}}(\mathbf{x}_{0:T})\big)&\ge \E_{\mathbf{z}_{0:T}\sim q_{\boldsymbol\phi,\boldsymbol\psi}}
+            \left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{0:T}|\mathbf{z}_{0:T}\right)\big)\right] - D_{KL}\big[q_{\boldsymbol\phi,\boldsymbol\psi}(\mathbf{z}_{0:T}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{0:T})\big]\\
+            &=\underbrace{\E_{\mathbf{z}_{0}\sim q_{\text{enc }\boldsymbol\phi}}
+    	    \left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{0}|\mathbf{z}_{0}\right)\big)\right] - D_{KL}\big[q_{\text{enc }\boldsymbol\phi}(\mathbf{z}_{0}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta}(\mathbf{z}_{0})\big]}_{\text{Vanilla-VAE ELBO}}\\ &+ \underbrace{\sum_{t=1}^T \E_{\mathbf{z}_{t}\sim q_{\text{ode }\boldsymbol\psi}}
+    	    \left[\log\big(p_{\boldsymbol\theta}\left(\mathbf{x}_{t}|\mathbf{z}_{t}\right)\big)\right] - D_{KL}\big[q_{\text{ode }\boldsymbol\psi}(\mathbf{z}_{t}|\mathbf{x}_{0:m})||p_{\boldsymbol\theta,\boldsymbol\psi}(\mathbf{z}_{t})\big]}_{\text{dynamic loss}}
     \end{align*}}
+    Während dem Training sieht das Modell alle Inputframes einer \emph{time series}
 \end{frame}
 
 
-%\begin{frame}
-    %\frametitle{ODE$^{2}$VAE}
-    %Inhalt
-%\end{frame}
+\begin{frame}
+    \frametitle{Ergebnisse}
+    \emph{bouncing Balls}
+    \begin{figure}[!htbp]
+    	\centering
+    	\includegraphics[scale=0.28]{Bilder/bouncingBalls}
+    \end{figure}
+\end{frame}
+
+
+
+
+\begin{frame}
+\frametitle{Ergebnisse}
+\textbf{Von links nach rechts:} Modellinput, tatsächlicher Versauf der \emph{time series}, Rekonstruktionen 
+\begin{figure}[h!]
+	\begin{minipage}{0.115\textwidth}
+		%\begin{mdframed}[style=innersmall]
+			\center{}
+			\includegraphics[scale=0.19]{Bilder/MNISTorig1}
+			%\center{}
+			%\includegraphics[scale=0.15]{Bilder/bouncingBalls_ODEorig1}
+		%\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.26\textwidth}
+		%\begin{mdframed}[style=innersmall]
+			\center{}
+			\includegraphics[scale=0.19]{Bilder/MNISTorig2}
+			%\center{}
+			%\includegraphics[scale=0.15]{Bilder/bouncingBalls_ODEorig2}
+		%\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.35\textwidth}
+		%\begin{mdframed}[style=innersmall]
+			\center{}
+			\includegraphics[scale=0.19]{Bilder/MNISTrec}
+			%\center{}
+			%\includegraphics[scale=0.15]{Bilder/bouncingBalls_ODE}
+		%\end{mdframed}
+	\end{minipage}
+\end{figure}
+\end{frame}
+
+
+
+
+\begin{frame}
+\frametitle{Ergebnisse}
+\textbf{Von links nach rechts:} Modellinput, tatsächlicher Versauf der \emph{time series}, Rekonstruktionen 
+\begin{figure}[h!]
+	\begin{minipage}{0.115\textwidth}
+		%\begin{mdframed}[style=innersmall]
+		%\center{\small{Modellinput}\vspace{0.1cm}}
+		%\includegraphics[scale=0.15]{Bilder/MNISTorig1}
+		\center{}
+		\includegraphics[scale=0.19]{Bilder/bouncingBalls_ODEorig1}
+		%\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.26\textwidth}
+		%\begin{mdframed}[style=innersmall]
+		%\center{Groundtruth\vspace{0.1cm}}
+		%\includegraphics[scale=0.15]{Bilder/MNISTorig2}
+		\center{}
+		\includegraphics[scale=0.19]{Bilder/bouncingBalls_ODEorig2}
+		%\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.35\textwidth}
+		%\begin{mdframed}[style=innersmall]
+		%\center{Rekonstruktion}
+		%\includegraphics[scale=0.15]{Bilder/MNISTrec}
+		\center{}
+		\includegraphics[scale=0.19]{Bilder/bouncingBalls_ODE}
+		%\end{mdframed}
+	\end{minipage}
+\end{figure}
+\end{frame}
+
+
+
+
+\begin{frame}
+\frametitle{Ergebnisse}
+\emph{AVI-Motion}
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[scale=0.35]{Bilder/AVIMotion}
+\end{figure}
+\end{frame}
+
+
+
+
+\begin{frame}
+\frametitle{Ergebnisse}
+\begin{figure}[h!]
+	\begin{minipage}[position=l]{0.4\textwidth}
+		%\begin{mdframed}[style=inner]
+			\center{Modellinput\vspace{0.1cm}}
+			\includegraphics[scale=0.3]{Bilder/movies_input}
+		%\end{mdframed}
+	\end{minipage}
+	\begin{minipage}[position=r]{0.4\textwidth}
+		%\begin{mdframed}[style=inner]
+			\center{Extrapolation\vspace{0.1cm}}
+			\includegraphics[scale=0.299]{Bilder/movies_extrapolation}
+		%\end{mdframed}
+	\end{minipage}
+\end{figure}
+\end{frame}
+
