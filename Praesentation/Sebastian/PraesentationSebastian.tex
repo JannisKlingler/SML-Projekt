@@ -20,13 +20,6 @@
 	\end{align*}
 \end{frame}
 
-\begin{frame}
-	\frametitle{Verlustfunktion (ELBO)}
-	\begin{align*}
-	\log\big(p_{\boldsymbol\theta}(\x)\big)
-	\geq\underbrace{ \E_{\z\sim q_{\boldsymbol\phi}}\big[\log\big(\pdec\big)\big] - D_{KL}\big[\qenc||p_{\boldsymbol\theta}(\z)\big]}_{=:\ \mathrm{ELBO}\ =\ -\mathcal{L}(\boldsymbol\theta,\boldsymbol\phi,\mathbf{x}_i)}
-	\end{align*}
-\end{frame}
 
 \begin{frame}
 	\frametitle{Beispiel eines latenten Raumes}
@@ -53,6 +46,86 @@
 
 
 \begin{frame}
+\frametitle{Vanilla-VAE}
+\begin{figure}[h!]
+	\begin{minipage}{0.32\textwidth}
+		%			\begin{mdframed}[style=inner]
+		\hfill
+		\center{Modellinput\\ \vspace{0.1cm}}
+		\includegraphics[scale=0.12]{Bilder/rotatingMNIST_VAE}
+		%			\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.32\textwidth}
+		\hfill
+	\end{minipage}
+	\begin{minipage}{0.32\textwidth}
+		\hfill
+	\end{minipage}
+	%		\caption{Blablabla}
+	
+	\begin{minipage}{0.32\textwidth}
+		%			\begin{mdframed}[style=inner]
+		\center
+		\includegraphics[scale=0.12]{Bilder/bouncingBalls_VAE}
+		%			\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.32\textwidth}
+		\hfill
+	\end{minipage}
+	\begin{minipage}{0.32\textwidth}
+		\hfill
+	\end{minipage}
+	%		\caption{Blablabla}
+\end{figure}
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Vanilla-VAE}
+\begin{figure}[h!]
+	\begin{minipage}{0.32\textwidth}
+		%			\begin{mdframed}[style=inner]
+		\hfill
+		\center{Modellinput\\ \vspace{0.1cm}}
+		\includegraphics[scale=0.12]{Bilder/rotatingMNIST_VAE}
+		%			\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.32\textwidth}
+		%		\begin{mdframed}[style=inner]
+		\hfill
+		\center{Rekonstuktion A\vspace{0.1cm}}
+		\includegraphics[scale=0.12]{Bilder/rotatingMNIST_VAElat}
+		%		\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.32\textwidth}
+		\hfill
+	\end{minipage}
+	%		\caption{Blablabla}
+	
+	\begin{minipage}{0.32\textwidth}
+		%			\begin{mdframed}[style=inner]
+		\center
+		\includegraphics[scale=0.12]{Bilder/bouncingBalls_VAE}
+		%			\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.32\textwidth}
+		%		\begin{mdframed}[style=inner]
+		\center
+		\includegraphics[scale=0.12]{Bilder/bouncingBalls_VAElat}
+		%		\end{mdframed}
+	\end{minipage}
+	\begin{minipage}{0.32\textwidth}
+		\hfill
+	\end{minipage}
+	%		\caption{Blablabla}
+\end{figure}
+
+\end{frame}
+
+
+
+\begin{frame}
 	\frametitle{Vanilla-VAE}
 	\begin{figure}[h!]
 		\begin{minipage}{0.32\textwidth}
@@ -64,13 +137,15 @@
 		\end{minipage}
 		\begin{minipage}{0.32\textwidth}
 			%		\begin{mdframed}[style=inner]
-			\center{Trainingsdaten vollständig\vspace{0.1cm}}
+			\hfill
+			\center{Rekonstruktion A\vspace{0.1cm}}
 			\includegraphics[scale=0.12]{Bilder/rotatingMNIST_VAElat}
 			%		\end{mdframed}
 		\end{minipage}
 		\begin{minipage}{0.32\textwidth}
 			%			\begin{mdframed}[style=inner]
-			\center{Trainingsdaten beschädigt\vspace{0.1cm}}
+			\hfill
+			\center{Rekonstruktion B\vspace{0.1cm}}
 			\includegraphics[scale=0.12]{Bilder/rotatingMNIST_VAElat2}
 			%			\end{mdframed}
 		\end{minipage}
